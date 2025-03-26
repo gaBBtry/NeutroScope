@@ -47,4 +47,8 @@ class ReactorController:
     
     def get_four_factors_data(self):
         """Get the four factors data from the model"""
-        return self.model.get_four_factors_data() 
+        return self.model.get_four_factors_data()
+    
+    def get_neutron_balance_data(self):
+        """Get the neutron balance data from the model"""
+        return self.model.get_neutron_balance_data() 

@@ -145,4 +145,67 @@ class ReactorModel:
             "thermal_leakage": self.thermal_leakage,
             "fast_leakage": self.fast_leakage,
             "k_effective": self.k_effective
+        }
+        
+    def get_neutron_balance_data(self):
+        """Get data for the neutron balance visualization (pie chart)"""
+        # Ces valeurs sont des approximations simplifiées pour un REP typique
+        # et varient en fonction des paramètres du réacteur
+        
+        # Calcul des proportions de neutrons en fonction de leur devenir
+        
+        # Neutrons de fission (divisés entre rapides et thermiques)
+        fissions_neutrons_lents_pct = 39
+        fissions_neutrons_rapides_pct = 2
+        
+        # Captures fertiles (U-238 -> Pu-239)
+        captures_fertiles_pct = 18
+        
+        # Captures stériles (dans le combustible)
+        captures_steriles_pct = 13
+        
+        # Fuites
+        fuites_neutrons_lents_pct = 2
+        fuites_neutrons_rapides_pct = 11
+        
+        # Captures dans le modérateur, gaines, etc.
+        captures_moderateur_pct = 4
+        
+        # Captures dans le combustible sans fission
+        captures_combustible_pct = 6
+        
+        # Poisons, barres de contrôle
+        poisons_barres_pct = 6
+        
+        # Ajuster ces valeurs en fonction des paramètres du réacteur
+        effect_rod = self.control_rod_position / 100
+        effect_boron = self.boron_concentration / 2000
+        
+        # Augmenter l'absorption par les barres et le bore
+        poisons_barres_pct += 4 * effect_rod
+        captures_steriles_pct += 3 * effect_boron
+        
+        # Réduire les fissions en conséquence
+        fissions_reduction = (4 * effect_rod + 3 * effect_boron)
+        fissions_neutrons_lents_pct -= fissions_reduction
+        
+        # Renvoyer les données dans un format utilisable par le graphique
+        return {
+            "sections": [
+                {"name": "Fissions", "value": fissions_neutrons_lents_pct + fissions_neutrons_rapides_pct, 
+                 "color": "#33a02c", "tooltip": f"Fissions neutrons\n(lents {fissions_neutrons_lents_pct}%, rapides {fissions_neutrons_rapides_pct}%)"},
+                {"name": "Captures fertiles", "value": captures_fertiles_pct, 
+                 "color": "#1f78b4", "tooltip": "Captures fertiles\nU-238 → Pu-239"},
+                {"name": "Captures stériles", "value": captures_steriles_pct, 
+                 "color": "#ffff33", "tooltip": "Captures stériles"},
+                {"name": "Fuites", "value": fuites_neutrons_lents_pct + fuites_neutrons_rapides_pct, 
+                 "color": "#e31a1c", "tooltip": f"Fuites\n(N. lents {fuites_neutrons_lents_pct}%, N. rapides {fuites_neutrons_rapides_pct}%)"},
+                {"name": "Modérateur", "value": captures_moderateur_pct, 
+                 "color": "#a6cee3", "tooltip": "Modérateur, gaines, etc."},
+                {"name": "Combustible", "value": captures_combustible_pct, 
+                 "color": "#b2df8a", "tooltip": "Combustible"},
+                {"name": "Poisons/Barres", "value": poisons_barres_pct, 
+                 "color": "#fb9a99", "tooltip": "Poisons, Barres de contrôle"}
+            ],
+            "total": 100
         } 

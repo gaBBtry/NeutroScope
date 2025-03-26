@@ -128,10 +128,10 @@ class CreditsButton(QToolButton):
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         
         credits = QLabel(
-            "© 2023-2024 EDF R&D\n\n"
+            "© 2023-2024 EDF UFPI\n\n"
             "Développé pour la formation et l'apprentissage\n"
             "des principes de la neutronique des réacteurs.\n\n"
-            "Version: 1.0.0"
+            "Version: alpha 0.1"
         )
         credits.setAlignment(Qt.AlignmentFlag.AlignCenter)
         credits.setWordWrap(True)
@@ -500,4 +500,8 @@ class MainWindow(QMainWindow):
         
         # Update four factors plot
         factors_data = self.controller.get_four_factors_data()
-        self.visualization_panel.update_factors_plot(factors_data) 
+        self.visualization_panel.update_factors_plot(factors_data)
+        
+        # Update neutron balance plot
+        balance_data = self.controller.get_neutron_balance_data()
+        self.visualization_panel.update_neutron_balance_plot(balance_data) 
