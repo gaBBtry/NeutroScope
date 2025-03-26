@@ -3,12 +3,87 @@ Main window implementation for the Neutro_EDF application
 """
 from PyQt6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
-    QLabel, QSlider, QComboBox, QGroupBox, QDoubleSpinBox
+    QLabel, QSlider, QComboBox, QGroupBox, QDoubleSpinBox,
+    QToolButton
 )
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, pyqtSignal, QEvent
+from PyQt6.QtGui import QEnterEvent, QFont
 
 from src.controller.reactor_controller import ReactorController
-from src.gui.visualization import VisualizationPanel
+from src.gui.visualization import (
+    VisualizationPanel, InfoPanel, InfoButton
+)
+
+
+class InfoItem(QWidget):
+    """
+    Mixin class to add hover information capability to any widget
+    """
+    # Signal to send info to the info panel
+    info_signal = pyqtSignal(str)
+    
+    def __init__(self, parent=None, info_text=""):
+        super().__init__(parent)
+        self.info_text = info_text
+        self.setMouseTracking(True)
+        self.installEventFilter(self)
+    
+    def eventFilter(self, obj, event):
+        """Filter events to detect mouse hover"""
+        if event.type() == QEvent.Type.Enter:
+            # Mouse entered widget
+            self.send_info()
+        elif event.type() == QEvent.Type.Leave:
+            # Mouse left widget
+            self.clear_info()
+        return super().eventFilter(obj, event)
+    
+    def send_info(self):
+        """Send info text to the panel"""
+        self.info_signal.emit(self.info_text)
+    
+    def clear_info(self):
+        """Clear info panel"""
+        self.info_signal.emit("")
+    
+    def set_info_text(self, text):
+        """Set the information text for this widget"""
+        self.info_text = text
+
+
+class InfoGroupBox(QGroupBox):
+    """GroupBox with hover information capability"""
+    
+    info_signal = pyqtSignal(str)
+    
+    def __init__(self, title, info_text="", parent=None):
+        super().__init__(title, parent)
+        self.info_text = info_text
+        self.setMouseTracking(True)
+        self.installEventFilter(self)
+    
+    def eventFilter(self, obj, event):
+        """Filter events to detect mouse hover"""
+        if event.type() == QEvent.Type.Enter:
+            # Mouse entered widget
+            self.send_info()
+        elif event.type() == QEvent.Type.Leave:
+            # Mouse left widget
+            self.clear_info()
+        return super().eventFilter(obj, event)
+    
+    def send_info(self):
+        """Send info text to the panel"""
+        self.info_signal.emit(self.info_text)
+    
+    def clear_info(self):
+        """Clear info panel"""
+        self.info_signal.emit("")
+    
+    def set_info_text(self, text):
+        """Set the information text for this widget"""
+        self.info_text = text
+
 
 class MainWindow(QMainWindow):
     """Main application window with control panel and visualization area"""
@@ -22,22 +97,99 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Simulation Neutronique des REP")
         self.setMinimumSize(1200, 800)
         
+        # Dictionary of information texts for different controls
+        self.info_texts = {
+            "difficulty": (
+                "Niveau de difficulté\n\n"
+                "Détermine la complexité des concepts présentés et des contrôles disponibles:\n"
+                "- Débutant: Accès aux concepts fondamentaux et contrôles principaux\n"
+                "- Intermédiaire: Ajout de paramètres physiques avancés\n"
+                "- Expert: Accès à tous les paramètres et visualisations détaillées"
+            ),
+            "rod_control": (
+                "Barres de contrôle\n\n"
+                "Les barres de contrôle sont des éléments absorbants de neutrons qui permettent "
+                "de contrôler rapidement la réactivité du cœur. Leur insertion dans le cœur "
+                "réduit le facteur de multiplication k et donc la puissance du réacteur.\n\n"
+                "Plage: 0% (barres extraites) à 100% (barres complètement insérées)"
+            ),
+            "boron": (
+                "Concentration en bore\n\n"
+                "Le bore dissous dans l'eau du circuit primaire est un poison neutronique "
+                "qui permet un contrôle fin et homogène de la réactivité du cœur. Une concentration "
+                "plus élevée réduit la réactivité.\n\n"
+                "Plage typique: 0 à 2000 ppm (parties par million)"
+            ),
+            "moderator_temp": (
+                "Température du modérateur\n\n"
+                "La température de l'eau (modérateur) affecte sa densité et donc son efficacité "
+                "à ralentir les neutrons. Une augmentation de température réduit généralement "
+                "la réactivité (coefficient de température modérateur négatif).\n\n"
+                "Plage d'opération normale: 280°C à 350°C"
+            ),
+            "fuel_enrichment": (
+                "Enrichissement du combustible\n\n"
+                "Le pourcentage d'uranium-235 (isotope fissile) dans le combustible. "
+                "Un enrichissement plus élevé augmente la réactivité et permet des "
+                "cycles de combustible plus longs.\n\n"
+                "Plage typique REP: 1.0% à 5.0%"
+            ),
+            "reactor_params": (
+                "Paramètres neutroniques du réacteur\n\n"
+                "- Taux de neutrons retardés (β): Fraction des neutrons émis avec un délai\n"
+                "- Temps de doublement: Temps nécessaire pour doubler la puissance\n"
+                "- Réactivité (ρ): Écart relatif par rapport à la criticité\n"
+                "- k-effectif: Facteur de multiplication effectif (k=1: critique)"
+            )
+        }
+        
         # Create the central widget and main layout
         central_widget = QWidget()
         main_layout = QHBoxLayout(central_widget)
         
+        # Create left side container (controls + info panel)
+        left_container = QWidget()
+        left_layout = QVBoxLayout(left_container)
+        left_layout.setContentsMargins(0, 0, 0, 0)
+        
+        # Create info panel and button for left side
+        self.info_panel = InfoPanel()
+        self.info_button = InfoButton()
+        self.info_button.clicked.connect(self.toggle_info_panel)
+        
+        # Connect info panel closed signal
+        self.info_panel.closed.connect(self.on_info_panel_closed)
+        
+        # Flag to control automatic showing of info panel
+        self.auto_show_info = False
+        
         # Create control panel (left side)
         control_panel = self.create_control_panel()
         
+        # Add button for info panel in the controls area
+        button_layout = QHBoxLayout()
+        button_layout.addStretch(1)
+        button_layout.addWidget(self.info_button)
+        
+        # Add components to left container
+        left_layout.addWidget(control_panel)
+        left_layout.addLayout(button_layout)
+        left_layout.addWidget(self.info_panel)
+        
         # Create visualization area (right side)
-        self.visualization_panel = VisualizationPanel()
+        self.visualization_panel = VisualizationPanel(use_info_panel=False)
+        # Connect visualization panel to the info panel
+        self.visualization_panel.set_external_info_callback(self.show_info)
         visualization_container = self.create_visualization_area()
         
-        # Add both panels to the main layout
-        main_layout.addWidget(control_panel, 1)  # 1/3 of window width
+        # Add both containers to the main layout
+        main_layout.addWidget(left_container, 1)  # 1/3 of window width
         main_layout.addWidget(visualization_container, 2)  # 2/3 of window width
         
         self.setCentralWidget(central_widget)
+        
+        # Hide info panel by default
+        self.info_panel.hide()
         
         # Initialize visualizations with current data
         self.update_visualizations()
@@ -48,12 +200,15 @@ class MainWindow(QMainWindow):
         layout = QVBoxLayout(panel)
         
         # Difficulty level selector
-        difficulty_group = QGroupBox("Niveau de difficulté")
+        difficulty_group = self.create_info_groupbox("Niveau de difficulté", self.info_texts["difficulty"])
         difficulty_layout = QVBoxLayout(difficulty_group)
         
         self.difficulty_selector = QComboBox()
         self.difficulty_selector.addItems(["Débutant", "Intermédiaire", "Expert"])
         difficulty_layout.addWidget(self.difficulty_selector)
+        
+        # Connect info signal
+        difficulty_group.info_signal.connect(self.show_info)
         
         layout.addWidget(difficulty_group)
         
@@ -63,6 +218,9 @@ class MainWindow(QMainWindow):
         
         # Control rod position
         rod_layout = QVBoxLayout()
+        rod_container = self.create_info_widget(self.info_texts["rod_control"])
+        rod_container_layout = QVBoxLayout(rod_container)
+        
         rod_label = QLabel("Position des barres de contrôle:")
         self.rod_slider = QSlider(Qt.Orientation.Horizontal)
         self.rod_slider.setMinimum(0)
@@ -70,12 +228,21 @@ class MainWindow(QMainWindow):
         self.rod_value = QLabel("0%")
         self.rod_slider.valueChanged.connect(self.on_rod_position_changed)
         
-        rod_layout.addWidget(rod_label)
-        rod_layout.addWidget(self.rod_slider)
-        rod_layout.addWidget(self.rod_value)
+        rod_container_layout.addWidget(rod_label)
+        rod_container_layout.addWidget(self.rod_slider)
+        rod_container_layout.addWidget(self.rod_value)
+        rod_container_layout.setContentsMargins(0, 0, 0, 0)
+        
+        # Connect info signal
+        rod_container.info_signal.connect(self.show_info)
+        
+        rod_layout.addWidget(rod_container)
         
         # Boron concentration
         boron_layout = QVBoxLayout()
+        boron_container = self.create_info_widget(self.info_texts["boron"])
+        boron_container_layout = QVBoxLayout(boron_container)
+        
         boron_label = QLabel("Concentration en bore (ppm):")
         
         # Add slider for boron
@@ -98,9 +265,15 @@ class MainWindow(QMainWindow):
         boron_value_layout.addWidget(self.boron_value)
         boron_value_layout.addWidget(self.boron_spin)
         
-        boron_layout.addWidget(boron_label)
-        boron_layout.addWidget(self.boron_slider)
-        boron_layout.addLayout(boron_value_layout)
+        boron_container_layout.addWidget(boron_label)
+        boron_container_layout.addWidget(self.boron_slider)
+        boron_container_layout.addLayout(boron_value_layout)
+        boron_container_layout.setContentsMargins(0, 0, 0, 0)
+        
+        # Connect info signal
+        boron_container.info_signal.connect(self.show_info)
+        
+        boron_layout.addWidget(boron_container)
         
         control_layout.addLayout(rod_layout)
         control_layout.addLayout(boron_layout)
@@ -113,17 +286,29 @@ class MainWindow(QMainWindow):
         
         # Temperature
         temp_mod_layout = QVBoxLayout()
+        temp_container = self.create_info_widget(self.info_texts["moderator_temp"])
+        temp_container_layout = QVBoxLayout(temp_container)
+        
         temp_mod_label = QLabel("Température du modérateur (°C):")
         self.temp_mod_spin = QDoubleSpinBox()
         self.temp_mod_spin.setRange(280, 350)
         self.temp_mod_spin.setValue(310)
         self.temp_mod_spin.valueChanged.connect(self.on_moderator_temperature_changed)
         
-        temp_mod_layout.addWidget(temp_mod_label)
-        temp_mod_layout.addWidget(self.temp_mod_spin)
+        temp_container_layout.addWidget(temp_mod_label)
+        temp_container_layout.addWidget(self.temp_mod_spin)
+        temp_container_layout.setContentsMargins(0, 0, 0, 0)
+        
+        # Connect info signal
+        temp_container.info_signal.connect(self.show_info)
+        
+        temp_mod_layout.addWidget(temp_container)
         
         # Fuel enrichment
         enrich_layout = QVBoxLayout()
+        enrich_container = self.create_info_widget(self.info_texts["fuel_enrichment"])
+        enrich_container_layout = QVBoxLayout(enrich_container)
+        
         enrich_label = QLabel("Enrichissement du combustible (%):")
         self.enrich_spin = QDoubleSpinBox()
         self.enrich_spin.setRange(1.0, 5.0)
@@ -131,8 +316,14 @@ class MainWindow(QMainWindow):
         self.enrich_spin.setSingleStep(0.1)
         self.enrich_spin.valueChanged.connect(self.on_fuel_enrichment_changed)
         
-        enrich_layout.addWidget(enrich_label)
-        enrich_layout.addWidget(self.enrich_spin)
+        enrich_container_layout.addWidget(enrich_label)
+        enrich_container_layout.addWidget(self.enrich_spin)
+        enrich_container_layout.setContentsMargins(0, 0, 0, 0)
+        
+        # Connect info signal
+        enrich_container.info_signal.connect(self.show_info)
+        
+        enrich_layout.addWidget(enrich_container)
         
         physics_layout.addLayout(temp_mod_layout)
         physics_layout.addLayout(enrich_layout)
@@ -150,7 +341,8 @@ class MainWindow(QMainWindow):
         layout = QVBoxLayout(panel)
         
         # Reactor parameters display
-        self.params_group = QGroupBox("Paramètres du réacteur")
+        self.params_group = self.create_info_groupbox("Paramètres du réacteur", 
+                                                     self.info_texts["reactor_params"])
         params_layout = QVBoxLayout(self.params_group)
         
         self.neutron_rate = QLabel("Taux de neutrons retardés: 0.0065")
@@ -163,12 +355,45 @@ class MainWindow(QMainWindow):
         params_layout.addWidget(self.reactivity)
         params_layout.addWidget(self.k_effective)
         
+        # Connect info signal
+        self.params_group.info_signal.connect(self.show_info)
+        
         layout.addWidget(self.params_group)
         
         # Add visualization panel
         layout.addWidget(self.visualization_panel)
         
         return panel
+    
+    def create_info_widget(self, info_text):
+        """Create a widget with info text capability"""
+        widget = InfoItem(info_text=info_text)
+        return widget
+    
+    def create_info_groupbox(self, title, info_text):
+        """Create a groupbox with info text capability"""
+        groupbox = InfoGroupBox(title, info_text)
+        return groupbox
+    
+    def show_info(self, text):
+        """Show information in the info panel"""
+        self.info_panel.update_info(text)
+        # Only show the panel if auto_show is enabled
+        if text and not self.info_panel.isVisible() and self.auto_show_info:
+            self.info_panel.show()
+    
+    def toggle_info_panel(self):
+        """Toggle visibility of info panel"""
+        if self.info_panel.isVisible():
+            self.info_panel.hide()
+            self.auto_show_info = False
+        else:
+            self.info_panel.show()
+            self.auto_show_info = True
+    
+    def on_info_panel_closed(self):
+        """Handle info panel being closed"""
+        self.auto_show_info = False
     
     def on_rod_position_changed(self, value):
         """Handle changes to the control rod position slider"""
