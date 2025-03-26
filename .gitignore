@@ -1,0 +1,5 @@
+# Documentation du projet
+.docs/
+
+# Environnement virtuel
+.venv/
