@@ -208,4 +208,44 @@ class ReactorModel:
                  "color": "#fb9a99", "tooltip": "Poisons, Barres de contrôle"}
             ],
             "total": 100
+        }
+        
+    def get_axial_offset_data(self):
+        """
+        Calculate axial offset and reactor power data for the pilotage diagram
+        
+        Axial Offset (AO) = (Flux_haut - Flux_bas) / (Flux_haut + Flux_bas)
+        Where:
+        - Flux_haut is the average flux in the upper half of the core
+        - Flux_bas is the average flux in the lower half of the core
+        
+        Returns: A dict with axial_offset and power_percentage
+        """
+        # Get current flux distribution
+        height, flux = self.get_axial_flux_distribution()
+        
+        # Calculate axial offset
+        upper_flux = np.mean(flux[height > 0.5])
+        lower_flux = np.mean(flux[height <= 0.5])
+        axial_offset = 100 * (upper_flux - lower_flux) / (upper_flux + lower_flux)
+        
+        # Calculate power percentage based on effective multiplication factor
+        # For a simplified model, we'll assume power is proportional to k_effective
+        # In a real reactor with control systems, power would be more complex to calculate
+        base_k = 1.0  # Critical reactor
+        power_percentage = 100 * (self.k_effective / base_k)
+        
+        # Adjust power based on control rod position to simulate load following
+        # In a real reactor, this would be controlled by external demand
+        if self.control_rod_position > 0:
+            # Deeper rod insertion generally means lower power operation
+            rod_effect = 1.0 - (0.3 * self.control_rod_position / 100)
+            power_percentage *= rod_effect
+        
+        # Constrain power to realistic range (0-100%)
+        power_percentage = max(0, min(100, power_percentage))
+        
+        return {
+            "axial_offset": axial_offset,
+            "power_percentage": power_percentage
         } 

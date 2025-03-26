@@ -825,6 +825,106 @@ class NeutronBalancePlot(FigureCanvasQTAgg):
             self.parent().update_info_panel(expanded_tooltip)
 
 
+class PilotageDiagramPlot(FigureCanvasQTAgg):
+    """Matplotlib canvas for plotting the pilotage diagram (AO vs Power)"""
+    
+    def __init__(self, parent=None, width=5, height=4, dpi=100):
+        self.fig = Figure(figsize=(width, height), dpi=dpi)
+        self.axes = self.fig.add_subplot(111)
+        super().__init__(self.fig)
+        self.setParent(parent)
+        
+        # Current state point
+        self.state_point = None
+        
+        # Initial setup
+        self.axes.set_xlabel('Axial Offset (%)')
+        self.axes.set_ylabel('Puissance nucléaire (%)')
+        self.axes.set_title('Diagramme de Pilotage')
+        self.axes.set_xlim(-30, 30)  # Typical AO range
+        self.axes.set_ylim(0, 110)   # Power percentage range
+        self.axes.grid(True)
+        
+        # Connect mouse events
+        self.fig.canvas.mpl_connect('motion_notify_event', self.on_mouse_move)
+        self.fig.canvas.mpl_connect('axes_leave_event', self.on_axes_leave)
+        
+        self.fig.tight_layout()
+    
+    def update_plot(self, ao_data):
+        """Update the pilotage diagram with new data"""
+        axial_offset = ao_data["axial_offset"]
+        power_percentage = ao_data["power_percentage"]
+        
+        # Remove previous state point if it exists
+        if self.state_point:
+            self.state_point.remove()
+        
+        # Plot new state point
+        self.state_point = self.axes.scatter(
+            axial_offset, power_percentage, 
+            color='red', s=100, marker='o', 
+            edgecolor='black', linewidth=1.5,
+            zorder=5
+        )
+        
+        self.draw()
+    
+    def on_mouse_move(self, event):
+        """Handle mouse movement to update tooltip info"""
+        if event.inaxes != self.axes:
+            return
+        
+        # Generate information about the current mouse position
+        if -30 <= event.xdata <= 30 and 0 <= event.ydata <= 110:
+            ao = event.xdata
+            power = event.ydata
+            
+            # Get current state point position
+            current_ao = None
+            current_power = None
+            if self.state_point:
+                current_ao = self.state_point.get_offsets()[0, 0]
+                current_power = self.state_point.get_offsets()[0, 1]
+            
+            # Description of axial offset
+            ao_description = ""
+            if ao < -15:
+                ao_description = "fort déséquilibre vers le bas"
+            elif ao < -5:
+                ao_description = "déséquilibre vers le bas"
+            elif ao < 5:
+                ao_description = "équilibre"
+            elif ao < 15:
+                ao_description = "déséquilibre vers le haut"
+            else:
+                ao_description = "fort déséquilibre vers le haut"
+            
+            # Build tooltip text
+            tooltip_text = (
+                "Diagramme de Pilotage\n\n"
+                f"Position actuelle :\n"
+                f"Axial Offset : {current_ao:.1f}%\n"
+                f"Puissance : {current_power:.1f}%\n\n"
+                f"Position pointée :\n"
+                f"Axial Offset : {ao:.1f}% ({ao_description})\n"
+                f"Puissance : {power:.1f}%\n\n"
+                "Le diagramme de pilotage permet de visualiser l'état du réacteur\n"
+                "en termes de déséquilibre axial de puissance (AO) et de niveau de puissance.\n\n"
+                "L'Axial Offset représente la différence relative de puissance entre\n"
+                "les moitiés supérieure et inférieure du cœur."
+            )
+            
+            # Update info panel
+            if hasattr(self.parent(), 'update_info_panel'):
+                self.parent().update_info_panel(tooltip_text)
+    
+    def on_axes_leave(self, event):
+        """Handle mouse leaving the axes"""
+        if hasattr(self.parent(), 'update_info_panel'):
+            self.parent().update_info_panel("")
+
+
 class VisualizationPanel(QWidget):
     """Panel containing all visualizations for the reactor simulation"""
     
@@ -839,6 +939,7 @@ class VisualizationPanel(QWidget):
         self.flux_plot = FluxDistributionPlot(self)
         self.factors_plot = FourFactorsPlot(self)
         self.neutron_balance_plot = NeutronBalancePlot(self)
+        self.pilotage_diagram_plot = PilotageDiagramPlot(self)
         
         # Flag to determine if we should use an internal info panel or an external one
         self.use_info_panel = use_info_panel
@@ -861,13 +962,18 @@ class VisualizationPanel(QWidget):
             plots_layout = QVBoxLayout(plots_container)
             plots_layout.setContentsMargins(0, 0, 0, 0)
             
+            # Create horizontal layout for flux and pilotage diagram
+            flux_pilotage_layout = QHBoxLayout()
+            flux_pilotage_layout.addWidget(self.flux_plot, 1)
+            flux_pilotage_layout.addWidget(self.pilotage_diagram_plot, 1)
+            
             # Create horizontal layout for factors and neutron balance
             factors_balance_layout = QHBoxLayout()
             factors_balance_layout.addWidget(self.factors_plot, 1)
             factors_balance_layout.addWidget(self.neutron_balance_plot, 1)
             
             # Add plots to plots container
-            plots_layout.addWidget(self.flux_plot, 1)
+            plots_layout.addLayout(flux_pilotage_layout, 1)
             plots_layout.addLayout(factors_balance_layout, 1)
             
             # Create container for buttons (bottom right corner)
@@ -888,7 +994,14 @@ class VisualizationPanel(QWidget):
             self.info_panel.hide()
         else:
             # Simpler layout without info panel
-            self.layout.addWidget(self.flux_plot, 1)
+            
+            # Create horizontal layout for flux and pilotage diagram
+            flux_pilotage_layout = QHBoxLayout()
+            flux_pilotage_layout.addWidget(self.flux_plot, 1)
+            flux_pilotage_layout.addWidget(self.pilotage_diagram_plot, 1)
+            
+            # Add top row
+            self.layout.addLayout(flux_pilotage_layout, 1)
             
             # Create horizontal layout for factors and neutron balance
             factors_balance_layout = QHBoxLayout()
@@ -931,6 +1044,10 @@ class VisualizationPanel(QWidget):
     def update_neutron_balance_plot(self, balance_data):
         """Update the neutron balance plot"""
         self.neutron_balance_plot.update_plot(balance_data)
+    
+    def update_pilotage_diagram_plot(self, ao_data):
+        """Update the pilotage diagram"""
+        self.pilotage_diagram_plot.update_plot(ao_data)
     
     def update_info_panel(self, text):
         """Update the info panel with the provided text"""
