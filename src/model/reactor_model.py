@@ -35,6 +35,40 @@ class ReactorModel:
         self.thermal_leakage = 0.98
         self.fast_leakage = 0.97
         
+        # Presets dictionary
+        self.presets = {
+            "Démarrage": {
+                "control_rod_position": 50.0,
+                "boron_concentration": 1500.0,
+                "moderator_temperature": 290.0,
+                "fuel_enrichment": 3.5
+            },
+            "Critique à puissance nominale": {
+                "control_rod_position": 10.0,
+                "boron_concentration": 800.0,
+                "moderator_temperature": 310.0,
+                "fuel_enrichment": 3.5
+            },
+            "Fin de cycle": {
+                "control_rod_position": 5.0,
+                "boron_concentration": 10.0,
+                "moderator_temperature": 310.0,
+                "fuel_enrichment": 3.5
+            },
+            "Surcritique": {
+                "control_rod_position": 0.0,
+                "boron_concentration": 400.0,
+                "moderator_temperature": 305.0,
+                "fuel_enrichment": 4.0
+            },
+            "Sous-critique": {
+                "control_rod_position": 80.0,
+                "boron_concentration": 1200.0,
+                "moderator_temperature": 310.0,
+                "fuel_enrichment": 3.0
+            }
+        }
+        
         # Initial calculation
         self.calculate_all()
     
@@ -248,4 +282,42 @@ class ReactorModel:
         return {
             "axial_offset": axial_offset,
             "power_percentage": power_percentage
-        } 
+        }
+    
+    def apply_preset(self, preset_name):
+        """Apply a predefined preset configuration to the reactor"""
+        if preset_name in self.presets:
+            preset = self.presets[preset_name]
+            self.control_rod_position = preset["control_rod_position"]
+            self.boron_concentration = preset["boron_concentration"]
+            self.moderator_temperature = preset["moderator_temperature"]
+            self.fuel_enrichment = preset["fuel_enrichment"]
+            self.calculate_all()
+            return True
+        return False
+    
+    def get_preset_names(self):
+        """Return a list of available preset names"""
+        return list(self.presets.keys())
+    
+    def get_current_preset_name(self):
+        """Check if current configuration matches any preset"""
+        for name, preset in self.presets.items():
+            if (abs(self.control_rod_position - preset["control_rod_position"]) < 0.1 and
+                abs(self.boron_concentration - preset["boron_concentration"]) < 0.1 and
+                abs(self.moderator_temperature - preset["moderator_temperature"]) < 0.1 and
+                abs(self.fuel_enrichment - preset["fuel_enrichment"]) < 0.1):
+                return name
+        return "Personnalisé"
+    
+    def save_preset(self, name, overwrite=False):
+        """Save current configuration as a preset"""
+        if name not in self.presets or overwrite:
+            self.presets[name] = {
+                "control_rod_position": self.control_rod_position,
+                "boron_concentration": self.boron_concentration,
+                "moderator_temperature": self.moderator_temperature,
+                "fuel_enrichment": self.fuel_enrichment
+            }
+            return True
+        return False 

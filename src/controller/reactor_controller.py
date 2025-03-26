@@ -55,4 +55,38 @@ class ReactorController:
     
     def get_axial_offset_data(self):
         """Get the axial offset and power data for the pilotage diagram"""
-        return self.model.get_axial_offset_data() 
+        return self.model.get_axial_offset_data()
+        
+    def get_preset_names(self):
+        """Get list of available presets"""
+        return self.model.get_preset_names()
+    
+    def apply_preset(self, preset_name):
+        """Apply a preset configuration"""
+        success = self.model.apply_preset(preset_name)
+        if success:
+            return {
+                "control_rod_position": self.model.control_rod_position,
+                "boron_concentration": self.model.boron_concentration,
+                "moderator_temperature": self.model.moderator_temperature,
+                "fuel_enrichment": self.model.fuel_enrichment,
+                "reactor_params": self.get_reactor_parameters()
+            }
+        return None
+    
+    def get_current_preset_name(self):
+        """Get the name of the current preset if matching any"""
+        return self.model.get_current_preset_name()
+    
+    def save_preset(self, name, overwrite=False):
+        """Save current configuration as a preset"""
+        return self.model.save_preset(name, overwrite)
+    
+    def get_current_configuration(self):
+        """Get current reactor configuration"""
+        return {
+            "control_rod_position": self.model.control_rod_position,
+            "boron_concentration": self.model.boron_concentration,
+            "moderator_temperature": self.model.moderator_temperature,
+            "fuel_enrichment": self.model.fuel_enrichment
+        } 

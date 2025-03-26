@@ -194,6 +194,16 @@ class MainWindow(QMainWindow):
                 "- Temps de doublement: Temps nécessaire pour doubler la puissance\n"
                 "- Réactivité (ρ): Écart relatif par rapport à la criticité\n"
                 "- k-effectif: Facteur de multiplication effectif (k=1: critique)"
+            ),
+            "presets": (
+                "Préréglages du réacteur\n\n"
+                "Sélectionnez un préréglage pour configurer rapidement le réacteur dans un état spécifique:\n\n"
+                "- Démarrage: Configuration typique au démarrage du réacteur\n"
+                "- Critique à puissance nominale: Réacteur en fonctionnement normal\n"
+                "- Fin de cycle: Configuration typique en fin de cycle du combustible\n"
+                "- Surcritique: État où le réacteur voit sa puissance augmenter\n"
+                "- Sous-critique: État où le réacteur voit sa puissance diminuer\n\n"
+                "Le préréglage 'Personnalisé' est automatiquement sélectionné lorsque vous modifiez manuellement les paramètres."
             )
         }
         
@@ -247,6 +257,19 @@ class MainWindow(QMainWindow):
         # Hide info panel by default
         self.info_panel.hide()
         
+        # Connect info panel details button to visualization panel
+        self.info_panel.show_details.connect(self.visualization_panel.show_detailed_info)
+        
+        # Apply default preset at startup
+        default_preset = "Critique à puissance nominale"
+        result = self.controller.apply_preset(default_preset)
+        if result:
+            # Update UI with the preset values
+            self.update_ui_from_preset(result)
+            # Update preset combo to show the selected preset
+            if hasattr(self, 'preset_combo'):
+                self.preset_combo.setCurrentText(default_preset)
+        
         # Initialize visualizations with current data
         self.update_visualizations()
     
@@ -254,6 +277,32 @@ class MainWindow(QMainWindow):
         """Create the left control panel with parameter controls"""
         panel = QWidget()
         layout = QVBoxLayout(panel)
+        
+        # Presets group
+        preset_group = QGroupBox("Préréglages")
+        preset_layout = QVBoxLayout(preset_group)
+        
+        # Wrap preset group with info container
+        preset_container = self.create_info_widget(self.info_texts["presets"])
+        preset_container_layout = QVBoxLayout(preset_container)
+        
+        preset_label = QLabel("Sélectionner un préréglage:")
+        self.preset_combo = QComboBox()
+        self.preset_combo.addItems(self.controller.get_preset_names())
+        self.preset_combo.addItem("Personnalisé")
+        self.preset_combo.setCurrentText(self.controller.get_current_preset_name())
+        self.preset_combo.currentTextChanged.connect(self.on_preset_changed)
+        
+        preset_container_layout.addWidget(preset_label)
+        preset_container_layout.addWidget(self.preset_combo)
+        preset_container_layout.setContentsMargins(0, 0, 0, 0)
+        
+        # Connect info signal
+        preset_container.info_signal.connect(self.show_info)
+        
+        preset_layout.addWidget(preset_container)
+        
+        layout.addWidget(preset_group)
         
         # Control parameters
         control_group = QGroupBox("Paramètres de contrôle")
@@ -421,6 +470,12 @@ class MainWindow(QMainWindow):
     def show_info(self, text):
         """Show information in the info panel"""
         self.info_panel.update_info(text)
+        
+        # Stocker également cette information comme détaillée dans le panneau de visualisation
+        # pour permettre son affichage via la touche 'i'
+        if text:
+            self.visualization_panel.detail_info = text
+        
         # Only show the panel if auto_show is enabled
         if text and not self.info_panel.isVisible() and self.auto_show_info:
             self.info_panel.show()
@@ -442,12 +497,67 @@ class MainWindow(QMainWindow):
         self.auto_show_info = False
         self.info_button.update_tooltip(False)
     
+    def on_preset_changed(self, preset_name):
+        """Handle preset selection"""
+        # Skip if "Personnalisé" is selected
+        if preset_name == "Personnalisé":
+            return
+            
+        # Apply the selected preset
+        result = self.controller.apply_preset(preset_name)
+        if result:
+            # Update UI controls with the new values
+            self.update_ui_from_preset(result)
+            # Update visualizations with the new reactor state
+            self.update_visualizations()
+    
+    def update_ui_from_preset(self, config):
+        """Update UI controls from a preset configuration"""
+        # Block signals temporarily to prevent recursive updates
+        self.rod_slider.blockSignals(True)
+        self.boron_slider.blockSignals(True)
+        self.boron_spin.blockSignals(True)
+        self.temp_mod_spin.blockSignals(True)
+        self.enrich_spin.blockSignals(True)
+        
+        # Update control rod position
+        rod_pos = config["control_rod_position"]
+        self.rod_slider.setValue(int(rod_pos))
+        self.rod_value.setText(f"{int(rod_pos)}%")
+        
+        # Update boron concentration
+        boron_conc = config["boron_concentration"]
+        self.boron_slider.setValue(int(boron_conc))
+        self.boron_spin.setValue(boron_conc)
+        self.boron_value.setText(f"{int(boron_conc)} ppm")
+        
+        # Update moderator temperature
+        self.temp_mod_spin.setValue(config["moderator_temperature"])
+        
+        # Update fuel enrichment
+        self.enrich_spin.setValue(config["fuel_enrichment"])
+        
+        # Update reactor parameters
+        self.update_reactor_params(config["reactor_params"])
+        
+        # Unblock signals
+        self.rod_slider.blockSignals(False)
+        self.boron_slider.blockSignals(False)
+        self.boron_spin.blockSignals(False)
+        self.temp_mod_spin.blockSignals(False)
+        self.enrich_spin.blockSignals(False)
+    
     def on_rod_position_changed(self, value):
-        """Handle changes to the control rod position slider"""
+        """Handle control rod position change"""
         self.rod_value.setText(f"{value}%")
-        params = self.controller.update_control_rod_position(float(value))
+        # Update reactor model
+        params = self.controller.update_control_rod_position(value)
         self.update_reactor_params(params)
         self.update_visualizations()
+        # Update preset dropdown to reflect any changes in configuration
+        self.preset_combo.blockSignals(True)
+        self.preset_combo.setCurrentText(self.controller.get_current_preset_name())
+        self.preset_combo.blockSignals(False)
     
     def on_boron_slider_changed(self, value):
         """Handle changes to the boron concentration slider"""
@@ -456,6 +566,10 @@ class MainWindow(QMainWindow):
         params = self.controller.update_boron_concentration(float(value))
         self.update_reactor_params(params)
         self.update_visualizations()
+        # Update preset dropdown
+        self.preset_combo.blockSignals(True)
+        self.preset_combo.setCurrentText(self.controller.get_current_preset_name())
+        self.preset_combo.blockSignals(False)
     
     def on_boron_spinbox_changed(self, value):
         """Handle changes to the boron concentration spinbox"""
@@ -463,22 +577,34 @@ class MainWindow(QMainWindow):
         # The slider's valueChanged signal will call on_boron_slider_changed
     
     def on_boron_concentration_changed(self, value):
-        """Deprecated - replaced by the slider and spinbox specific handlers"""
+        """Handle boron concentration change in reactor model"""
         params = self.controller.update_boron_concentration(value)
         self.update_reactor_params(params)
         self.update_visualizations()
+        # Update preset dropdown
+        self.preset_combo.blockSignals(True)
+        self.preset_combo.setCurrentText(self.controller.get_current_preset_name())
+        self.preset_combo.blockSignals(False)
     
     def on_moderator_temperature_changed(self, value):
-        """Handle changes to the moderator temperature spinbox"""
+        """Handle moderator temperature change"""
         params = self.controller.update_moderator_temperature(value)
         self.update_reactor_params(params)
         self.update_visualizations()
+        # Update preset dropdown
+        self.preset_combo.blockSignals(True)
+        self.preset_combo.setCurrentText(self.controller.get_current_preset_name())
+        self.preset_combo.blockSignals(False)
     
     def on_fuel_enrichment_changed(self, value):
-        """Handle changes to the fuel enrichment spinbox"""
+        """Handle fuel enrichment change"""
         params = self.controller.update_fuel_enrichment(value)
         self.update_reactor_params(params)
         self.update_visualizations()
+        # Update preset dropdown
+        self.preset_combo.blockSignals(True)
+        self.preset_combo.setCurrentText(self.controller.get_current_preset_name())
+        self.preset_combo.blockSignals(False)
     
     def update_reactor_params(self, params):
         """Update the reactor parameter display labels"""
@@ -508,4 +634,23 @@ class MainWindow(QMainWindow):
         
         # Update pilotage diagram plot
         ao_data = self.controller.get_axial_offset_data()
-        self.visualization_panel.update_pilotage_diagram_plot(ao_data) 
+        self.visualization_panel.update_pilotage_diagram_plot(ao_data)
+    
+    def keyPressEvent(self, event):
+        """Handle key press events"""
+        # Relayer la touche 'i' au panneau de visualisation
+        if event.key() == Qt.Key.Key_I:
+            # Vérifier s'il y a des informations détaillées à afficher
+            if self.visualization_panel.detail_info:
+                # Donner le focus au panneau de visualisation et montrer les infos détaillées
+                self.visualization_panel.setFocus()
+                self.visualization_panel.show_detailed_info()
+                status_message = "Affichage des informations détaillées..."
+                self.statusBar().showMessage(status_message, 3000)  # Afficher pendant 3 secondes
+                event.accept()  # Marquer l'événement comme traité
+            else:
+                status_message = "Aucune information détaillée disponible. Survolez un élément du graphique pour en avoir."
+                self.statusBar().showMessage(status_message, 3000)
+                event.accept()
+        else:
+            super().keyPressEvent(event) 

@@ -10,7 +10,7 @@ import numpy as np
 from PyQt6.QtWidgets import (
     QVBoxLayout, QHBoxLayout, QWidget, QLabel, QFrame, 
     QPushButton, QToolButton, QSizePolicy, QSpacerItem,
-    QDialog
+    QDialog, QScrollArea
 )
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QFont, QIcon
@@ -137,8 +137,16 @@ class FluxDistributionPlot(FigureCanvasQTAgg):
                                   "pourrait créer un déséquilibre axial de puissance. Une combinaison de barres partiellement " \
                                   "insérées et d'ajustement de la concentration en bore serait généralement préférée pour le contrôle à long terme."
             
-            # Assembler l'information complète
-            self.tooltip_text = (
+            # Informations essentielles pour le panneau d'information (concis)
+            concise_info = (
+                "Distribution Axiale du Flux Neutronique\n\n"
+                f"Hauteur relative : {height:.2f}\n"
+                f"Flux neutronique relatif : {flux:.2f}\n\n"
+                f"Observation : {specific_observation}"
+            )
+            
+            # Informations détaillées pour l'affichage avec la touche 'i' (complet)
+            detailed_info = (
                 "Distribution Axiale du Flux Neutronique\n\n"
                 f"Hauteur relative : {height:.2f}\n"
                 f"Flux neutronique relatif : {flux:.2f}\n\n"
@@ -148,13 +156,13 @@ class FluxDistributionPlot(FigureCanvasQTAgg):
             
             # Emit a signal to update the info panel
             if hasattr(self.parent(), 'update_info_panel'):
-                self.parent().update_info_panel(self.tooltip_text)
+                self.parent().update_info_panel(concise_info, detailed_info)
     
     def on_axes_leave(self, event):
         """Handle mouse leaving the axes"""
         self.tooltip_text = ""
         if hasattr(self.parent(), 'update_info_panel'):
-            self.parent().update_info_panel("")
+            self.parent().update_info_panel("", "")  # Réinitialiser également les infos détaillées
 
 
 class FourFactorsPlot(FigureCanvasQTAgg):
@@ -265,7 +273,7 @@ class FourFactorsPlot(FigureCanvasQTAgg):
     def on_axes_leave(self, event):
         """Handle mouse leaving the axes"""
         if hasattr(self.parent(), 'update_info_panel'):
-            self.parent().update_info_panel("")
+            self.parent().update_info_panel("", "")  # Réinitialiser également les infos détaillées
     
     def show_tooltip_in_panel(self, index):
         """Show tooltip for the bar at index in the info panel"""
@@ -429,8 +437,15 @@ class FourFactorsPlot(FigureCanvasQTAgg):
                 impact_explanation = "Le réacteur est significativement surcritique."
                 recommendations = "Une insertion des barres de contrôle ou une augmentation de la concentration en bore est nécessaire pour éviter une augmentation rapide de la puissance."
         
-        # Assembler l'explication complète
-        tooltip_text = (
+        # Informations concises pour le panneau d'information
+        concise_info = (
+            f"{symbol} - {name}\n\n"
+            f"Valeur actuelle : {value:.4f}\n\n"
+            f"Impact : {impact_explanation}"
+        )
+        
+        # Informations détaillées pour l'affichage complet
+        detailed_info = (
             f"{symbol} - {name}\n\n"
             f"{description}\n\n"
             f"Valeur actuelle : {value:.4f}\n\n"
@@ -441,7 +456,7 @@ class FourFactorsPlot(FigureCanvasQTAgg):
         
         # Send the text to the info panel
         if hasattr(self.parent(), 'update_info_panel'):
-            self.parent().update_info_panel(tooltip_text)
+            self.parent().update_info_panel(concise_info, detailed_info)
 
 
 class InfoPanel(QFrame):
@@ -449,6 +464,8 @@ class InfoPanel(QFrame):
     
     # Signal emitted when panel is closed
     closed = pyqtSignal()
+    # Signal to request detailed info display
+    show_details = pyqtSignal()
     
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -456,7 +473,8 @@ class InfoPanel(QFrame):
         # Set frame style
         self.setFrameStyle(QFrame.Shape.StyledPanel | QFrame.Shadow.Raised)
         self.setLineWidth(2)
-        self.setMinimumHeight(120)
+        self.setMinimumHeight(100)  # Réduire la hauteur minimale
+        self.setMaximumHeight(250)  # Limiter la hauteur maximale
         
         # Create layout
         main_layout = QVBoxLayout(self)
@@ -480,18 +498,26 @@ class InfoPanel(QFrame):
         self.info_label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
         self.info_label.setWordWrap(True)
         self.info_label.setTextFormat(Qt.TextFormat.RichText)
-        self.info_label.setMinimumHeight(80)
+        
+        # Indication pour la touche 'i'
+        self.key_hint_label = QLabel("<i>Appuyez sur la touche 'i' pour plus d'informations</i>")
+        self.key_hint_label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignBottom)
+        self.key_hint_label.setTextFormat(Qt.TextFormat.RichText)
+        self.key_hint_label.setStyleSheet("color: #666; font-size: 10px;")
         
         # Add to layout
         main_layout.addLayout(header_layout)
         main_layout.addWidget(self.info_label)
+        main_layout.addWidget(self.key_hint_label)
     
     def update_info(self, text):
         """Update the information displayed in the panel"""
         if not text:
             self.info_label.setText("")
+            self.key_hint_label.setVisible(False)
         else:
             self.info_label.setText(text.replace("\n", "<br>"))
+            self.key_hint_label.setVisible(True)
     
     def close_panel(self):
         """Hide the panel and emit closed signal"""
@@ -688,7 +714,7 @@ class NeutronBalancePlot(FigureCanvasQTAgg):
     def on_axes_leave(self, event):
         """Handle mouse leaving the axes"""
         if hasattr(self.parent(), 'update_info_panel'):
-            self.parent().update_info_panel("")
+            self.parent().update_info_panel("", "")  # Réinitialiser également les infos détaillées
     
     def show_tooltip_in_panel(self, index):
         """Show tooltip for the wedge at index in the info panel"""
@@ -817,12 +843,15 @@ class NeutronBalancePlot(FigureCanvasQTAgg):
             if section_value > 8:
                 recommendations = "\n\nLe taux d'absorption par les poisons et barres est élevé, indiquant un contrôle significatif de la réactivité. Cela peut être nécessaire en début de cycle ou pour compenser un excès de réactivité."
         
-        # Assembler l'explication complète
-        expanded_tooltip = f"{base_tooltip}\n\n{detailed_explanation}{recommendations}"
+        # Information concise pour le panneau d'information
+        concise_info = base_tooltip
+        
+        # Information détaillée pour l'affichage complet
+        detailed_info = f"{base_tooltip}\n\n{detailed_explanation}{recommendations}"
         
         # Send the text to the info panel
         if hasattr(self.parent(), 'update_info_panel'):
-            self.parent().update_info_panel(expanded_tooltip)
+            self.parent().update_info_panel(concise_info, detailed_info)
 
 
 class PilotageDiagramPlot(FigureCanvasQTAgg):
@@ -922,7 +951,7 @@ class PilotageDiagramPlot(FigureCanvasQTAgg):
     def on_axes_leave(self, event):
         """Handle mouse leaving the axes"""
         if hasattr(self.parent(), 'update_info_panel'):
-            self.parent().update_info_panel("")
+            self.parent().update_info_panel("", "")  # Réinitialiser également les infos détaillées
 
 
 class VisualizationPanel(QWidget):
@@ -930,6 +959,10 @@ class VisualizationPanel(QWidget):
     
     def __init__(self, parent=None, use_info_panel=True):
         super().__init__(parent)
+        
+        # Activer le focus clavier avec acceptation automatique
+        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.setFocus()  # Prendre le focus dès l'initialisation
         
         # Create main layout
         self.layout = QVBoxLayout(self)
@@ -940,6 +973,9 @@ class VisualizationPanel(QWidget):
         self.factors_plot = FourFactorsPlot(self)
         self.neutron_balance_plot = NeutronBalancePlot(self)
         self.pilotage_diagram_plot = PilotageDiagramPlot(self)
+        
+        # Stockage des informations détaillées pour affichage complet
+        self.detail_info = ""
         
         # Flag to determine if we should use an internal info panel or an external one
         self.use_info_panel = use_info_panel
@@ -953,6 +989,9 @@ class VisualizationPanel(QWidget):
             
             # Connect info panel closed signal
             self.info_panel.closed.connect(self.on_info_panel_closed)
+            
+            # Connect details button signal
+            self.info_panel.show_details.connect(self.show_detailed_info)
             
             # Flag to control automatic showing of info panel
             self.auto_show_info = False
@@ -1049,8 +1088,22 @@ class VisualizationPanel(QWidget):
         """Update the pilotage diagram"""
         self.pilotage_diagram_plot.update_plot(ao_data)
     
-    def update_info_panel(self, text):
-        """Update the info panel with the provided text"""
+    def update_info_panel(self, text, detailed_text=None):
+        """
+        Update the info panel with the provided text
+        
+        Parameters:
+        - text: Basic information to show in the panel
+        - detailed_text: Detailed information to store for "i" key press
+        """
+        # Store detailed information for key press - effacer si text est vide
+        if not text:
+            self.detail_info = ""  # Effacer les informations détaillées quand on quitte une zone
+        elif detailed_text is not None:
+            self.detail_info = detailed_text
+        else:
+            self.detail_info = text  # Si pas de texte détaillé fourni, utiliser le texte de base
+            
         if self.use_info_panel:
             self.info_panel.update_info(text)
             # Only show the panel if auto_show is enabled
@@ -1078,4 +1131,54 @@ class VisualizationPanel(QWidget):
     def on_info_panel_closed(self):
         """Handle info panel being closed"""
         self.auto_show_info = False
-        self.info_button.update_tooltip(False) 
+        self.info_button.update_tooltip(False)
+    
+    def show_detailed_info(self):
+        """Show detailed information in a dialog when 'i' key is pressed"""
+        if not self.detail_info:
+            print("Aucune information détaillée disponible")  # Debug
+            return
+            
+        print("Affichage des informations détaillées")  # Debug
+            
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Informations détaillées")
+        dialog.setMinimumWidth(600)
+        dialog.setMinimumHeight(400)
+        dialog.setStyleSheet("background-color: white;")
+        
+        layout = QVBoxLayout(dialog)
+        
+        # Créer un QTextEdit pour afficher le texte avec défilement
+        text_display = QLabel()
+        text_display.setWordWrap(True)
+        text_display.setTextFormat(Qt.TextFormat.RichText)
+        text_display.setText(self.detail_info.replace("\n", "<br>"))
+        
+        # Ajouter un scroll area
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setWidget(text_display)
+        
+        close_button = QPushButton("Fermer")
+        close_button.clicked.connect(dialog.accept)
+        
+        layout.addWidget(scroll_area)
+        layout.addWidget(close_button)
+        
+        dialog.exec()
+    
+    def showEvent(self, event):
+        """Override showEvent to take focus when shown"""
+        super().showEvent(event)
+        self.setFocus()  # Prendre le focus quand le widget devient visible
+        
+    def keyPressEvent(self, event):
+        """Handle key press events"""
+        if event.key() == Qt.Key.Key_I:
+            # N'ouvrir la fenêtre que s'il y a des informations détaillées
+            if self.detail_info:
+                self.show_detailed_info()
+                event.accept()
+                return
+        super().keyPressEvent(event) 
