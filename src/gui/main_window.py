@@ -4,7 +4,7 @@ Main window implementation for the Neutro_EDF application
 from PyQt6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
     QLabel, QSlider, QComboBox, QGroupBox, QDoubleSpinBox,
-    QToolButton
+    QToolButton, QDialog, QPushButton
 )
 from PyQt6.QtCore import Qt, pyqtSignal, QEvent
 from PyQt6.QtGui import QEnterEvent, QFont
@@ -85,6 +85,67 @@ class InfoGroupBox(QGroupBox):
         self.info_text = text
 
 
+class CreditsButton(QToolButton):
+    """Button to show the credits dialog"""
+    
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setText("©")  # Unicode copyright symbol
+        self.setToolTip("Afficher les crédits")
+        font = QFont()
+        font.setPointSize(14)
+        self.setFont(font)
+        self.setStyleSheet("""
+            QToolButton { 
+                border: 1px solid #ddd; 
+                border-radius: 4px;
+                padding: 5px; 
+                background-color: #f8f8f8;
+                color: #888;
+            }
+            QToolButton:hover { 
+                background-color: #e6e6e6; 
+                color: #444;
+            }
+        """)
+        self.setFixedSize(30, 30)
+        self.clicked.connect(self.show_credits)
+        
+    def show_credits(self):
+        """Show the credits dialog"""
+        dialog = QDialog(self.parent())
+        dialog.setWindowTitle("Crédits")
+        dialog.setMinimumWidth(400)
+        dialog.setStyleSheet("background-color: white;")
+        
+        layout = QVBoxLayout(dialog)
+        
+        title = QLabel("Simulation Neutronique des REP")
+        title_font = QFont()
+        title_font.setBold(True)
+        title_font.setPointSize(14)
+        title.setFont(title_font)
+        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
+        credits = QLabel(
+            "© 2023-2024 EDF R&D\n\n"
+            "Développé pour la formation et l'apprentissage\n"
+            "des principes de la neutronique des réacteurs.\n\n"
+            "Version: 1.0.0"
+        )
+        credits.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        credits.setWordWrap(True)
+        
+        close_button = QPushButton("Fermer")
+        close_button.clicked.connect(dialog.accept)
+        
+        layout.addWidget(title)
+        layout.addWidget(credits)
+        layout.addWidget(close_button)
+        
+        dialog.exec()
+
+
 class MainWindow(QMainWindow):
     """Main application window with control panel and visualization area"""
     
@@ -99,13 +160,6 @@ class MainWindow(QMainWindow):
         
         # Dictionary of information texts for different controls
         self.info_texts = {
-            "difficulty": (
-                "Niveau de difficulté\n\n"
-                "Détermine la complexité des concepts présentés et des contrôles disponibles:\n"
-                "- Débutant: Accès aux concepts fondamentaux et contrôles principaux\n"
-                "- Intermédiaire: Ajout de paramètres physiques avancés\n"
-                "- Expert: Accès à tous les paramètres et visualisations détaillées"
-            ),
             "rod_control": (
                 "Barres de contrôle\n\n"
                 "Les barres de contrôle sont des éléments absorbants de neutrons qui permettent "
@@ -152,9 +206,10 @@ class MainWindow(QMainWindow):
         left_layout = QVBoxLayout(left_container)
         left_layout.setContentsMargins(0, 0, 0, 0)
         
-        # Create info panel and button for left side
+        # Create info panel and buttons for left side
         self.info_panel = InfoPanel()
         self.info_button = InfoButton()
+        self.credits_button = CreditsButton()
         self.info_button.clicked.connect(self.toggle_info_panel)
         
         # Connect info panel closed signal
@@ -166,14 +221,15 @@ class MainWindow(QMainWindow):
         # Create control panel (left side)
         control_panel = self.create_control_panel()
         
-        # Add button for info panel in the controls area
-        button_layout = QHBoxLayout()
-        button_layout.addStretch(1)
-        button_layout.addWidget(self.info_button)
+        # Create a layout for the buttons
+        buttons_layout = QHBoxLayout()
+        buttons_layout.addStretch(1)
+        buttons_layout.addWidget(self.credits_button)
+        buttons_layout.addWidget(self.info_button)
         
         # Add components to left container
         left_layout.addWidget(control_panel)
-        left_layout.addLayout(button_layout)
+        left_layout.addLayout(buttons_layout)
         left_layout.addWidget(self.info_panel)
         
         # Create visualization area (right side)
@@ -198,19 +254,6 @@ class MainWindow(QMainWindow):
         """Create the left control panel with parameter controls"""
         panel = QWidget()
         layout = QVBoxLayout(panel)
-        
-        # Difficulty level selector
-        difficulty_group = self.create_info_groupbox("Niveau de difficulté", self.info_texts["difficulty"])
-        difficulty_layout = QVBoxLayout(difficulty_group)
-        
-        self.difficulty_selector = QComboBox()
-        self.difficulty_selector.addItems(["Débutant", "Intermédiaire", "Expert"])
-        difficulty_layout.addWidget(self.difficulty_selector)
-        
-        # Connect info signal
-        difficulty_group.info_signal.connect(self.show_info)
-        
-        layout.addWidget(difficulty_group)
         
         # Control parameters
         control_group = QGroupBox("Paramètres de contrôle")
@@ -381,19 +424,23 @@ class MainWindow(QMainWindow):
         # Only show the panel if auto_show is enabled
         if text and not self.info_panel.isVisible() and self.auto_show_info:
             self.info_panel.show()
+            self.info_button.update_tooltip(True)
     
     def toggle_info_panel(self):
         """Toggle visibility of info panel"""
         if self.info_panel.isVisible():
             self.info_panel.hide()
             self.auto_show_info = False
+            self.info_button.update_tooltip(False)
         else:
             self.info_panel.show()
             self.auto_show_info = True
+            self.info_button.update_tooltip(True)
     
     def on_info_panel_closed(self):
         """Handle info panel being closed"""
         self.auto_show_info = False
+        self.info_button.update_tooltip(False)
     
     def on_rod_position_changed(self, value):
         """Handle changes to the control rod position slider"""

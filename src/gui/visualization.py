@@ -8,7 +8,8 @@ from matplotlib.figure import Figure
 import numpy as np
 from PyQt6.QtWidgets import (
     QVBoxLayout, QHBoxLayout, QWidget, QLabel, QFrame, 
-    QPushButton, QToolButton, QSizePolicy, QSpacerItem
+    QPushButton, QToolButton, QSizePolicy, QSpacerItem,
+    QDialog
 )
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QFont, QIcon
@@ -227,7 +228,7 @@ class InfoPanel(QFrame):
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(10, 10, 10, 10)
         
-        # Create header with title and close button
+        # Create header with title only
         header_layout = QHBoxLayout()
         
         # Title label
@@ -237,29 +238,8 @@ class InfoPanel(QFrame):
         title_font.setPointSize(12)
         self.title_label.setFont(title_font)
         
-        # Close button
-        self.close_button = QToolButton()
-        self.close_button.setText("×")  # Unicode × symbol
-        self.close_button.setToolTip("Fermer le panneau d'information")
-        font = QFont()
-        font.setPointSize(16)
-        font.setBold(True)
-        self.close_button.setFont(font)
-        self.close_button.setStyleSheet("""
-            QToolButton { 
-                border: none; 
-                color: #999; 
-                padding: 0 5px; 
-            }
-            QToolButton:hover { 
-                color: #333; 
-            }
-        """)
-        self.close_button.clicked.connect(self.close_panel)
-        
         header_layout.addWidget(self.title_label)
         header_layout.addStretch(1)
-        header_layout.addWidget(self.close_button)
         
         # Info content label
         self.info_label = QLabel("")
@@ -307,6 +287,74 @@ class InfoButton(QToolButton):
             }
         """)
         self.setFixedSize(30, 30)
+        
+    def update_tooltip(self, is_panel_visible):
+        """Update tooltip based on panel visibility"""
+        if is_panel_visible:
+            self.setToolTip("Fermer le panneau d'information")
+        else:
+            self.setToolTip("Afficher le panneau d'information")
+
+
+class CreditsButton(QToolButton):
+    """Button to show the credits dialog"""
+    
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setText("©")  # Unicode copyright symbol
+        self.setToolTip("Afficher les crédits")
+        font = QFont()
+        font.setPointSize(14)
+        self.setFont(font)
+        self.setStyleSheet("""
+            QToolButton { 
+                border: 1px solid #ddd; 
+                border-radius: 4px;
+                padding: 5px; 
+                background-color: #f8f8f8;
+                color: #888;
+            }
+            QToolButton:hover { 
+                background-color: #e6e6e6; 
+                color: #444;
+            }
+        """)
+        self.setFixedSize(30, 30)
+        self.clicked.connect(self.show_credits)
+        
+    def show_credits(self):
+        """Show the credits dialog"""
+        dialog = QDialog(self.parent())
+        dialog.setWindowTitle("Crédits")
+        dialog.setMinimumWidth(400)
+        dialog.setStyleSheet("background-color: white;")
+        
+        layout = QVBoxLayout(dialog)
+        
+        title = QLabel("Simulation Neutronique des REP")
+        title_font = QFont()
+        title_font.setBold(True)
+        title_font.setPointSize(14)
+        title.setFont(title_font)
+        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
+        credits = QLabel(
+            "© 2023-2024 EDF UFPI\n\n"
+            "Développé pour la formation et l'apprentissage\n"
+            "des principes de la neutronique des réacteurs.\n\n"
+            "Version: alpha 0.1"
+        )
+        credits.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        credits.setWordWrap(True)
+        
+        close_button = QPushButton("Fermer")
+        close_button.clicked.connect(dialog.accept)
+        
+        layout.addWidget(title)
+        layout.addWidget(credits)
+        layout.addWidget(close_button)
+        
+        dialog.exec()
 
 
 class VisualizationPanel(QWidget):
@@ -330,6 +378,7 @@ class VisualizationPanel(QWidget):
             # Create info panel and info button
             self.info_panel = InfoPanel(self)
             self.info_button = InfoButton(self)
+            self.credits_button = CreditsButton(self)
             self.info_button.clicked.connect(self.toggle_info_panel)
             
             # Connect info panel closed signal
@@ -347,12 +396,14 @@ class VisualizationPanel(QWidget):
             plots_layout.addWidget(self.flux_plot, 1)
             plots_layout.addWidget(self.factors_plot, 1)
             
-            # Create container for info button (bottom right corner)
+            # Create container for buttons (bottom right corner)
             btn_container = QWidget(plots_container)
-            btn_container.setGeometry(0, 0, 40, 40)  # Will be repositioned in resizeEvent
+            btn_container.setGeometry(0, 0, 80, 40)  # Will be repositioned in resizeEvent
             btn_layout = QHBoxLayout(btn_container)
             btn_layout.setContentsMargins(0, 0, 5, 5)
+            btn_layout.setSpacing(10)
             btn_layout.addStretch(1)
+            btn_layout.addWidget(self.credits_button)
             btn_layout.addWidget(self.info_button)
             
             # Add plots container and info panel to main layout
@@ -403,6 +454,7 @@ class VisualizationPanel(QWidget):
             # Only show the panel if auto_show is enabled
             if text and not self.info_panel.isVisible() and self.auto_show_info:
                 self.info_panel.show()
+                self.info_button.update_tooltip(True)
         elif self.external_info_callback:
             # Use external callback if available
             self.external_info_callback(text)
@@ -415,10 +467,13 @@ class VisualizationPanel(QWidget):
         if self.info_panel.isVisible():
             self.info_panel.hide()
             self.auto_show_info = False
+            self.info_button.update_tooltip(False)
         else:
             self.info_panel.show()
             self.auto_show_info = True
+            self.info_button.update_tooltip(True)
     
     def on_info_panel_closed(self):
         """Handle info panel being closed"""
-        self.auto_show_info = False 
+        self.auto_show_info = False
+        self.info_button.update_tooltip(False) 
