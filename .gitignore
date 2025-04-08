@@ -3,3 +3,6 @@
 
 # Environnement virtuel
 .venv/
+
+# mac
+.DS_Store
