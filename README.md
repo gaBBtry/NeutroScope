@@ -7,18 +7,18 @@ Application interactive pour l'apprentissage des principes fondamentaux de la ne
 1. Cloner le dépôt
 2. Créer un environnement virtuel Python:
    ```
-   python -m venv venv
+   python3 -m venv .venv
    ```
 3. Activer l'environnement:
-   - Windows: `venv\Scripts\activate`
-   - macOS/Linux: `source venv/bin/activate`
+   - Windows: `.venv\Scripts\activate`
+   - macOS/Linux: `source .venv/bin/activate`
 4. Installer les dépendances:
    ```
-   pip install -r requirements.txt
+   pip3 install -r requirements.txt
    ```
 
 ## Lancement
 
 ```
-python main.py
+python3 main.py
 ``` 

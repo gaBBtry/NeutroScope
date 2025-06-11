@@ -2,6 +2,7 @@
 Reactor physics model for neutronics calculations
 """
 import numpy as np
+from . import config
 
 class ReactorModel:
     """
@@ -18,7 +19,7 @@ class ReactorModel:
         self.coolant_flow_rate = 100.0  # %
         
         # Physical constants
-        self.delayed_neutron_fraction = 0.0065  # β
+        self.delayed_neutron_fraction = config.DELAYED_NEUTRON_FRACTION  # β
         
         # Calculated parameters
         self.k_effective = 1.0
@@ -32,42 +33,11 @@ class ReactorModel:
         self.f = 0.71  # thermal utilization factor
         
         # Neutron leakage factors
-        self.thermal_leakage = 0.98
-        self.fast_leakage = 0.97
+        self.thermal_leakage = config.THERMAL_LEAKAGE
+        self.fast_leakage = config.FAST_LEAKAGE
         
         # Presets dictionary
-        self.presets = {
-            "Démarrage": {
-                "control_rod_position": 50.0,
-                "boron_concentration": 1500.0,
-                "moderator_temperature": 290.0,
-                "fuel_enrichment": 3.5
-            },
-            "Critique à puissance nominale": {
-                "control_rod_position": 10.0,
-                "boron_concentration": 800.0,
-                "moderator_temperature": 310.0,
-                "fuel_enrichment": 3.5
-            },
-            "Fin de cycle": {
-                "control_rod_position": 5.0,
-                "boron_concentration": 10.0,
-                "moderator_temperature": 310.0,
-                "fuel_enrichment": 3.5
-            },
-            "Surcritique": {
-                "control_rod_position": 0.0,
-                "boron_concentration": 400.0,
-                "moderator_temperature": 305.0,
-                "fuel_enrichment": 4.0
-            },
-            "Sous-critique": {
-                "control_rod_position": 80.0,
-                "boron_concentration": 1200.0,
-                "moderator_temperature": 310.0,
-                "fuel_enrichment": 3.0
-            }
-        }
+        self.presets = config.PRESETS
         
         # Initial calculation
         self.calculate_all()
@@ -85,21 +55,21 @@ class ReactorModel:
         
         # Eta (average number of neutrons per fission)
         # Depends primarily on fuel enrichment
-        self.eta = 2.0 + 0.1 * (self.fuel_enrichment - 3.0) / 2.0
+        self.eta = config.ETA_BASE + config.ETA_ENRICHMENT_COEFF * (self.fuel_enrichment - 3.0) / 2.0
         
         # Epsilon (fast fission factor)
         # Typically constant for a given reactor design
-        self.epsilon = 1.03
+        self.epsilon = config.EPSILON
         
         # Resonance escape probability
         # Affected by fuel temperature (Doppler broadening)
-        self.p = 0.75 - 0.01 * (self.fuel_temperature - 600) / 100
+        self.p = config.P_BASE - config.P_TEMP_COEFF * (self.fuel_temperature - 600) / 100
         
         # Thermal utilization factor
         # Affected by control rod position and boron concentration
-        rod_effect = -0.1 * self.control_rod_position / 100
-        boron_effect = -0.05 * self.boron_concentration / 1000
-        self.f = 0.71 + rod_effect + boron_effect
+        rod_effect = config.F_ROD_COEFF * self.control_rod_position / 100
+        boron_effect = config.F_BORON_COEFF * self.boron_concentration / 1000
+        self.f = config.F_BASE + rod_effect + boron_effect
     
     def calculate_k_effective(self):
         """Calculate k-effective from the four factors and leakage"""
@@ -122,7 +92,7 @@ class ReactorModel:
                 self.doubling_time = 0.1  # arbitrary small value
             else:
                 # Delayed critical
-                self.doubling_time = 80 / (self.reactivity * 100)  # seconds
+                self.doubling_time = config.DOUBLING_TIME_COEFF / (self.reactivity * 100)  # seconds
     
     def update_control_rod_position(self, position):
         """Update control rod position and recalculate"""

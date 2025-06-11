@@ -52,7 +52,7 @@ class FluxDistributionPlot(FigureCanvasQTAgg):
         
         # Update rod position line - rod comes from the top
         rod_height = 1.0 - (rod_position / 100.0)
-        self.rod_line.set_ydata(rod_height)
+        self.rod_line.set_ydata([rod_height, rod_height])
         
         self.draw()
     

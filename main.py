@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Programme pédagogique interactif sur la neutronique des REP
 """
