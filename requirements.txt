@@ -3,3 +3,5 @@ matplotlib
 PyQt6
 pandas
 scipy
+pytest
+pytest-qt

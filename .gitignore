@@ -6,3 +6,7 @@
 
 # mac
 .DS_Store
+
+# Pytest
+.pytest_cache/
+.vscode/
