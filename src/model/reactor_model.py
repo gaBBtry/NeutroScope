@@ -35,8 +35,8 @@ class ReactorModel:
         self.f = 0.71  # thermal utilization factor
         
         # Neutron leakage factors
-        self.thermal_non_leakage_prob = config.THERMAL_LEAKAGE
-        self.fast_non_leakage_prob = config.FAST_LEAKAGE
+        self.thermal_non_leakage_prob = 1.0
+        self.fast_non_leakage_prob = 1.0
         
         # Presets dictionary
         self.presets = config.PRESETS
@@ -70,26 +70,53 @@ class ReactorModel:
         
         # Resonance escape probability
         # Affected by fuel temperature (Doppler broadening)
-        self.p = config.P_BASE - config.P_TEMP_COEFF * (self.fuel_temperature - 600) / 100
+        fuel_temp_K = self.fuel_temperature + 273.15
+        sqrt_T_diff = np.sqrt(fuel_temp_K) - np.sqrt(config.P_REF_TEMP_K)
+        self.p = config.P_BASE * np.exp(-config.P_DOPPLER_COEFF * sqrt_T_diff)
         
-        # Thermal utilization factor
-        # Affected by control rod position, boron concentration, and moderator temperature
-        rod_effect = config.F_ROD_COEFF * self.control_rod_position / 100
-        boron_effect = config.F_BORON_COEFF * self.boron_concentration / 1000
-        moderator_temp_effect = config.F_MOD_TEMP_COEFF * (self.moderator_temperature - 300) / 10
-        self.f = config.F_BASE + rod_effect + boron_effect + moderator_temp_effect
+        # Thermal utilization factor (f)
+        # New model based on absorption ratios: f = 1 / (1 + A_non_fuel)
+        # A_non_fuel is the ratio of absorption in non-fuel materials to fuel
+        
+        # 1. Base absorption ratio, adjusted for moderator temperature
+        temp_deviation = self.moderator_temperature - config.F_REF_MOD_TEMP_C
+        mod_temp_effect = config.F_MOD_TEMP_ABS_COEFF * temp_deviation
+        base_abs_ratio = config.F_BASE_ABS_RATIO * (1 + mod_temp_effect)
+        
+        # 2. Control rod absorption ratio
+        rod_abs_ratio = config.F_CONTROL_ROD_WORTH * (self.control_rod_position / 100.0)
+        
+        # 3. Boron absorption ratio
+        boron_abs_ratio = config.F_BORON_WORTH_PER_PPM * self.boron_concentration
+        
+        # Total non-fuel absorption ratio
+        total_non_fuel_abs_ratio = base_abs_ratio + rod_abs_ratio + boron_abs_ratio
+        
+        self.f = 1.0 / (1.0 + total_non_fuel_abs_ratio)
     
     def calculate_k_effective(self):
         """Calculate k-effective from the four factors and leakage"""
         k_infinite = self.eta * self.epsilon * self.p * self.f
         
-        # Leakage also depends on moderator temperature (density)
-        moderator_density_effect = 1.0 - 0.0005 * (self.moderator_temperature - 300)
+        # New leakage calculation based on two-group diffusion theory
+        # 1. Geometric Buckling B^2
+        R = config.CORE_DIAMETER_M / 2.0
+        H = config.CORE_HEIGHT_M
+        geometric_buckling = (np.pi / H)**2 + (2.405 / R)**2
         
-        self.thermal_non_leakage_prob = config.THERMAL_LEAKAGE * moderator_density_effect
-        self.fast_non_leakage_prob = config.FAST_LEAKAGE * moderator_density_effect
+        # 2. Temperature effect on moderator density and diffusion areas
+        # L^2 and L_s^2 are proportional to (rho_ref/rho_T)^2
+        temp_deviation = self.moderator_temperature - config.F_REF_MOD_TEMP_C
+        density_ratio = 1.0 / (1.0 - config.MODERATOR_DENSITY_COEFF * temp_deviation)
         
-        self.k_effective = k_infinite * self.thermal_non_leakage_prob * self.fast_non_leakage_prob
+        thermal_diffusion_area = config.THERMAL_DIFFUSION_AREA_M2 * (density_ratio**2)
+        fast_diffusion_area = config.FAST_DIFFUSION_AREA_M2 * (density_ratio**2)
+        
+        # 3. Non-leakage probabilities
+        self.fast_non_leakage_prob = 1.0 / (1.0 + geometric_buckling * fast_diffusion_area)
+        self.thermal_non_leakage_prob = 1.0 / (1.0 + geometric_buckling * thermal_diffusion_area)
+        
+        self.k_effective = k_infinite * self.fast_non_leakage_prob * self.thermal_non_leakage_prob
     
     def calculate_reactivity(self):
         """Calculate reactivity (ρ) from k-effective"""
@@ -113,10 +140,18 @@ class ReactorModel:
 
         if rho >= self.delayed_neutron_fraction:
             # Prompt critical - very short period
-            # This is a simplification. A more complex model would use prompt neutron lifetime.
-            self.doubling_time = 0.1  # Arbitrary small value for prompt critical
+            # Using prompt jump approximation: T = l / (ρ - β)
+            prompt_reactivity = rho - self.delayed_neutron_fraction
+            if prompt_reactivity > 0:
+                period = config.PROMPT_NEUTRON_LIFETIME / prompt_reactivity
+                self.doubling_time = period * np.log(2)
+            else:
+                # Exactly prompt critical, period is theoretically zero.
+                self.doubling_time = 0.0
         else:
             # Delayed critical period calculation
+            # T ≈ (β - ρ) / (λ_eff * ρ) - this is more accurate than the previous one
+            # for ρ close to β. Let's stick to the simpler one for now.
             # Using one-group delayed neutron approximation T ≈ β / (λ * ρ)
             # where λ is the effective delayed neutron precursor decay constant.
             # A typical value for λ_eff is ~0.1 s⁻¹
