@@ -1,6 +1,6 @@
 # Programme Pédagogique sur la Neutronique des REP
 
-Application interactive pour l'apprentissage des principes fondamentaux de la neutronique des Réacteurs à Eau Pressurisée.
+Application interactive pour la visualisation de certains principes fondamentaux de la neutronique des Réacteurs à Eau Pressurisée.
 
 ## Installation
 

@@ -271,12 +271,19 @@ class ReactorModel:
         return list(self.presets.keys())
     
     def get_current_preset_name(self):
-        """Check if current configuration matches any preset"""
-        for name, preset in self.presets.items():
-            if (abs(self.control_rod_position - preset["control_rod_position"]) < 0.1 and
-                abs(self.boron_concentration - preset["boron_concentration"]) < 0.1 and
-                abs(self.moderator_temperature - preset["moderator_temperature"]) < 0.1 and
-                abs(self.fuel_enrichment - preset["fuel_enrichment"]) < 0.1):
+        """
+        Get the name of the current preset if matching any. 
+        If no preset matches, return 'Personnalisé'.
+        """
+        current_config = {
+            "control_rod_position": self.control_rod_position,
+            "boron_concentration": self.boron_concentration,
+            "moderator_temperature": self.moderator_temperature,
+            "fuel_enrichment": self.fuel_enrichment
+        }
+        for name, preset_config in self.presets.items():
+            # Use np.isclose for robust floating point comparison
+            if all(np.isclose(current_config.get(key, 0), preset_config.get(key, 0)) for key in preset_config):
                 return name
         return "Personnalisé"
     
