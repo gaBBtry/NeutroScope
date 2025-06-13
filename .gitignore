@@ -1,12 +1,4 @@
-# Documentation du projet
-.docs/
-
-# Environnement virtuel
 .venv/
-
-# mac
-.DS_Store
-
-# Pytest
-.pytest_cache/
 .vscode/
+tests/__pycache__/
+.DS_Store
