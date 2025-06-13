@@ -14,9 +14,11 @@ class ReactorModel:
         self.control_rod_position = 0.0  # 0-100%
         self.boron_concentration = 500.0  # ppm
         self.moderator_temperature = 310.0  # °C
-        self.fuel_temperature = 600.0  # °C
+        self.power_level = 100.0 # %
         self.fuel_enrichment = 3.5  # %
-        self.coolant_flow_rate = 100.0  # %
+        
+        # This is now a calculated value, not a direct input
+        self.fuel_temperature = 0.0  # °C, will be calculated
         
         # Physical constants
         self.delayed_neutron_fraction = config.DELAYED_NEUTRON_FRACTION  # β
@@ -33,15 +35,20 @@ class ReactorModel:
         self.f = 0.71  # thermal utilization factor
         
         # Neutron leakage factors
-        self.thermal_leakage = config.THERMAL_LEAKAGE
-        self.fast_leakage = config.FAST_LEAKAGE
+        self.thermal_non_leakage_prob = config.THERMAL_LEAKAGE
+        self.fast_non_leakage_prob = config.FAST_LEAKAGE
         
         # Presets dictionary
         self.presets = config.PRESETS
         
         # Initial calculation
+        self._update_temperatures()
         self.calculate_all()
     
+    def _update_temperatures(self):
+        """Calculate fuel temperature based on power level and moderator temperature."""
+        self.fuel_temperature = self.moderator_temperature + (self.power_level * config.POWER_TO_FUEL_TEMP_COEFF)
+
     def calculate_all(self):
         """Calculate all reactor parameters based on current inputs"""
         self.calculate_four_factors()
@@ -66,34 +73,62 @@ class ReactorModel:
         self.p = config.P_BASE - config.P_TEMP_COEFF * (self.fuel_temperature - 600) / 100
         
         # Thermal utilization factor
-        # Affected by control rod position and boron concentration
+        # Affected by control rod position, boron concentration, and moderator temperature
         rod_effect = config.F_ROD_COEFF * self.control_rod_position / 100
         boron_effect = config.F_BORON_COEFF * self.boron_concentration / 1000
-        self.f = config.F_BASE + rod_effect + boron_effect
+        moderator_temp_effect = config.F_MOD_TEMP_COEFF * (self.moderator_temperature - 300) / 10
+        self.f = config.F_BASE + rod_effect + boron_effect + moderator_temp_effect
     
     def calculate_k_effective(self):
         """Calculate k-effective from the four factors and leakage"""
         k_infinite = self.eta * self.epsilon * self.p * self.f
-        self.k_effective = k_infinite * self.thermal_leakage * self.fast_leakage
+        
+        # Leakage also depends on moderator temperature (density)
+        moderator_density_effect = 1.0 - 0.0005 * (self.moderator_temperature - 300)
+        
+        self.thermal_non_leakage_prob = config.THERMAL_LEAKAGE * moderator_density_effect
+        self.fast_non_leakage_prob = config.FAST_LEAKAGE * moderator_density_effect
+        
+        self.k_effective = k_infinite * self.thermal_non_leakage_prob * self.fast_non_leakage_prob
     
     def calculate_reactivity(self):
         """Calculate reactivity (ρ) from k-effective"""
-        self.reactivity = (self.k_effective - 1.0) / self.k_effective
+        if self.k_effective > 0:
+            self.reactivity = (self.k_effective - 1.0) / self.k_effective
+        else:
+            self.reactivity = -float('inf')
     
     def calculate_doubling_time(self):
-        """Calculate reactor period/doubling time"""
+        """
+        Calculate reactor period/doubling time using a standard approximation.
+        The reactor period T is the time required for the neutron population to change by a factor of e.
+        The doubling time is T * ln(2).
+        """
         if self.reactivity <= 0:
             self.doubling_time = float('inf')
+            return
+
+        # Use reactivity in absolute units, not pcm or %
+        rho = self.reactivity
+
+        if rho >= self.delayed_neutron_fraction:
+            # Prompt critical - very short period
+            # This is a simplification. A more complex model would use prompt neutron lifetime.
+            self.doubling_time = 0.1  # Arbitrary small value for prompt critical
         else:
-            # Simplified period calculation for educational purposes
-            prompt_reactivity = self.reactivity - self.delayed_neutron_fraction
-            if prompt_reactivity > 0:
-                # Prompt critical - very fast
-                self.doubling_time = 0.1  # arbitrary small value
+            # Delayed critical period calculation
+            # Using one-group delayed neutron approximation T ≈ β / (λ * ρ)
+            # where λ is the effective delayed neutron precursor decay constant.
+            # A typical value for λ_eff is ~0.1 s⁻¹
+            effective_decay_constant = 0.1  # lambda_eff (s^-1)
+            
+            # A simpler and more common approximation for small reactivity is T ≈ β / (λ * ρ)
+            if rho > 0:
+                period = self.delayed_neutron_fraction / (rho * effective_decay_constant)
+                self.doubling_time = period * np.log(2)
             else:
-                # Delayed critical
-                self.doubling_time = config.DOUBLING_TIME_COEFF / (self.reactivity * 100)  # seconds
-    
+                self.doubling_time = float('inf')
+
     def update_control_rod_position(self, position):
         """Update control rod position and recalculate"""
         self.control_rod_position = position
@@ -107,6 +142,13 @@ class ReactorModel:
     def update_moderator_temperature(self, temperature):
         """Update moderator temperature and recalculate"""
         self.moderator_temperature = temperature
+        self._update_temperatures()
+        self.calculate_all()
+    
+    def update_power_level(self, power_level):
+        """Update power level and recalculate"""
+        self.power_level = power_level
+        self._update_temperatures()
         self.calculate_all()
     
     def update_fuel_enrichment(self, enrichment):
@@ -146,74 +188,85 @@ class ReactorModel:
             "p": self.p,
             "f": self.f,
             "k_infinite": self.eta * self.epsilon * self.p * self.f,
-            "thermal_leakage": self.thermal_leakage,
-            "fast_leakage": self.fast_leakage,
+            "thermal_non_leakage_prob": self.thermal_non_leakage_prob,
+            "fast_non_leakage_prob": self.fast_non_leakage_prob,
             "k_effective": self.k_effective
         }
         
     def get_neutron_balance_data(self):
-        """Get data for the neutron balance visualization (pie chart)"""
-        # Ces valeurs sont des approximations simplifiées pour un REP typique
-        # et varient en fonction des paramètres du réacteur
+        """
+        Get data for the neutron balance visualization (pie chart).
+        This function tracks the fate of a generation of neutrons.
+        """
+        # Start with a generation of N fast neutrons produced by fission.
+        # k_eff = (neutrons in gen N+1) / (neutrons in gen N)
+        # Here we track how the N neutrons are lost or absorbed to create the N+1 generation.
         
-        # Calcul des proportions de neutrons en fonction de leur devenir
+        # Let's start with 1000 neutrons for calculation clarity.
+        neutrons_start_generation = 1000.0
+
+        # 1. Fast Leakage
+        fast_leakage_neutrons = neutrons_start_generation * (1.0 - self.fast_non_leakage_prob)
+        neutrons_after_fast_leakage = neutrons_start_generation - fast_leakage_neutrons
+
+        # 2. Resonance Capture while slowing down
+        resonance_capture_neutrons = neutrons_after_fast_leakage * (1.0 - self.p)
+        neutrons_after_resonance_capture = neutrons_after_fast_leakage - resonance_capture_neutrons
+
+        # 3. Thermal Leakage
+        thermal_leakage_neutrons = neutrons_after_resonance_capture * (1.0 - self.thermal_non_leakage_prob)
+        neutrons_after_thermal_leakage = neutrons_after_resonance_capture - thermal_leakage_neutrons
+
+        # 4. Absorption in non-fuel materials
+        non_fuel_absorptions = neutrons_after_thermal_leakage * (1.0 - self.f)
         
-        # Neutrons de fission (divisés entre rapides et thermiques)
-        fissions_neutrons_lents_pct = 39
-        fissions_neutrons_rapides_pct = 2
+        # 5. Absorption in fuel (split into capture and fission)
+        fuel_absorptions = neutrons_after_thermal_leakage * self.f
         
-        # Captures fertiles (U-238 -> Pu-239)
-        captures_fertiles_pct = 18
-        
-        # Captures stériles (dans le combustible)
-        captures_steriles_pct = 13
-        
-        # Fuites
-        fuites_neutrons_lents_pct = 2
-        fuites_neutrons_rapides_pct = 11
-        
-        # Captures dans le modérateur, gaines, etc.
-        captures_moderateur_pct = 4
-        
-        # Captures dans le combustible sans fission
-        captures_combustible_pct = 6
-        
-        # Poisons, barres de contrôle
-        poisons_barres_pct = 6
-        
-        # Ajuster ces valeurs en fonction des paramètres du réacteur
-        effect_rod = self.control_rod_position / 100
-        effect_boron = self.boron_concentration / 2000
-        
-        # Augmenter l'absorption par les barres et le bore
-        poisons_barres_pct += 4 * effect_rod
-        captures_steriles_pct += 3 * effect_boron
-        
-        # Réduire les fissions en conséquence
-        fissions_reduction = (4 * effect_rod + 3 * effect_boron)
-        fissions_neutrons_lents_pct -= fissions_reduction
-        
-        # Renvoyer les données dans un format utilisable par le graphique
+        # To split fuel absorptions, we use eta. eta = nu * Sigma_f / Sigma_a_fuel
+        # Fraction of absorptions causing fission is eta/nu.
+        nu = 2.43  # Neutrons per thermal fission in U-235
+        fission_fraction_in_fuel = self.eta / nu
+        fission_fraction_in_fuel = min(fission_fraction_in_fuel, 1.0) # Cannot be > 1
+
+        thermal_fission_absorptions = fuel_absorptions * fission_fraction_in_fuel
+        fertile_capture_absorptions = fuel_absorptions * (1.0 - fission_fraction_in_fuel)
+
+        # The sum of all these "loss" and "absorption" terms should be the initial number of neutrons.
+        total_lost_and_absorbed = (fast_leakage_neutrons + 
+                                   resonance_capture_neutrons + 
+                                   thermal_leakage_neutrons + 
+                                   non_fuel_absorptions + 
+                                   fertile_capture_absorptions + 
+                                   thermal_fission_absorptions)
+
+        # The visualization should show the fate of the initial 1000 neutrons.
+        # The sum of percentages should be 100%.
+        # Note: Epsilon (fast fission factor) is implicitly included in k_effective,
+        # but showing it explicitly in a neutron lifecycle starting from *all* fast neutrons
+        # is tricky. Epsilon = (total n from fission) / (n from thermal fission).
+        # k_inf = epsilon * (eta * p * f). The eta*p*f part is the thermal part.
+        # The current structure starting from a batch of fast neutrons is more intuitive for a lifecycle chart.
+
         return {
+            # Values are absolute numbers of neutrons, the view can convert to %
             "sections": [
-                {"name": "Fissions", "value": fissions_neutrons_lents_pct + fissions_neutrons_rapides_pct, 
-                 "color": "#33a02c", "tooltip": f"Fissions neutrons\n(lents {fissions_neutrons_lents_pct}%, rapides {fissions_neutrons_rapides_pct}%)"},
-                {"name": "Captures fertiles", "value": captures_fertiles_pct, 
-                 "color": "#1f78b4", "tooltip": "Captures fertiles\nU-238 → Pu-239"},
-                {"name": "Captures stériles", "value": captures_steriles_pct, 
-                 "color": "#ffff33", "tooltip": "Captures stériles"},
-                {"name": "Fuites", "value": fuites_neutrons_lents_pct + fuites_neutrons_rapides_pct, 
-                 "color": "#e31a1c", "tooltip": f"Fuites\n(N. lents {fuites_neutrons_lents_pct}%, N. rapides {fuites_neutrons_rapides_pct}%)"},
-                {"name": "Modérateur", "value": captures_moderateur_pct, 
-                 "color": "#a6cee3", "tooltip": "Modérateur, gaines, etc."},
-                {"name": "Combustible", "value": captures_combustible_pct, 
-                 "color": "#b2df8a", "tooltip": "Combustible"},
-                {"name": "Poisons/Barres", "value": poisons_barres_pct, 
-                 "color": "#fb9a99", "tooltip": "Poisons, Barres de contrôle"}
+                {"name": "Fuites rapides", "value": fast_leakage_neutrons,
+                 "color": "#e31a1c", "tooltip": "Fuites de neutrons rapides hors du cœur"},
+                {"name": "Captures résonnantes", "value": resonance_capture_neutrons,
+                 "color": "#6a3d9a", "tooltip": "Captures de neutrons dans les résonances de l'U-238"},
+                {"name": "Fuites thermiques", "value": thermal_leakage_neutrons,
+                 "color": "#fb9a99", "tooltip": "Fuites de neutrons thermiques hors du cœur"},
+                {"name": "Absorption non-combustible", "value": non_fuel_absorptions,
+                 "color": "#b2df8a", "tooltip": "Captures dans le modérateur, les structures, etc."},
+                {"name": "Capture fertile", "value": fertile_capture_absorptions,
+                 "color": "#33a02c", "tooltip": "Captures dans le combustible ne menant pas à une fission (ex: U-238)"},
+                {"name": "Fission thermique", "value": thermal_fission_absorptions,
+                 "color": "#1f78b4", "tooltip": "Fissions causées par des neutrons thermiques dans le combustible"}
             ],
-            "total": 100
+            "neutrons_produced_new": neutrons_start_generation * self.k_effective
         }
-        
+    
     def get_axial_offset_data(self):
         """
         Calculate axial offset and reactor power data for the pilotage diagram
@@ -233,35 +286,21 @@ class ReactorModel:
         lower_flux = np.mean(flux[height <= 0.5])
         axial_offset = 100 * (upper_flux - lower_flux) / (upper_flux + lower_flux)
         
-        # Calculate power percentage based on effective multiplication factor
-        # For a simplified model, we'll assume power is proportional to k_effective
-        # In a real reactor with control systems, power would be more complex to calculate
-        base_k = 1.0  # Critical reactor
-        power_percentage = 100 * (self.k_effective / base_k)
-        
-        # Adjust power based on control rod position to simulate load following
-        # In a real reactor, this would be controlled by external demand
-        if self.control_rod_position > 0:
-            # Deeper rod insertion generally means lower power operation
-            rod_effect = 1.0 - (0.3 * self.control_rod_position / 100)
-            power_percentage *= rod_effect
-        
-        # Constrain power to realistic range (0-100%)
-        power_percentage = max(0, min(100, power_percentage))
-        
-        return {
-            "axial_offset": axial_offset,
-            "power_percentage": power_percentage
-        }
+        power_percentage = self.power_level
+
+        return {"axial_offset": axial_offset, "power_percentage": power_percentage}
     
     def apply_preset(self, preset_name):
-        """Apply a predefined preset configuration to the reactor"""
+        """Apply a preset configuration"""
         if preset_name in self.presets:
             preset = self.presets[preset_name]
             self.control_rod_position = preset["control_rod_position"]
             self.boron_concentration = preset["boron_concentration"]
             self.moderator_temperature = preset["moderator_temperature"]
             self.fuel_enrichment = preset["fuel_enrichment"]
+            if "power_level" in preset:
+                self.power_level = preset["power_level"]
+            self._update_temperatures()
             self.calculate_all()
             return True
         return False
@@ -272,14 +311,15 @@ class ReactorModel:
     
     def get_current_preset_name(self):
         """
-        Get the name of the current preset if matching any. 
+        Get the name of the current preset if the current parameters match one.
         If no preset matches, return 'Personnalisé'.
         """
         current_config = {
             "control_rod_position": self.control_rod_position,
             "boron_concentration": self.boron_concentration,
             "moderator_temperature": self.moderator_temperature,
-            "fuel_enrichment": self.fuel_enrichment
+            "fuel_enrichment": self.fuel_enrichment,
+            "power_level": self.power_level
         }
         for name, preset_config in self.presets.items():
             # Use np.isclose for robust floating point comparison
@@ -294,7 +334,8 @@ class ReactorModel:
                 "control_rod_position": self.control_rod_position,
                 "boron_concentration": self.boron_concentration,
                 "moderator_temperature": self.moderator_temperature,
-                "fuel_enrichment": self.fuel_enrichment
+                "fuel_enrichment": self.fuel_enrichment,
+                "power_level": self.power_level
             }
             return True
         return False 

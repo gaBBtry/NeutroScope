@@ -51,15 +51,15 @@ class FourFactorsPlot(FigureCanvasQTAgg):
             self.critical_line = None
         
         # Extract data
-        labels = ['η', 'ε', 'p', 'f', 'k∞', 'LT', 'LF', 'keff']
+        labels = ['η', 'ε', 'p', 'f', 'k∞', 'P_NL_th', 'P_NL_f', 'keff']
         values = [
             factors_data['eta'], 
             factors_data['epsilon'], 
             factors_data['p'], 
             factors_data['f'],
             factors_data['k_infinite'],
-            factors_data['thermal_leakage'],
-            factors_data['fast_leakage'],
+            factors_data['thermal_non_leakage_prob'],
+            factors_data['fast_non_leakage_prob'],
             factors_data['k_effective']
         ]
         
@@ -70,9 +70,9 @@ class FourFactorsPlot(FigureCanvasQTAgg):
             2: ('p', 'Facteur antitrappe', 'Probabilité d\'échappement aux résonances', values[2]),
             3: ('f', 'Facteur d\'utilisation thermique', 'Rapport des neutrons absorbés dans le combustible aux neutrons absorbés partout', values[3]),
             4: ('k∞', 'Facteur de multiplication infini', 'Produit des quatre facteurs (η × ε × p × f)', values[4]),
-            5: ('LT', 'Fuites thermiques', 'Probabilité de non-fuite pour les neutrons thermiques', values[5]),
-            6: ('LF', 'Fuites rapides', 'Probabilité de non-fuite pour les neutrons rapides', values[6]),
-            7: ('keff', 'Facteur de multiplication effectif', 'k∞ × LT × LF (prend en compte les fuites)', values[7])
+            5: ('P_NL_th', 'Prob. de non-fuite thermique', 'Probabilité de non-fuite pour les neutrons thermiques', values[5]),
+            6: ('P_NL_f', 'Prob. de non-fuite rapide', 'Probabilité de non-fuite pour les neutrons rapides', values[6]),
+            7: ('keff', 'Facteur de multiplication effectif', 'k∞ × P_NL_th × P_NL_f (prend en compte les fuites)', values[7])
         }
         
         # Create color map - first 4 are four factors, then k_inf, then leakage, then k_eff
@@ -132,7 +132,7 @@ class FourFactorsPlot(FigureCanvasQTAgg):
                 context = "Affecté par les poisons (bore, barres de contrôle)."
             elif symbol == 'k∞':
                 context = "Représente la performance du réacteur dans un milieu infini (sans fuites)."
-            elif symbol == 'LT' or symbol == 'LF':
+            elif symbol == 'P_NL_th' or symbol == 'P_NL_f':
                 context = "Dépend de la taille et de la géométrie du cœur."
             elif symbol == 'keff':
                 context = "La valeur clé qui détermine le comportement du réacteur :\n" \
