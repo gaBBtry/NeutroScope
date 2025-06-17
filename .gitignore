@@ -85,3 +85,6 @@ venv.bak/
 *.swp
 *~
 .DS_Store
+
+# data
+data/

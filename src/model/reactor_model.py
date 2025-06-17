@@ -3,6 +3,7 @@ Reactor physics model for neutronics calculations
 """
 import numpy as np
 from . import config
+from .openmc_model import OpenMCModel
 
 class ReactorModel:
     """
@@ -34,6 +35,9 @@ class ReactorModel:
         self.p = 0.75  # resonance escape probability
         self.f = 0.71  # thermal utilization factor
         
+        # OpenMC runner
+        self.openmc_runner = None
+        
         # Neutron leakage factors
         self.thermal_non_leakage_prob = 1.0
         self.fast_non_leakage_prob = 1.0
@@ -51,6 +55,8 @@ class ReactorModel:
 
     def calculate_all(self):
         """Calculate all reactor parameters based on current inputs"""
+        # The analytical four-factor calculation is kept for now for visualizations,
+        # but the k_effective from it will be overwritten by OpenMC.
         self.calculate_four_factors()
         self.calculate_k_effective()
         self.calculate_reactivity()
@@ -95,28 +101,56 @@ class ReactorModel:
         self.f = 1.0 / (1.0 + total_non_fuel_abs_ratio)
     
     def calculate_k_effective(self):
-        """Calculate k-effective from the four factors and leakage"""
-        k_infinite = self.eta * self.epsilon * self.p * self.f
-        
-        # New leakage calculation based on two-group diffusion theory
-        # 1. Geometric Buckling B^2
-        R = config.CORE_DIAMETER_M / 2.0
-        H = config.CORE_HEIGHT_M
-        geometric_buckling = (np.pi / H)**2 + (2.405 / R)**2
-        
-        # 2. Temperature effect on moderator density and diffusion areas
-        # L^2 and L_s^2 are proportional to (rho_ref/rho_T)^2
-        temp_deviation = self.moderator_temperature - config.F_REF_MOD_TEMP_C
-        density_ratio = 1.0 / (1.0 - config.MODERATOR_DENSITY_COEFF * temp_deviation)
-        
-        thermal_diffusion_area = config.THERMAL_DIFFUSION_AREA_M2 * (density_ratio**2)
-        fast_diffusion_area = config.FAST_DIFFUSION_AREA_M2 * (density_ratio**2)
-        
-        # 3. Non-leakage probabilities
-        self.fast_non_leakage_prob = 1.0 / (1.0 + geometric_buckling * fast_diffusion_area)
-        self.thermal_non_leakage_prob = 1.0 / (1.0 + geometric_buckling * thermal_diffusion_area)
-        
-        self.k_effective = k_infinite * self.fast_non_leakage_prob * self.thermal_non_leakage_prob
+        """
+        Calculate k-effective using the OpenMC model.
+        The analytical calculation is kept as a fallback or for comparison.
+        """
+        # --- OpenMC Calculation ---
+        try:
+            params = self._get_params_for_openmc()
+            self.openmc_runner = OpenMCModel(params)
+            self.k_effective = self.openmc_runner.run_simulation()
+            
+            # Since we use OpenMC, leakage is implicitly handled.
+            # We can set these to 1.0 or try to derive them from OpenMC tallies later.
+            self.fast_non_leakage_prob = 1.0
+            self.thermal_non_leakage_prob = 1.0
+
+        except Exception as e:
+            print(f"Failed to run OpenMC, falling back to analytical model. Error: {e}")
+            # --- Analytical Calculation (Fallback) ---
+            k_infinite = self.eta * self.epsilon * self.p * self.f
+            
+            # New leakage calculation based on two-group diffusion theory
+            # 1. Geometric Buckling B^2
+            R = config.CORE_DIAMETER_M / 2.0
+            H = config.CORE_HEIGHT_M
+            geometric_buckling = (np.pi / H)**2 + (2.405 / R)**2
+            
+            # 2. Temperature effect on moderator density and diffusion areas
+            # L^2 and L_s^2 are proportional to (rho_ref/rho_T)^2
+            temp_deviation = self.moderator_temperature - config.F_REF_MOD_TEMP_C
+            density_ratio = 1.0 / (1.0 - config.MODERATOR_DENSITY_COEFF * temp_deviation)
+            
+            thermal_diffusion_area = config.THERMAL_DIFFUSION_AREA_M2 * (density_ratio**2)
+            fast_diffusion_area = config.FAST_DIFFUSION_AREA_M2 * (density_ratio**2)
+            
+            # 3. Non-leakage probabilities
+            self.fast_non_leakage_prob = 1.0 / (1.0 + geometric_buckling * fast_diffusion_area)
+            self.thermal_non_leakage_prob = 1.0 / (1.0 + geometric_buckling * thermal_diffusion_area)
+            
+            self.k_effective = k_infinite * self.fast_non_leakage_prob * self.thermal_non_leakage_prob
+
+    def _get_params_for_openmc(self):
+        """Gathers the current reactor state into a dictionary for OpenMC."""
+        return {
+            "control_rod_position": self.control_rod_position,
+            "boron_concentration": self.boron_concentration,
+            "moderator_temperature": self.moderator_temperature + 273.15, # Convert to K
+            "fuel_temperature": self.fuel_temperature + 273.15, # Convert to K
+            "power_level": self.power_level,
+            "fuel_enrichment": self.fuel_enrichment,
+        }
     
     def calculate_reactivity(self):
         """Calculate reactivity (ρ) from k-effective"""

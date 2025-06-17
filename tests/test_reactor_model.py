@@ -4,6 +4,7 @@ Tests for the ReactorModel class
 import pytest
 from src.model.reactor_model import ReactorModel
 import numpy as np
+from unittest.mock import patch, MagicMock
 
 @pytest.fixture
 def reactor():
@@ -161,4 +162,70 @@ def test_presets(reactor):
     assert reactor.boron_concentration == 999
 
     # Test applying non-existent preset
-    assert not reactor.apply_preset("NonExistentPreset") 
+    assert not reactor.apply_preset("NonExistentPreset")
+
+# --- Tests for OpenMC Integration ---
+
+@patch('src.model.reactor_model.OpenMCModel')
+def test_calculate_k_effective_with_openmc_success(mock_openmc_model, reactor):
+    """
+    Verify that calculate_k_effective calls the OpenMC model and uses its result.
+    """
+    # Configure the mock instance returned by OpenMCModel(params)
+    mock_runner = MagicMock()
+    mock_runner.run_simulation.return_value = 1.025
+    mock_openmc_model.return_value = mock_runner
+
+    # Call the method that should trigger the OpenMC calculation
+    reactor.calculate_k_effective()
+
+    # Verify that OpenMCModel was instantiated with the correct parameters
+    mock_openmc_model.assert_called_once()
+    params = mock_openmc_model.call_args[0][0]
+    assert params['boron_concentration'] == reactor.boron_concentration
+    assert params['moderator_temperature'] == reactor.moderator_temperature + 273.15 # Check Kelvin conversion
+
+    # Verify that the simulation was run
+    mock_runner.run_simulation.assert_called_once()
+
+    # Verify that the reactor's k_effective is updated with the OpenMC result
+    assert reactor.k_effective == 1.025
+
+@patch('src.model.reactor_model.OpenMCModel')
+def test_calculate_k_effective_with_openmc_failure_fallback(mock_openmc_model, reactor):
+    """
+    Verify that the model falls back to the analytical calculation if OpenMC fails.
+    """
+    # Store the initial k_effective from the analytical model
+    initial_k_eff = reactor.k_effective
+
+    # Configure the mock to raise an exception
+    mock_runner = MagicMock()
+    mock_runner.run_simulation.side_effect = Exception("OpenMC simulation failed")
+    mock_openmc_model.return_value = mock_runner
+
+    # Call the method that will attempt the OpenMC calculation
+    reactor.calculate_k_effective()
+    
+    # Verify that the k_effective value is the result of the analytical calculation
+    # (since the fixture-created reactor already ran calculate_all).
+    # We re-run the analytical part to be sure.
+    k_inf = reactor.eta * reactor.epsilon * reactor.p * reactor.f
+    analytical_k_eff = k_inf * reactor.fast_non_leakage_prob * reactor.thermal_non_leakage_prob
+    
+    # Here, the logic is a bit tricky. The fallback runs the analytical model *again*.
+    # Since the state hasn't changed, it should be the same as the initial state.
+    assert reactor.k_effective == pytest.approx(initial_k_eff)
+    # Ensure it did not get a value from a successful run
+    assert reactor.k_effective != 1.025
+
+def test_get_params_for_openmc(reactor):
+    """
+    Test the helper function that prepares parameters for OpenMC.
+    """
+    reactor.moderator_temperature = 300 # °C
+    reactor.fuel_temperature = 600 # °C
+    params = reactor._get_params_for_openmc()
+    
+    assert params["moderator_temperature"] == 300 + 273.15
+    assert params["fuel_temperature"] == 600 + 273.15 
