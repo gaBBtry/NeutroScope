@@ -1,0 +1,72 @@
+{
+    "physical_constants": {
+        "DELAYED_NEUTRON_FRACTION": 0.0065,
+        "PROMPT_NEUTRON_LIFETIME": 2e-05
+    },
+    "four_factors": {
+        "eta": {
+            "BASE": 2.0,
+            "ENRICHMENT_COEFF": 0.1
+        },
+        "epsilon": 1.03,
+        "p": {
+            "BASE": 0.75,
+            "REF_TEMP_K": 873.15,
+            "DOPPLER_COEFF": 0.008
+        },
+        "f": {
+            "BASE": 0.71,
+            "BASE_ABS_RATIO": 0.408,
+            "REF_MOD_TEMP_C": 300.0,
+            "CONTROL_ROD_WORTH": 0.26,
+            "BORON_WORTH_PER_PPM": 2.8e-05,
+            "MOD_TEMP_ABS_COEFF": 0.003
+        }
+    },
+    "neutron_leakage": {
+        "CORE_HEIGHT_M": 4.0,
+        "CORE_DIAMETER_M": 3.0,
+        "THERMAL_DIFFUSION_AREA_M2": 0.0064,
+        "FAST_DIFFUSION_AREA_M2": 0.0097,
+        "MODERATOR_DENSITY_COEFF": 0.0008
+    },
+    "thermal_hydraulics": {
+        "POWER_TO_FUEL_TEMP_COEFF": 3.0
+    },
+    "doubling_time": {
+        "DOUBLING_TIME_COEFF": 80.0
+    },
+    "presets": {
+        "Démarrage": {
+            "control_rod_position": 50.0,
+            "boron_concentration": 1500.0,
+            "moderator_temperature": 290.0,
+            "fuel_enrichment": 3.5
+        },
+        "Critique à puissance nominale": {
+            "control_rod_position": 10.0,
+            "boron_concentration": 1240.0,
+            "moderator_temperature": 310.0,
+            "fuel_enrichment": 3.5,
+            "power_level": 100.0
+        },
+        "Fin de cycle": {
+            "control_rod_position": 5.0,
+            "boron_concentration": 10.0,
+            "moderator_temperature": 310.0,
+            "fuel_enrichment": 3.5
+        },
+        "Surcritique": {
+            "control_rod_position": 0.0,
+            "boron_concentration": 400.0,
+            "moderator_temperature": 305.0,
+            "fuel_enrichment": 4.0
+        },
+        "Sous-critique": {
+            "control_rod_position": 80.0,
+            "boron_concentration": 1200.0,
+            "moderator_temperature": 310.0,
+            "fuel_enrichment": 3.0
+        }
+    }
+}

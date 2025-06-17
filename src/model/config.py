@@ -1,90 +1,74 @@
 """
-Configuration file for the ReactorModel
+Configuration file for the ReactorModel.
+
+This module loads the reactor's physical and operational parameters
+from the 'config.json' file located in the project's root directory.
 """
 
+import json
+from pathlib import Path
+
+def _load_config():
+    """
+    Loads configuration from the project's root config.json file.
+    The path is determined relative to this file's location.
+    """
+    try:
+        # This file is in src/model/, so we go up three levels to the project root.
+        config_path = Path(__file__).resolve().parent.parent.parent / 'config.json'
+        with config_path.open('r', encoding='utf-8') as f:
+            return json.load(f)
+    except FileNotFoundError as e:
+        raise FileNotFoundError(f"Configuration file 'config.json' not found in project root. Make sure it exists. Original error: {e}")
+    except json.JSONDecodeError as e:
+        raise ValueError(f"Invalid JSON in configuration file 'config.json'. Please check its syntax. Original error: {e}")
+
+_config = _load_config()
+
+# --- Unpack configuration into module-level variables for easy access ---
+
 # Physical constants
-DELAYED_NEUTRON_FRACTION = 0.0065  # β
+_phys_const = _config.get("physical_constants", {})
+DELAYED_NEUTRON_FRACTION = _phys_const.get("DELAYED_NEUTRON_FRACTION", 0.0065)
+PROMPT_NEUTRON_LIFETIME = _phys_const.get("PROMPT_NEUTRON_LIFETIME", 2.0e-5)
 
 # Four factors model coefficients
-# eta = ETA_BASE + ETA_ENRICHMENT_COEFF * (enrichment - 3.0) / 2.0
-ETA_BASE = 2.0
-ETA_ENRICHMENT_COEFF = 0.1
+_four_factors = _config.get("four_factors", {})
 
-# epsilon is constant
-EPSILON = 1.03
+_eta = _four_factors.get("eta", {})
+ETA_BASE = _eta.get("BASE", 2.0)
+ETA_ENRICHMENT_COEFF = _eta.get("ENRICHMENT_COEFF", 0.1)
 
-# p = P_BASE - P_TEMP_COEFF * (fuel_temp - 600) / 100
-P_BASE = 0.75
-# P_TEMP_COEFF = 0.01 # Original linear coefficient
-P_REF_TEMP_K = 873.15  # 600°C
-P_DOPPLER_COEFF = 0.008 # Doppler coefficient for sqrt(T) formula
+EPSILON = _four_factors.get("epsilon", 1.03)
 
-# --- Thermal Utilization Factor (f) ---
-# Original linear model:
-# f = F_BASE + F_ROD_COEFF * rod_pos / 100 + F_BORON_COEFF * boron_conc / 1000 + F_MOD_TEMP_COEFF * (mod_temp - 300)
-F_BASE = 0.71 # Base value for f, used for display and to derive F_BASE_ABS_RATIO
-# F_ROD_COEFF = -0.1
-# F_BORON_COEFF = -0.05
-# F_MOD_TEMP_COEFF = -0.005 # per 10°C change from 300°C
+_p = _four_factors.get("p", {})
+P_BASE = _p.get("BASE", 0.75)
+P_REF_TEMP_K = _p.get("REF_TEMP_K", 873.15)
+P_DOPPLER_COEFF = _p.get("DOPPLER_COEFF", 0.008)
 
-# New model based on absorption ratios: f = 1 / (1 + A_non_fuel)
-F_BASE_ABS_RATIO = 0.408  # Base non-fuel to fuel absorption ratio (A_mod + A_struct) at ref temp
-F_REF_MOD_TEMP_C = 300.0  # Reference moderator temperature in °C
-F_CONTROL_ROD_WORTH = 0.26 # Total worth of control rods on non-fuel absorption ratio
-F_BORON_WORTH_PER_PPM = 2.8e-5 # Non-fuel absorption ratio increase per ppm of boron
-F_MOD_TEMP_ABS_COEFF = 0.003 # Coefficient for moderator temperature effect on absorption ratio
+_f = _four_factors.get("f", {})
+F_BASE = _f.get("BASE", 0.71)
+F_BASE_ABS_RATIO = _f.get("BASE_ABS_RATIO", 0.408)
+F_REF_MOD_TEMP_C = _f.get("REF_MOD_TEMP_C", 300.0)
+F_CONTROL_ROD_WORTH = _f.get("CONTROL_ROD_WORTH", 0.26)
+F_BORON_WORTH_PER_PPM = _f.get("BORON_WORTH_PER_PPM", 2.8e-5)
+F_MOD_TEMP_ABS_COEFF = _f.get("MOD_TEMP_ABS_COEFF", 0.003)
 
 # --- Neutron Leakage Factors ---
-# Original constant leakage model
-# THERMAL_LEAKAGE = 0.98
-# FAST_LEAKAGE = 0.97
-
-# New model based on two-group diffusion theory
-CORE_HEIGHT_M = 4.0
-CORE_DIAMETER_M = 3.0
-# Reference values for diffusion and slowing-down areas, tuned for this model
-THERMAL_DIFFUSION_AREA_M2 = 0.0064  # L^2
-FAST_DIFFUSION_AREA_M2 = 0.0097    # L_s^2 or tau
-MODERATOR_DENSITY_COEFF = 8.0e-4   # per °C, for water around 300°C
+_leakage = _config.get("neutron_leakage", {})
+CORE_HEIGHT_M = _leakage.get("CORE_HEIGHT_M", 4.0)
+CORE_DIAMETER_M = _leakage.get("CORE_DIAMETER_M", 3.0)
+THERMAL_DIFFUSION_AREA_M2 = _leakage.get("THERMAL_DIFFUSION_AREA_M2", 0.0064)
+FAST_DIFFUSION_AREA_M2 = _leakage.get("FAST_DIFFUSION_AREA_M2", 0.0097)
+MODERATOR_DENSITY_COEFF = _leakage.get("MODERATOR_DENSITY_COEFF", 8.0e-4)
 
 # Thermal-Hydraulics
-POWER_TO_FUEL_TEMP_COEFF = 3.0  # °C increase in fuel temp per % power, above moderator temp
+_thermo = _config.get("thermal_hydraulics", {})
+POWER_TO_FUEL_TEMP_COEFF = _thermo.get("POWER_TO_FUEL_TEMP_COEFF", 3.0)
 
 # Doubling time calculation
-DOUBLING_TIME_COEFF = 80.0  # s
-PROMPT_NEUTRON_LIFETIME = 2.0e-5  # seconds (l)
+_doubling = _config.get("doubling_time", {})
+DOUBLING_TIME_COEFF = _doubling.get("DOUBLING_TIME_COEFF", 80.0)
 
 # Default presets
-PRESETS = {
-    "Démarrage": {
-        "control_rod_position": 50.0,
-        "boron_concentration": 1500.0,
-        "moderator_temperature": 290.0,
-        "fuel_enrichment": 3.5
-    },
-    "Critique à puissance nominale": {
-        "control_rod_position": 10.0,
-        "boron_concentration": 1240.0,
-        "moderator_temperature": 310.0,
-        "fuel_enrichment": 3.5,
-        "power_level": 100.0
-    },
-    "Fin de cycle": {
-        "control_rod_position": 5.0,
-        "boron_concentration": 10.0,
-        "moderator_temperature": 310.0,
-        "fuel_enrichment": 3.5
-    },
-    "Surcritique": {
-        "control_rod_position": 0.0,
-        "boron_concentration": 400.0,
-        "moderator_temperature": 305.0,
-        "fuel_enrichment": 4.0
-    },
-    "Sous-critique": {
-        "control_rod_position": 80.0,
-        "boron_concentration": 1200.0,
-        "moderator_temperature": 310.0,
-        "fuel_enrichment": 3.0
-    }
-} 
+PRESETS = _config.get("presets", {}) 
