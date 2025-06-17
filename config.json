@@ -1,7 +1,25 @@
 {
     "openmc": {
         "data_path": "data/endfb-vii.1-hdf5",
-        "cross_sections_file": "cross_sections.xml"
+        "cross_sections_file": "cross_sections.xml",
+        "default_mode": "auto"
+    },
+    "calculation_modes": {
+        "fast": {
+            "name": "Mode rapide (analytique)",
+            "description": "Calculs rapides basés sur un modèle analytique simplifié. Idéal pour l'apprentissage et l'exploration des concepts de base de la neutronique.",
+            "use_openmc": false
+        },
+        "precise": {
+            "name": "Mode précis (OpenMC)",
+            "description": "Calculs précis utilisant la simulation Monte Carlo avec OpenMC. Nécessite les données nucléaires mais offre une grande précision.",
+            "use_openmc": true
+        },
+        "auto": {
+            "name": "Mode automatique",
+            "description": "Utilise OpenMC si disponible, sinon utilise le modèle analytique.",
+            "use_openmc": "auto"
+        }
     },
     "physical_constants": {
         "DELAYED_NEUTRON_FRACTION": 0.0065,

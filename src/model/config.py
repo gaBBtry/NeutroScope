@@ -9,6 +9,9 @@ import json
 import os
 from pathlib import Path
 
+# Global variable to store the current calculation mode
+_current_calculation_mode = None
+
 def _load_config():
     """
     Loads configuration from the project's root config.json file.
@@ -27,6 +30,41 @@ def _load_config():
 def get_project_root():
     """Get the project root directory path."""
     return Path(__file__).resolve().parent.parent.parent
+
+def get_calculation_modes():
+    """Get available calculation modes."""
+    return _config.get("calculation_modes", {})
+
+def get_current_calculation_mode():
+    """Get the current calculation mode."""
+    global _current_calculation_mode
+    if _current_calculation_mode is None:
+        default_mode = _config.get("openmc", {}).get("default_mode", "auto")
+        _current_calculation_mode = default_mode
+    return _current_calculation_mode
+
+def set_calculation_mode(mode):
+    """Set the current calculation mode."""
+    global _current_calculation_mode
+    modes = get_calculation_modes()
+    if mode in modes:
+        _current_calculation_mode = mode
+        print(f"✓ Mode de calcul défini: {modes[mode]['name']}")
+        return True
+    else:
+        print(f"✗ Mode de calcul inconnu: {mode}")
+        return False
+
+def should_use_openmc():
+    """
+    Determine if OpenMC should be used based on the current mode.
+    Returns: True, False, or "auto"
+    """
+    mode = get_current_calculation_mode()
+    modes = get_calculation_modes()
+    if mode in modes:
+        return modes[mode].get("use_openmc", "auto")
+    return "auto"
 
 def setup_openmc_data():
     """
@@ -57,6 +95,10 @@ _config = _load_config()
 _openmc_config = _config.get("openmc", {})
 OPENMC_DATA_PATH = _openmc_config.get("data_path", "data/endfb-vii.1-hdf5")
 OPENMC_CROSS_SECTIONS_FILE = _openmc_config.get("cross_sections_file", "cross_sections.xml")
+OPENMC_DEFAULT_MODE = _openmc_config.get("default_mode", "auto")
+
+# --- Calculation Modes ---
+CALCULATION_MODES = _config.get("calculation_modes", {})
 
 # --- Unpack configuration into module-level variables for easy access ---
 

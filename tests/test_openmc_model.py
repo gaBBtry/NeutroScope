@@ -96,16 +96,49 @@ def test_build_model(openmc_model):
 
 # --- Tests for Simulation Execution ---
 
-def test_run_simulation_no_cross_sections_env(openmc_model):
+def test_run_simulation_cross_sections_auto_setup(openmc_model):
     """
-    Verify that run_simulation raises a RuntimeError if the cross sections
-    environment variable is not set.
+    Verify that run_simulation automatically configures cross sections
+    when the environment variable is not set but data files are available.
     """
-    # Ensure the environment variable is not set
+    # Ensure the environment variable is not set initially
     if 'OPENMC_CROSS_SECTIONS' in os.environ:
         del os.environ['OPENMC_CROSS_SECTIONS']
     
-    with pytest.raises(RuntimeError, match="OPENMC_CROSS_SECTIONS environment variable is not set"):
+    # Build the model first (required before running simulation)
+    openmc_model.build_model()
+    
+    # Make the simulation very fast for testing
+    openmc_model.model.settings.batches = 5
+    openmc_model.model.settings.inactive = 2
+    openmc_model.model.settings.particles = 100
+    
+    # This should work if cross sections data is available in the data directory
+    try:
+        k_effective = openmc_model.run_simulation()
+        # If successful, k_effective should be a reasonable value
+        assert isinstance(k_effective, float)
+        assert 0.5 < k_effective < 2.5
+        # Check that the environment variable was set automatically
+        assert 'OPENMC_CROSS_SECTIONS' in os.environ
+    except RuntimeError as e:
+        # If cross sections data is not available, this is expected
+        assert "Unable to locate OpenMC cross sections data" in str(e)
+
+def test_run_simulation_no_cross_sections_data(openmc_model, monkeypatch):
+    """
+    Verify that run_simulation raises a RuntimeError when no cross sections
+    data is available (neither in environment variable nor in data directory).
+    """
+    # Remove environment variable if it exists
+    monkeypatch.delenv('OPENMC_CROSS_SECTIONS', raising=False)
+    
+    # Mock the setup_openmc_data function in the openmc_model module
+    # since it's imported there directly
+    from src.model import openmc_model as openmc_module
+    monkeypatch.setattr(openmc_module, 'setup_openmc_data', lambda: False)
+    
+    with pytest.raises(RuntimeError, match="Unable to locate OpenMC cross sections data"):
         openmc_model.run_simulation()
 
 @pytest.mark.slow

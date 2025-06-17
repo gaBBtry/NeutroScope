@@ -3,6 +3,7 @@ Reactor physics model for neutronics calculations
 """
 import numpy as np
 from . import config
+from .config import should_use_openmc, get_current_calculation_mode, get_calculation_modes
 from .openmc_model import OpenMCModel
 
 class ReactorModel:
@@ -44,6 +45,9 @@ class ReactorModel:
         
         # Presets dictionary
         self.presets = config.PRESETS
+        
+        # Calculation mode tracking
+        self._last_calculation_mode = None
         
         # Initial calculation
         self._update_temperatures()
@@ -102,10 +106,43 @@ class ReactorModel:
     
     def calculate_k_effective(self):
         """
-        Calculate k-effective using the OpenMC model.
-        The analytical calculation is kept as a fallback or for comparison.
+        Calculate k-effective using the chosen calculation method.
+        The method depends on the user's choice of calculation mode.
         """
-        # --- OpenMC Calculation ---
+        current_mode = get_current_calculation_mode()
+        modes = get_calculation_modes()
+        use_openmc_setting = should_use_openmc()
+        
+        # Track mode changes for user feedback
+        if self._last_calculation_mode != current_mode:
+            if current_mode in modes:
+                print(f"🔄 Calcul avec {modes[current_mode]['name']}")
+            self._last_calculation_mode = current_mode
+        
+        # --- Décision du mode de calcul ---
+        if use_openmc_setting is False:
+            # Mode rapide : utiliser uniquement le modèle analytique
+            self._calculate_k_effective_analytical()
+            
+        elif use_openmc_setting is True:
+            # Mode précis : utiliser uniquement OpenMC
+            if not self._calculate_k_effective_openmc():
+                raise RuntimeError(
+                    "Mode précis sélectionné mais OpenMC n'est pas disponible. "
+                    "Veuillez configurer OpenMC ou changer de mode de calcul."
+                )
+                
+        else:
+            # Mode auto : essayer OpenMC, fallback sur analytique
+            if not self._calculate_k_effective_openmc():
+                print("⚠ OpenMC non disponible, passage en mode analytique")
+                self._calculate_k_effective_analytical()
+
+    def _calculate_k_effective_openmc(self):
+        """
+        Calcul k-effectif avec OpenMC.
+        Retourne True si réussi, False sinon.
+        """
         try:
             params = self._get_params_for_openmc()
             self.openmc_runner = OpenMCModel(params)
@@ -115,31 +152,36 @@ class ReactorModel:
             # We can set these to 1.0 or try to derive them from OpenMC tallies later.
             self.fast_non_leakage_prob = 1.0
             self.thermal_non_leakage_prob = 1.0
-
+            return True
+            
         except Exception as e:
-            print(f"Failed to run OpenMC, falling back to analytical model. Error: {e}")
-            # --- Analytical Calculation (Fallback) ---
-            k_infinite = self.eta * self.epsilon * self.p * self.f
-            
-            # New leakage calculation based on two-group diffusion theory
-            # 1. Geometric Buckling B^2
-            R = config.CORE_DIAMETER_M / 2.0
-            H = config.CORE_HEIGHT_M
-            geometric_buckling = (np.pi / H)**2 + (2.405 / R)**2
-            
-            # 2. Temperature effect on moderator density and diffusion areas
-            # L^2 and L_s^2 are proportional to (rho_ref/rho_T)^2
-            temp_deviation = self.moderator_temperature - config.F_REF_MOD_TEMP_C
-            density_ratio = 1.0 / (1.0 - config.MODERATOR_DENSITY_COEFF * temp_deviation)
-            
-            thermal_diffusion_area = config.THERMAL_DIFFUSION_AREA_M2 * (density_ratio**2)
-            fast_diffusion_area = config.FAST_DIFFUSION_AREA_M2 * (density_ratio**2)
-            
-            # 3. Non-leakage probabilities
-            self.fast_non_leakage_prob = 1.0 / (1.0 + geometric_buckling * fast_diffusion_area)
-            self.thermal_non_leakage_prob = 1.0 / (1.0 + geometric_buckling * thermal_diffusion_area)
-            
-            self.k_effective = k_infinite * self.fast_non_leakage_prob * self.thermal_non_leakage_prob
+            print(f"Échec du calcul OpenMC: {e}")
+            return False
+
+    def _calculate_k_effective_analytical(self):
+        """Calcul k-effectif avec le modèle analytique."""
+        # --- Analytical Calculation ---
+        k_infinite = self.eta * self.epsilon * self.p * self.f
+        
+        # New leakage calculation based on two-group diffusion theory
+        # 1. Geometric Buckling B^2
+        R = config.CORE_DIAMETER_M / 2.0
+        H = config.CORE_HEIGHT_M
+        geometric_buckling = (np.pi / H)**2 + (2.405 / R)**2
+        
+        # 2. Temperature effect on moderator density and diffusion areas
+        # L^2 and L_s^2 are proportional to (rho_ref/rho_T)^2
+        temp_deviation = self.moderator_temperature - config.F_REF_MOD_TEMP_C
+        density_ratio = 1.0 / (1.0 - config.MODERATOR_DENSITY_COEFF * temp_deviation)
+        
+        thermal_diffusion_area = config.THERMAL_DIFFUSION_AREA_M2 * (density_ratio**2)
+        fast_diffusion_area = config.FAST_DIFFUSION_AREA_M2 * (density_ratio**2)
+        
+        # 3. Non-leakage probabilities
+        self.fast_non_leakage_prob = 1.0 / (1.0 + geometric_buckling * fast_diffusion_area)
+        self.thermal_non_leakage_prob = 1.0 / (1.0 + geometric_buckling * thermal_diffusion_area)
+        
+        self.k_effective = k_infinite * self.fast_non_leakage_prob * self.thermal_non_leakage_prob
 
     def _get_params_for_openmc(self):
         """Gathers the current reactor state into a dictionary for OpenMC."""
@@ -407,4 +449,26 @@ class ReactorModel:
                 "power_level": self.power_level
             }
             return True
-        return False 
+        return False
+
+    def get_current_calculation_info(self):
+        """
+        Retourne des informations sur le mode de calcul actuel.
+        """
+        current_mode = get_current_calculation_mode()
+        modes = get_calculation_modes()
+        
+        if current_mode in modes:
+            return {
+                "mode": current_mode,
+                "name": modes[current_mode]["name"],
+                "description": modes[current_mode]["description"],
+                "uses_openmc": modes[current_mode]["use_openmc"]
+            }
+        else:
+            return {
+                "mode": "unknown",
+                "name": "Mode inconnu",
+                "description": "Mode de calcul non reconnu",
+                "uses_openmc": False
+            } 

@@ -147,19 +147,37 @@ class MainWindow(QMainWindow):
         self.presets_group.info_signal.connect(self.show_info)
     
     def create_control_panel(self):
-        """Create the main control panel with all sliders and inputs"""
+        """Create the control panel with reactor parameter controls"""
         control_panel = QWidget()
-        control_layout = QVBoxLayout(control_panel)
+        control_layout = QVBoxLayout()
+        control_panel.setLayout(control_layout)
         
-        # Reactor Presets
+        # Mode de calcul (indicateur)
+        self.calculation_mode_group = QGroupBox("Mode de calcul")
+        mode_layout = QVBoxLayout()
+        
+        # Récupérer les informations du mode actuel
+        calc_info = self.controller.model.get_current_calculation_info()
+        
+        self.mode_label = QLabel(f"🔧 {calc_info['name']}")
+        self.mode_label.setStyleSheet("font-weight: bold; color: #2E7D32; padding: 5px;")
+        
+        self.mode_description = QLabel(calc_info['description'])
+        self.mode_description.setWordWrap(True)
+        self.mode_description.setStyleSheet("color: #666; font-size: 10px; margin-top: 5px;")
+        
+        mode_layout.addWidget(self.mode_label)
+        mode_layout.addWidget(self.mode_description)
+        self.calculation_mode_group.setLayout(mode_layout)
+
+        # Presets
         self.presets_group = self.create_info_groupbox("Préréglages", self.info_texts["presets"])
-        presets_layout = QVBoxLayout()
+        preset_layout = QVBoxLayout()
         self.preset_combo = QComboBox()
-        preset_names = self.controller.get_preset_names()
-        preset_names.append("Personnalisé")
-        self.preset_combo.addItems(preset_names)
-        presets_layout.addWidget(self.preset_combo)
-        self.presets_group.setLayout(presets_layout)
+        self.preset_combo.addItems(self.controller.get_preset_names())
+        self.preset_combo.setCurrentText(self.controller.get_current_preset_name())
+        preset_layout.addWidget(self.preset_combo)
+        self.presets_group.setLayout(preset_layout)
         
         # Control Rods
         self.rod_control_group = self.create_info_groupbox("Barres de contrôle", self.info_texts["rod_control"])
@@ -217,6 +235,7 @@ class MainWindow(QMainWindow):
         self.reactor_params_group.setLayout(params_layout)
         
         # Add all groups to control layout
+        control_layout.addWidget(self.calculation_mode_group)
         control_layout.addWidget(self.presets_group)
         control_layout.addWidget(self.rod_control_group)
         control_layout.addWidget(self.boron_group)
@@ -348,6 +367,30 @@ class MainWindow(QMainWindow):
         self.update_visualizations()
         self.check_for_custom_preset()
 
+    def update_calculation_mode_display(self):
+        """Met à jour l'affichage du mode de calcul"""
+        calc_info = self.controller.model.get_current_calculation_info()
+        
+        # Mettre à jour le label principal
+        self.mode_label.setText(f"🔧 {calc_info['name']}")
+        
+        # Mettre à jour la description
+        self.mode_description.setText(calc_info['description'])
+        
+        # Changer la couleur selon le mode
+        if calc_info['mode'] == 'fast':
+            color = "#1976D2"  # Bleu pour mode rapide
+            icon = "⚡"
+        elif calc_info['mode'] == 'precise':
+            color = "#388E3C"  # Vert pour mode précis
+            icon = "🎯"
+        else:
+            color = "#F57C00"  # Orange pour mode auto
+            icon = "🔧"
+        
+        self.mode_label.setText(f"{icon} {calc_info['name']}")
+        self.mode_label.setStyleSheet(f"font-weight: bold; color: {color}; padding: 5px;")
+
     def update_reactor_params(self, params):
         """Update the display of reactor parameters"""
         k_eff = params["k_effective"]
@@ -361,6 +404,9 @@ class MainWindow(QMainWindow):
             self.doubling_time_label.setText("Temps de doublement: ∞")
         else:
             self.doubling_time_label.setText(f"Temps de doublement: {doubling_time:.1f} s")
+        
+        # Mettre à jour l'indicateur de mode (au cas où il aurait changé)
+        self.update_calculation_mode_display()
             
     def update_visualizations(self):
         """Update all plots with the latest data from the model"""
