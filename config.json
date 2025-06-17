@@ -1,4 +1,8 @@
 {
+    "openmc": {
+        "data_path": "data/endfb-vii.1-hdf5",
+        "cross_sections_file": "cross_sections.xml"
+    },
     "physical_constants": {
         "DELAYED_NEUTRON_FRACTION": 0.0065,
         "PROMPT_NEUTRON_LIFETIME": 2e-05

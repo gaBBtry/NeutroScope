@@ -3,8 +3,10 @@ OpenMC model for the reactor
 """
 import openmc
 from ..model import config as global_config
+from ..model.config import setup_openmc_data
 import tempfile
 import os
+from pathlib import Path
 
 class OpenMCModel:
     """
@@ -216,10 +218,11 @@ class OpenMCModel:
         with tempfile.TemporaryDirectory() as tmpdir:
             # We need to check if the cross sections are defined.
             # OpenMC will look for the OPENMC_CROSS_SECTIONS environment variable.
-            if 'OPENMC_CROSS_SECTIONS' not in os.environ:
+            if not setup_openmc_data():
                 raise RuntimeError(
-                    "The OPENMC_CROSS_SECTIONS environment variable is not set. "
-                    "Please set it to the path of your cross_sections.xml file."
+                    "Unable to locate OpenMC cross sections data. "
+                    "Please ensure cross_sections.xml is available in the data directory "
+                    "or set the OPENMC_CROSS_SECTIONS environment variable."
                 )
 
             # The model.run() method can take a 'cwd' argument to specify the directory.

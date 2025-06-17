@@ -6,6 +6,7 @@ from the 'config.json' file located in the project's root directory.
 """
 
 import json
+import os
 from pathlib import Path
 
 def _load_config():
@@ -23,7 +24,39 @@ def _load_config():
     except json.JSONDecodeError as e:
         raise ValueError(f"Invalid JSON in configuration file 'config.json'. Please check its syntax. Original error: {e}")
 
+def get_project_root():
+    """Get the project root directory path."""
+    return Path(__file__).resolve().parent.parent.parent
+
+def setup_openmc_data():
+    """
+    Setup OpenMC cross sections path automatically if not already set.
+    Returns True if successfully configured, False otherwise.
+    """
+    if 'OPENMC_CROSS_SECTIONS' in os.environ:
+        return True
+    
+    project_root = get_project_root()
+    openmc_config = _config.get("openmc", {})
+    data_path = openmc_config.get("data_path", "data/endfb-vii.1-hdf5")
+    cross_sections_file = openmc_config.get("cross_sections_file", "cross_sections.xml")
+    
+    cross_sections_path = project_root / data_path / cross_sections_file
+    
+    if cross_sections_path.exists():
+        os.environ['OPENMC_CROSS_SECTIONS'] = str(cross_sections_path)
+        print(f"✓ Configuration OpenMC automatique: {cross_sections_path}")
+        return True
+    else:
+        print(f"⚠ Données OpenMC non trouvées dans: {cross_sections_path}")
+        return False
+
 _config = _load_config()
+
+# --- OpenMC Configuration ---
+_openmc_config = _config.get("openmc", {})
+OPENMC_DATA_PATH = _openmc_config.get("data_path", "data/endfb-vii.1-hdf5")
+OPENMC_CROSS_SECTIONS_FILE = _openmc_config.get("cross_sections_file", "cross_sections.xml")
 
 # --- Unpack configuration into module-level variables for easy access ---
 
