@@ -127,7 +127,7 @@ class MainWindow(QMainWindow):
         self.connect_signals()
         
         # Initialize UI with a preset
-        self.on_preset_changed("Critique à puissance nominale")
+        self.on_preset_changed("Démarrage")
     
     def connect_signals(self):
         """Connect all UI element signals to controller methods"""
