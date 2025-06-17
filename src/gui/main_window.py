@@ -13,7 +13,9 @@ from src.gui.visualization import VisualizationPanel
 from src.gui.widgets.info_panel import InfoPanel
 from src.gui.widgets.info_button import InfoButton
 from src.gui.widgets.credits_button import CreditsButton
-from src.gui.widgets.info_widgets import InfoGroupBox
+from src.gui.widgets.info_manager import InfoManager
+from src.gui.widgets.enhanced_widgets import InfoGroupBox
+from src.gui.widgets.info_dialog import InfoDialog
 
 
 class MainWindow(QMainWindow):
@@ -86,17 +88,20 @@ class MainWindow(QMainWindow):
         left_layout = QVBoxLayout(left_container)
         left_layout.setContentsMargins(0, 0, 0, 0)
         
+        # Create the new centralized info management system
+        self.info_manager = InfoManager()
+        
         # Create info panel and buttons for left side
         self.info_panel = InfoPanel()
         self.info_button = InfoButton()
         self.credits_button = CreditsButton()
-        self.info_button.clicked.connect(self.toggle_info_panel)
         
-        # Connect info panel closed signal
-        self.info_panel.closed.connect(self.on_info_panel_closed)
+        # Connect the new info management system
+        self.info_manager.info_requested.connect(self.info_panel.update_info)
+        self.info_manager.info_cleared.connect(self.info_panel.clear_info)
         
-        # Flag to control automatic showing of info panel
-        self.auto_show_info = False
+        # Connect UI signals
+        self.info_button.clicked.connect(self._show_info_dialog)
         
         # Create control panel (left side)
         control_panel = self.create_control_panel()
@@ -114,8 +119,8 @@ class MainWindow(QMainWindow):
         
         # Create visualization area (right side)
         self.visualization_panel = VisualizationPanel(use_info_panel=False)
-        # Connect visualization panel to the info panel
-        self.visualization_panel.set_external_info_callback(self.show_info)
+        # Connect visualization panel to the info manager
+        self.visualization_panel.set_external_info_callback(self.info_manager)
         
         # Add left and right containers to main layout
         main_layout.addWidget(left_container, 1)
@@ -138,13 +143,8 @@ class MainWindow(QMainWindow):
         self.fuel_enrichment_slider.valueChanged.connect(self.on_fuel_enrichment_changed)
         self.preset_combo.currentTextChanged.connect(self.on_preset_changed)
         
-        # Connect info signals from group boxes
-        self.rod_control_group.info_signal.connect(self.show_info)
-        self.boron_group.info_signal.connect(self.show_info)
-        self.moderator_temp_group.info_signal.connect(self.show_info)
-        self.fuel_enrichment_group.info_signal.connect(self.show_info)
-        self.reactor_params_group.info_signal.connect(self.show_info)
-        self.presets_group.info_signal.connect(self.show_info)
+        # Info connections are now handled automatically by the InfoManager
+        # No need for manual signal connections
     
     def create_control_panel(self):
         """Create the control panel with reactor parameter controls"""
@@ -248,34 +248,18 @@ class MainWindow(QMainWindow):
     
     def create_info_groupbox(self, title, info_text):
         """Helper to create a group box with info capabilities"""
-        group_box = InfoGroupBox(title, info_text)
+        group_box = InfoGroupBox(title, info_text, self.info_manager)
         return group_box
 
-    def show_info(self, text):
-        """Show information in the info panel"""
-        # Automatically show/hide panel on hover
-        if self.auto_show_info:
-            if text:
-                self.info_panel.update_info(text)
-                self.info_panel.setVisible(True)
-            else:
-                self.info_panel.setVisible(False)
-        else: # Manual mode
-            if self.info_panel.isVisible():
-                self.info_panel.update_info(text)
-    
-    def toggle_info_panel(self):
-        """Toggle the visibility of the info panel"""
-        self.info_panel.setVisible(not self.info_panel.isVisible())
-        self.info_button.setChecked(self.info_panel.isVisible())
-        self.info_button.update_tooltip(self.info_panel.isVisible())
-        # When manually toggled, switch off auto-show
-        self.auto_show_info = False
-
-    def on_info_panel_closed(self):
-        """Handle info panel being closed via its own button"""
-        self.info_button.setChecked(False)
-        self.info_button.update_tooltip(False)
+    def _show_info_dialog(self):
+        """Show a dialog with the detailed information of the last hovered item."""
+        current_html = self.info_panel.get_current_info_html()
+        
+        InfoDialog.show_info(
+            "Informations Détaillées",
+            current_html if current_html else "<p><i>Aucune information à afficher. Survolez un élément pour obtenir des détails.</i></p>",
+            self
+        )
     
     def on_preset_changed(self, preset_name):
         """Handle preset change from the combobox"""
@@ -430,6 +414,16 @@ class MainWindow(QMainWindow):
     def keyPressEvent(self, event):
         """Handle key press events for the main window"""
         if event.key() == Qt.Key.Key_I:
-            self.toggle_info_panel()
+            self._show_info_dialog()
         
-        super().keyPressEvent(event) 
+        super().keyPressEvent(event)
+    
+    def closeEvent(self, event):
+        """Ensure proper cleanup on close"""
+        # Unregister all widgets to prevent issues on shutdown
+        if self.info_manager:
+            widgets_to_unregister = list(self.info_manager.get_registered_widgets().keys())
+            for widget in widgets_to_unregister:
+                self.info_manager.unregister_widget(widget)
+        
+        super().closeEvent(event) 

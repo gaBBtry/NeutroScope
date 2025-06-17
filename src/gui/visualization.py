@@ -29,7 +29,7 @@ class VisualizationPanel(QWidget):
         super().__init__(parent)
         
         self.use_info_panel = use_info_panel
-        self.external_info_callback = None
+        self.external_info_manager = None
         
         # Main layout
         main_layout = QHBoxLayout(self)
@@ -76,9 +76,9 @@ class VisualizationPanel(QWidget):
             self.detailed_info_text = ""
             self.info_panel.show_details.connect(self.show_detailed_info)
     
-    def set_external_info_callback(self, callback):
-        """Set an external function to call for updating info"""
-        self.external_info_callback = callback
+    def set_external_info_callback(self, info_manager):
+        """Set an external InfoManager to use for updating info"""
+        self.external_info_manager = info_manager
     
     def resizeEvent(self, event):
         """Handle resize event to adjust layout"""
@@ -105,8 +105,13 @@ class VisualizationPanel(QWidget):
     # --- Info Panel Methods ---
     def update_info_panel(self, text, detailed_text=None):
         """Update the info panel with new text"""
-        if self.external_info_callback:
-            self.external_info_callback(text)
+        if hasattr(self, 'external_info_manager') and self.external_info_manager:
+            # Use external info manager - this is a more complex integration
+            # For now, we'll implement a simple approach
+            if text:
+                self.external_info_manager.info_requested.emit(text)
+            else:
+                self.external_info_manager.info_cleared.emit()
         elif self.use_info_panel:
             self.info_panel.update_info(text)
             if detailed_text:

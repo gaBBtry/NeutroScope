@@ -1,77 +1,184 @@
 """
-Panel for displaying information about visualizations
+Refactored information panel with improved stability and integration
 """
 from PyQt6.QtWidgets import (
-    QFrame, QVBoxLayout, QLabel, QPushButton, QSizePolicy, 
-    QScrollArea, QDialog, QHBoxLayout
+    QFrame, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
+    QSizePolicy, QScrollArea, QTextEdit
 )
-from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtGui import QFont, QIcon
+from PyQt6.QtCore import Qt, pyqtSignal, QTimer
+from PyQt6.QtGui import QFont
 
 
 class InfoPanel(QFrame):
-    """Panel for displaying information about visualizations"""
-    
-    # Signal emitted when panel is closed
-    closed = pyqtSignal()
-    # Signal to request detailed info display
-    show_details = pyqtSignal()
+    """
+    An always-visible panel to display context-sensitive information.
+    Integrates with the InfoManager system.
+    """
     
     def __init__(self, parent=None):
         super().__init__(parent)
         
-        self.setFrameShape(QFrame.Shape.StyledPanel)
-        self.setFrameShadow(QFrame.Shadow.Raised)
+        # Setup UI
+        self._setup_ui()
+        self._setup_styles()
+        
+        # State management
+        self._current_text = ""
+        
+        # Animation timer for smooth updates
+        self._update_timer = QTimer()
+        self._update_timer.setSingleShot(True)
+        self._update_timer.timeout.connect(self._delayed_update)
+        
+        # Always visible
+        self.setVisible(True)
+        
+    def _setup_ui(self):
+        """Setup the user interface components."""
+        # Main layout
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(8, 8, 8, 8)
+        layout.setSpacing(4)
+        
+        # Header with title and subtitle
+        header_layout = QHBoxLayout()
+        header_layout.setContentsMargins(0, 0, 0, 0)
+        
+        # Title and subtitle container
+        title_vbox = QVBoxLayout()
+        title_vbox.setSpacing(0)
+        
+        # Title
+        self.title_label = QLabel("Informations")
+        title_font = self.title_label.font()
+        title_font.setBold(True)
+        title_font.setPointSize(title_font.pointSize() + 1)
+        self.title_label.setFont(title_font)
+        
+        # Subtitle
+        self.subtitle_label = QLabel("Appuyez sur 'i' pour ouvrir la fenêtre d'informations")
+        subtitle_font = self.subtitle_label.font()
+        subtitle_font.setPointSize(subtitle_font.pointSize() - 1)
+        self.subtitle_label.setStyleSheet("color: #666; margin-top: 1px;")
+        self.subtitle_label.setFont(subtitle_font)
+        
+        title_vbox.addWidget(self.title_label)
+        title_vbox.addWidget(self.subtitle_label)
+        
+        header_layout.addLayout(title_vbox)
+        header_layout.addStretch()
+        
+        # Content area with scroll support
+        self.content_widget = QTextEdit()
+        self.content_widget.setReadOnly(True)
+        self.content_widget.setMinimumHeight(60)
+        
+        # Set default content
+        self._set_default_content()
+        
+        # Add to main layout
+        layout.addLayout(header_layout)
+        layout.addWidget(self.content_widget)
+        
+        # Size policy
+        self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
+        
+    def _setup_styles(self):
+        """Setup the visual styling for the panel."""
         self.setStyleSheet("""
-            QFrame {
-                background-color: #f0f0f0;
-                border: 1px solid #ccc;
-                border-radius: 5px;
+            InfoPanel {
+                background-color: #ffffff;
+                border: 1px solid #d0d0d0;
+                border-radius: 8px;
+                margin: 2px;
             }
         """)
         
-        # Main layout for the panel
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(5, 5, 5, 5)
+        self.content_widget.setStyleSheet("""
+            QTextEdit {
+                background-color: #fafafa;
+                border: 1px solid #e0e0e0;
+                border-radius: 4px;
+                padding: 8px;
+                font-size: 11px;
+                line-height: 1.4;
+            }
+        """)
         
-        # Header with title and close button
-        header_layout = QHBoxLayout()
+    def _set_default_content(self):
+        """Set the default content when no information is available."""
+        default_text = (
+            "<p style='color: #888; font-style: italic;'>"
+            "Survolez un élément pour afficher des informations."
+            "</p>"
+        )
+        self.content_widget.setHtml(default_text)
         
-        self.title_label = QLabel("Informations")
-        font = self.title_label.font()
-        font.setBold(True)
-        self.title_label.setFont(font)
+    def update_info(self, text: str):
+        """
+        Update the information text with debouncing for stability.
         
-        close_button = QPushButton("×")
-        close_button.setFixedSize(20, 20)
-        close_button.setStyleSheet("font-size: 14px; border-radius: 10px; background-color: #e0e0e0;")
-        close_button.clicked.connect(self.close_panel)
+        Args:
+            text: The new information text to display
+        """
+        self._current_text = text.strip()
         
-        header_layout.addWidget(self.title_label)
-        header_layout.addStretch()
-        header_layout.addWidget(close_button)
+        # Use timer to debounce rapid updates
+        self._update_timer.stop()
+        self._update_timer.start(50)  # 50ms delay
         
-        # Content label
-        self.info_label = QLabel("Survolez un élément pour afficher des informations.")
-        self.info_label.setWordWrap(True)
-        self.info_label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        self.info_label.setAlignment(Qt.AlignmentFlag.AlignTop)
-        
-        layout.addLayout(header_layout)
-        layout.addWidget(self.info_label)
-        
-        # Initially hidden
-        self.setVisible(False)
-
-    def update_info(self, text):
-        """Update the information text"""
-        self.info_label.setText(text)
-        if text:
-            self.setVisible(True)
+    def _delayed_update(self):
+        """Perform the actual update after debouncing."""
+        if self._current_text:
+            # Format the text with basic HTML for better presentation
+            formatted_text = self._format_info_text(self._current_text)
+            self.content_widget.setHtml(formatted_text)
         else:
-            self.setVisible(False)
+            # Clear content
+            self._set_default_content()
             
-    def close_panel(self):
-        """Close the panel"""
-        self.setVisible(False)
-        self.closed.emit() 
+    def _format_info_text(self, text: str) -> str:
+        """
+        Format plain text into basic HTML for better presentation.
+        
+        Args:
+            text: The plain text to format
+            
+        Returns:
+            str: HTML formatted text
+        """
+        # Split into lines and process
+        lines = text.split('\n')
+        formatted_lines = []
+        
+        for i, line in enumerate(lines):
+            line = line.strip()
+            if not line:
+                if i > 0 and lines[i-1].strip():
+                    formatted_lines.append('<br>')
+            elif line.endswith(':'):
+                # Treat as a header
+                formatted_lines.append(f'<p style="font-weight: bold; color: #333; margin-top: 8px; margin-bottom: 4px;">{line}</p>')
+            elif line.startswith('- '):
+                # Treat as a list item
+                item = line[2:]
+                formatted_lines.append(f'<p style="margin-left: 16px; margin-top: 2px; margin-bottom: 2px;">• {item}</p>')
+            else:
+                # Regular paragraph
+                formatted_lines.append(f'<p style="margin-top: 4px; margin-bottom: 4px; line-height: 1.5;">{line}</p>')
+                
+        return ''.join(formatted_lines)
+        
+    def clear_info(self):
+        """Clear the current information."""
+        self.update_info("")
+        
+    def get_current_info_text(self) -> str:
+        """Get the current raw information text."""
+        return self._current_text
+        
+    def get_current_info_html(self) -> str:
+        """Get the current HTML-formatted information text."""
+        if not self._current_text:
+            return ""
+        return self._format_info_text(self._current_text) 
