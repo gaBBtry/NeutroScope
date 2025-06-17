@@ -13,11 +13,13 @@ Application pédagogique interactive pour la neutronique des Réacteurs à Eau P
 
 ## Installation
 
-1. **Cloner le dépôt**
+1. **Cloner le dépôt avec OpenMC**
    ```bash
-   git clone [url-du-repo]
+   git clone --recursive https://github.com/gaBBtry/NeutroScope.git
    cd NeutroScope
    ```
+   
+   > Si déjà cloné sans `--recursive` : `git submodule update --init --recursive`
 
 2. **Environnement virtuel**
    ```bash
@@ -51,6 +53,13 @@ Au démarrage, choisissez votre mode :
 ## Configuration
 
 Les modes sont configurables dans `config.json`. L'application détecte automatiquement les données disponibles.
+
+## OpenMC
+
+Le code Monte Carlo OpenMC est inclus comme submodule pour le mode précis.
+- Dossier : `openmc/`
+- Version utilisée : celle pointée par le submodule
+- Pour mettre à jour : `cd openmc && git pull`
 
 ## Documentation
 
