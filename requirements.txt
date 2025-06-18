@@ -1,7 +1,11 @@
+# Core dependencies for the NeutroScope application
 numpy
 matplotlib
 PyQt6
-pandas
-scipy
+
+# Testing dependencies
 pytest
 pytest-qt
+
+# OpenMC is included as a Git submodule in the 'openmc/' directory
+# For installation options, see: https://docs.openmc.org/en/stable/quickinstall.html
