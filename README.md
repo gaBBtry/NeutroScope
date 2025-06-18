@@ -65,4 +65,3 @@ Le code Monte Carlo OpenMC est inclus comme submodule pour le mode précis.
 
 - [Guide des modes de calcul](MODES_CALCUL.md) : Détails sur les deux modes
 - Interface : Panneau de contrôle (gauche), visualisations (centre), aide (touche `I`) 
-``` 
