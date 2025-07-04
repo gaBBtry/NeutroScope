@@ -7,5 +7,6 @@ PyQt6
 pytest
 pytest-qt
 
-# OpenMC is included as a Git submodule in the 'openmc/' directory
-# For installation options, see: https://docs.openmc.org/en/stable/quickinstall.html
+# OpenMC must be installed in the user's device.
+# Update the path below to the location of your local OpenMC source
+-e path/to/openmc
