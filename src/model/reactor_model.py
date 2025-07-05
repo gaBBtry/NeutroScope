@@ -3,8 +3,6 @@ Reactor physics model for neutronics calculations
 """
 import numpy as np
 from . import config
-from .config import should_use_openmc, get_current_calculation_mode, get_calculation_modes
-from .openmc_model import OpenMCModel
 
 class ReactorModel:
     """
@@ -36,18 +34,12 @@ class ReactorModel:
         self.p = 0.75  # resonance escape probability
         self.f = 0.71  # thermal utilization factor
         
-        # OpenMC runner
-        self.openmc_runner = None
-        
         # Neutron leakage factors
         self.thermal_non_leakage_prob = 1.0
         self.fast_non_leakage_prob = 1.0
         
         # Presets dictionary
         self.presets = config.PRESETS
-        
-        # Calculation mode tracking
-        self._last_calculation_mode = None
         
         # Initial calculation
         self._update_temperatures()
@@ -59,8 +51,6 @@ class ReactorModel:
 
     def calculate_all(self):
         """Calculate all reactor parameters based on current inputs"""
-        # The analytical four-factor calculation is kept for now for visualizations,
-        # but the k_effective from it will be overwritten by OpenMC.
         self.calculate_four_factors()
         self.calculate_k_effective()
         self.calculate_reactivity()
@@ -106,57 +96,9 @@ class ReactorModel:
     
     def calculate_k_effective(self):
         """
-        Calculate k-effective using the chosen calculation method.
-        The method depends on the user's choice of calculation mode.
+        Calculate k-effective using the analytical model.
         """
-        current_mode = get_current_calculation_mode()
-        modes = get_calculation_modes()
-        use_openmc_setting = should_use_openmc()
-        
-        # Track mode changes for user feedback
-        if self._last_calculation_mode != current_mode:
-            if current_mode in modes:
-                print(f"🔄 Calcul avec {modes[current_mode]['name']}")
-            self._last_calculation_mode = current_mode
-        
-        # --- Décision du mode de calcul ---
-        if use_openmc_setting is False:
-            # Mode rapide : utiliser uniquement le modèle analytique
-            self._calculate_k_effective_analytical()
-            
-        elif use_openmc_setting is True:
-            # Mode précis : utiliser uniquement OpenMC
-            if not self._calculate_k_effective_openmc():
-                raise RuntimeError(
-                    "Mode précis sélectionné mais OpenMC n'est pas disponible. "
-                    "Veuillez configurer OpenMC ou changer de mode de calcul."
-                )
-                
-        else:
-            # Mode auto : essayer OpenMC, fallback sur analytique
-            if not self._calculate_k_effective_openmc():
-                print("⚠ OpenMC non disponible, passage en mode analytique")
-                self._calculate_k_effective_analytical()
-
-    def _calculate_k_effective_openmc(self):
-        """
-        Calcul k-effectif avec OpenMC.
-        Retourne True si réussi, False sinon.
-        """
-        try:
-            params = self._get_params_for_openmc()
-            self.openmc_runner = OpenMCModel(params)
-            self.k_effective = self.openmc_runner.run_simulation()
-            
-            # Since we use OpenMC, leakage is implicitly handled.
-            # We can set these to 1.0 or try to derive them from OpenMC tallies later.
-            self.fast_non_leakage_prob = 1.0
-            self.thermal_non_leakage_prob = 1.0
-            return True
-            
-        except Exception as e:
-            print(f"Échec du calcul OpenMC: {e}")
-            return False
+        self._calculate_k_effective_analytical()
 
     def _calculate_k_effective_analytical(self):
         """Calcul k-effectif avec le modèle analytique."""
@@ -183,17 +125,6 @@ class ReactorModel:
         
         self.k_effective = k_infinite * self.fast_non_leakage_prob * self.thermal_non_leakage_prob
 
-    def _get_params_for_openmc(self):
-        """Gathers the current reactor state into a dictionary for OpenMC."""
-        return {
-            "control_rod_position": self.control_rod_position,
-            "boron_concentration": self.boron_concentration,
-            "moderator_temperature": self.moderator_temperature + 273.15, # Convert to K
-            "fuel_temperature": self.fuel_temperature + 273.15, # Convert to K
-            "power_level": self.power_level,
-            "fuel_enrichment": self.fuel_enrichment,
-        }
-    
     def calculate_reactivity(self):
         """Calculate reactivity (ρ) from k-effective"""
         if self.k_effective > 0:
@@ -401,6 +332,53 @@ class ReactorModel:
 
         return {"axial_offset": axial_offset, "power_percentage": power_percentage}
     
+    def get_neutron_cycle_data(self):
+        """
+        Get data for the neutron cycle visualization.
+        This calculates the neutron population at each step of the 6-factor formula.
+        """
+        # Start with a reference population of fast neutrons
+        n_start = 1000.0
+
+        # 1. Fast Fission Factor (epsilon)
+        n_after_epsilon = n_start * self.epsilon
+
+        # 2. Fast Non-Leakage Probability (P_AFR)
+        n_after_p_afr = n_after_epsilon * self.fast_non_leakage_prob
+
+        # 3. Resonance Escape Probability (p)
+        n_after_p = n_after_p_afr * self.p
+
+        # 4. Thermal Non-Leakage Probability (P_AFT)
+        n_after_p_aft = n_after_p * self.thermal_non_leakage_prob
+
+        # 5. Thermal Utilization Factor (f)
+        n_after_f = n_after_p_aft * self.f
+
+        # 6. Reproduction Factor (eta)
+        n_final = n_after_f * self.eta
+
+        return {
+            "factors": {
+                "eta": self.eta,
+                "epsilon": self.epsilon,
+                "p": self.p,
+                "f": self.f,
+                "P_AFR": self.fast_non_leakage_prob,
+                "P_AFT": self.thermal_non_leakage_prob,
+                "k_eff": self.k_effective,
+            },
+            "populations": {
+                "start": n_start,
+                "after_epsilon": n_after_epsilon,
+                "after_P_AFR": n_after_p_afr,
+                "after_p": n_after_p,
+                "after_P_AFT": n_after_p_aft,
+                "after_f": n_after_f,
+                "final": n_final
+            }
+        }
+    
     def apply_preset(self, preset_name):
         """Apply a preset configuration"""
         if preset_name in self.presets:
@@ -450,25 +428,3 @@ class ReactorModel:
             }
             return True
         return False
-
-    def get_current_calculation_info(self):
-        """
-        Retourne des informations sur le mode de calcul actuel.
-        """
-        current_mode = get_current_calculation_mode()
-        modes = get_calculation_modes()
-        
-        if current_mode in modes:
-            return {
-                "mode": current_mode,
-                "name": modes[current_mode]["name"],
-                "description": modes[current_mode]["description"],
-                "uses_openmc": modes[current_mode]["use_openmc"]
-            }
-        else:
-            return {
-                "mode": "unknown",
-                "name": "Mode inconnu",
-                "description": "Mode de calcul non reconnu",
-                "uses_openmc": False
-            } 

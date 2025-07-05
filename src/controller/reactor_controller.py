@@ -56,7 +56,11 @@ class ReactorController:
     def get_axial_offset_data(self):
         """Get the axial offset and power data for the pilotage diagram"""
         return self.model.get_axial_offset_data()
-        
+    
+    def get_neutron_cycle_data(self):
+        """Get the neutron cycle data from the model"""
+        return self.model.get_neutron_cycle_data()
+    
     def get_preset_names(self):
         """Get list of available presets"""
         return self.model.get_preset_names()

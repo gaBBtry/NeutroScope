@@ -164,96 +164,19 @@ def test_presets(reactor):
     # Test applying non-existent preset
     assert not reactor.apply_preset("NonExistentPreset")
 
-# --- Tests for OpenMC Integration ---
-
-@patch('src.model.reactor_model.OpenMCModel')
-def test_calculate_k_effective_with_openmc_success(mock_openmc_model, reactor):
-    """
-    Verify that calculate_k_effective calls the OpenMC model and uses its result.
-    """
-    # Configure the mock instance returned by OpenMCModel(params)
-    mock_runner = MagicMock()
-    mock_runner.run_simulation.return_value = 1.025
-    mock_openmc_model.return_value = mock_runner
-
-    # Reset state before test
-    reactor.k_effective = 1.0
-    reactor.calculate_reactivity()
-    initial_reactivity = reactor.reactivity
-
-    # Call the method that should trigger the OpenMC calculation
-    reactor.calculate_k_effective()
-
-    # Verify that OpenMCModel was instantiated with the correct parameters
-    mock_openmc_model.assert_called_once()
-    params = mock_openmc_model.call_args[0][0]
-    assert params['boron_concentration'] == reactor.boron_concentration
-    assert params['moderator_temperature'] == reactor.moderator_temperature + 273.15 # Check Kelvin conversion
-
-    # Verify that the simulation was run
-    mock_runner.run_simulation.assert_called_once()
-
-    # Verify that the reactor's k_effective is updated with the OpenMC result
-    assert reactor.k_effective == 1.025
-    # Verify that reactivity is also updated
-    reactor.calculate_reactivity()
-    assert reactor.reactivity != initial_reactivity
-    assert reactor.reactivity == pytest.approx((1.025 - 1) / 1.025)
-
-@patch('src.model.reactor_model.OpenMCModel')
-def test_calculate_k_effective_with_openmc_failure_fallback(mock_openmc_model, reactor):
-    """
-    Verify that the model falls back to the analytical calculation if OpenMC fails.
-    """
-    # 1. First, determine the expected analytical k_effective using the model itself.
-    #    We patch OpenMCModel to ensure the analytical path is taken.
-    with patch('src.model.reactor_model.OpenMCModel') as analytical_path_mock:
-        analytical_path_mock.return_value.run_simulation.side_effect = Exception("Force analytical")
-        
-        # Create a fresh, clean reactor model to get an unpolluted analytical value
-        temp_reactor = ReactorModel()
-        expected_analytical_k_eff = temp_reactor.k_effective
-
-    # 2. Now, test the actual reactor fixture.
-    #    Configure its OpenMC mock to fail.
-    mock_runner = MagicMock()
-    mock_runner.run_simulation.side_effect = Exception("OpenMC simulation failed")
-    mock_openmc_model.return_value = mock_runner
-
-    # Call the method that will attempt the OpenMC calculation and should fallback
-    reactor.calculate_k_effective()
-
-    # Verify that the reactor's k_effective is updated with the expected analytical result
-    assert reactor.k_effective == pytest.approx(expected_analytical_k_eff)
-
-def test_get_params_for_openmc(reactor):
-    """
-    Test the helper function that prepares parameters for OpenMC.
-    """
-    reactor.moderator_temperature = 300 # °C
-    reactor.fuel_temperature = 600 # °C
-    params = reactor._get_params_for_openmc()
-    
-    assert params["moderator_temperature"] == 300 + 273.15
-    assert params["fuel_temperature"] == 600 + 273.15
-    assert "control_rod_position" in params
-
 def test_update_dependencies_after_calculation(reactor):
     """
     Test that changing a parameter and recalculating updates all dependent values.
     """
-    with patch.object(reactor, 'calculate_k_effective') as mock_calc_k:
-        # Set a new k_effective value to be returned by the mocked calculation
-        mock_calc_k.side_effect = lambda: setattr(reactor, 'k_effective', 1.01)
+    initial_reactivity = reactor.reactivity
+    initial_doubling_time = reactor.doubling_time
+    initial_k_effective = reactor.k_effective
 
-        initial_reactivity = reactor.reactivity
-        initial_doubling_time = reactor.doubling_time
+    # Update a parameter, which should trigger a full recalculation
+    reactor.update_control_rod_position(50)
 
-        # Update a parameter, which should trigger a full recalculation
-        reactor.update_control_rod_position(50)
-
-        assert mock_calc_k.called
-        assert reactor.k_effective == 1.01
-        assert reactor.reactivity != initial_reactivity
-        assert reactor.doubling_time != initial_doubling_time
-        assert reactor.reactivity == pytest.approx(0.0099, abs=1e-4) 
+    assert reactor.k_effective != initial_k_effective
+    assert reactor.reactivity != initial_reactivity
+    assert reactor.doubling_time != initial_doubling_time
+    # A basic check to ensure reactivity is calculated from the new k-effective
+    assert reactor.reactivity == pytest.approx((reactor.k_effective - 1) / reactor.k_effective) 

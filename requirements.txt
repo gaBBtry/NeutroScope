@@ -1,12 +1,10 @@
 # Core dependencies for the NeutroScope application
-numpy
-matplotlib
 PyQt6
+numpy
 
 # Testing dependencies
 pytest
 pytest-qt
-
-# OpenMC must be installed in the user's device.
-# Update the path below to the location of your local OpenMC source
--e path/to/openmc
+pytest-cov
+matplotlib
+scipy

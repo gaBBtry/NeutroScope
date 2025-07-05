@@ -1,67 +1,68 @@
-# NeutroScope
+# NeutroScope - Simulation Pédagogique du Cycle Neutronique
 
-Application pédagogique interactive pour la neutronique des Réacteurs à Eau Pressurisée (REP).
+NeutroScope est un logiciel de simulation interactif conçu comme un outil pédagogique pour l'apprentissage des principes de la physique des réacteurs nucléaires. Il se concentre sur la visualisation du cycle de vie des neutrons et l'impact des paramètres de pilotage sur la réactivité du cœur.
 
 ## Fonctionnalités
 
-- **Deux modes de calcul** :
-  - ⚡ **Mode rapide** : Calculs analytiques instantanés
-  - 🎯 **Mode précis** : Simulation Monte Carlo avec OpenMC
-- **Visualisations interactives** : flux axial, quatre facteurs, bilan neutronique
-- **Contrôles réalistes** : barres, bore, température, enrichissement
-- **Interface pédagogique** avec préréglages et informations contextuelles
+-   **Visualisation du cycle neutronique** : Suivez une population de neutrons à travers les six facteurs du cycle pour comprendre comment la criticité est atteinte.
+-   **Contrôles interactifs** : Manipulez les barres de contrôle, la concentration en bore et les températures pour voir leur effet en temps réel.
+-   **Données en temps réel** : Observez `k_eff`, la réactivité (en pcm) et la valeur de chaque facteur du cycle.
+-   **Presets de scénarios** : Chargez des configurations de réacteur prédéfinies (début/fin de cycle, etc.).
+-   **Interface Pédagogique** : Des info-bulles détaillées expliquent chaque paramètre et concept physique.
 
-## Installation
+## Installation et Lancement
 
-1. **Cloner le dépôt avec OpenMC**
-   ```bash
-   git clone --recursive https://github.com/gaBBtry/NeutroScope.git
-   cd NeutroScope
-   ```
-   
-   > Si déjà cloné sans `--recursive` : `git submodule update --init --recursive`
+### Prérequis
 
-2. **Environnement virtuel**
-   ```bash
-   python -m venv .venv
-   source .venv/bin/activate  # Linux/Mac
-   # ou .venv\Scripts\activate  # Windows
-   ```
+-   Python 3.8+
+-   PyQt6
 
-3. **Dépendances**
-   ```bash
-   pip install -r requirements.txt
-   ```
+### Installation
 
-4. **Données OpenMC (optionnel)**
-   
-   Pour le mode précis, placer les données ENDF/B-VII.1 dans :
-   ```
-   data/endfb-vii.1-hdf5/cross_sections.xml
-   ```
+1.  **Clonez le dépôt**
 
-## Utilisation
+    ```bash
+    git clone https://github.com/votre-utilisateur/NeutroScope.git
+    cd NeutroScope
+    ```
+
+2.  **Créez un environnement virtuel**
+
+    ```bash
+    python -m venv venv
+    source venv/bin/activate  # Sur Windows: venv\Scripts\activate
+    ```
+
+3.  **Installez les dépendances**
+
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+### Lancement
 
 ```bash
 python main.py
 ```
 
-Au démarrage, choisissez votre mode :
-- **Mode rapide** : Idéal pour l'apprentissage, aucune donnée requise
-- **Mode précis** : Simulation haute fidélité, nécessite les données OpenMC
+## Structure du Projet
 
-## Configuration
+-   `main.py` : Point d'entrée de l'application.
+-   `config.json` : Fichier de configuration pour les paramètres physiques et les presets.
+-   `src/` : Code source de l'application.
+    -   `model/` : Logique de la simulation physique (`reactor_model.py`).
+    -   `controller/` : Pont entre le modèle et l'interface (`reactor_controller.py`).
+    -   `gui/` : Tous les composants de l'interface utilisateur (fenêtre principale, widgets, graphiques).
+-   `tests/` : Tests unitaires et d'intégration.
+-   `docs/` : Documentation du projet.
+-   `data/` : Données (si nécessaire pour de futures extensions).
 
-Les modes sont configurables dans `config.json`. L'application détecte automatiquement les données disponibles.
+## Comment Contribuer
 
-## OpenMC
+Les contributions sont les bienvenues ! Veuillez suivre les étapes suivantes :
 
-Le code Monte Carlo OpenMC est inclus comme submodule pour le mode précis.
-- Dossier : `openmc/`
-- Version utilisée : celle pointée par le submodule
-- Pour mettre à jour : `cd openmc && git pull`
-
-## Documentation
-
-- [Guide des modes de calcul](MODES_CALCUL.md) : Détails sur les deux modes
-- Interface : Panneau de contrôle (gauche), visualisations (centre), aide (touche `I`) 
+1.  Forkez le projet.
+2.  Créez une branche pour votre fonctionnalité (`git checkout -b feature/NouvelleFonctionnalite`).
+3.  Commitez vos changements (`git commit -m 'Ajout de la fonctionnalité X'`).
+4.  Poussez vers la branche (`git push origin feature/NouvelleFonctionnalite`).
+5.  Ouvrez une Pull Request.

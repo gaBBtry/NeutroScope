@@ -1,29 +1,7 @@
 {
-    "openmc": {
-        "data_path": "data/endfb-vii.1-hdf5",
-        "cross_sections_file": "cross_sections.xml",
-        "default_mode": "auto"
-    },
-    "calculation_modes": {
-        "fast": {
-            "name": "Mode rapide (analytique)",
-            "description": "Calculs rapides basés sur un modèle analytique simplifié. Idéal pour l'apprentissage et l'exploration des concepts de base de la neutronique.",
-            "use_openmc": false
-        },
-        "precise": {
-            "name": "Mode précis (OpenMC)",
-            "description": "Calculs précis utilisant la simulation Monte Carlo avec OpenMC. Nécessite les données nucléaires mais offre une grande précision.",
-            "use_openmc": true
-        },
-        "auto": {
-            "name": "Mode automatique",
-            "description": "Utilise OpenMC si disponible, sinon utilise le modèle analytique.",
-            "use_openmc": "auto"
-        }
-    },
     "physical_constants": {
         "DELAYED_NEUTRON_FRACTION": 0.0065,
-        "PROMPT_NEUTRON_LIFETIME": 2e-05
+        "PROMPT_NEUTRON_LIFETIME": 2.0e-5
     },
     "four_factors": {
         "eta": {
@@ -37,11 +15,10 @@
             "DOPPLER_COEFF": 0.008
         },
         "f": {
-            "BASE": 0.71,
             "BASE_ABS_RATIO": 0.408,
             "REF_MOD_TEMP_C": 300.0,
             "CONTROL_ROD_WORTH": 0.26,
-            "BORON_WORTH_PER_PPM": 2.8e-05,
+            "BORON_WORTH_PER_PPM": 2.8e-5,
             "MOD_TEMP_ABS_COEFF": 0.003
         }
     },
@@ -50,7 +27,7 @@
         "CORE_DIAMETER_M": 3.0,
         "THERMAL_DIFFUSION_AREA_M2": 0.0064,
         "FAST_DIFFUSION_AREA_M2": 0.0097,
-        "MODERATOR_DENSITY_COEFF": 0.0008
+        "MODERATOR_DENSITY_COEFF": 8e-4
     },
     "thermal_hydraulics": {
         "POWER_TO_FUEL_TEMP_COEFF": 3.0
@@ -60,35 +37,39 @@
     },
     "presets": {
         "Démarrage": {
-            "control_rod_position": 50.0,
-            "boron_concentration": 1500.0,
-            "moderator_temperature": 290.0,
-            "fuel_enrichment": 3.5
+            "control_rod_position": 25.0,
+            "boron_concentration": 1200.0,
+            "moderator_temperature": 280.0,
+            "fuel_enrichment": 3.5,
+            "power_level": 10.0
         },
         "Critique à puissance nominale": {
-            "control_rod_position": 10.0,
-            "boron_concentration": 1240.0,
+            "control_rod_position": 80.0,
+            "boron_concentration": 800.0,
             "moderator_temperature": 310.0,
             "fuel_enrichment": 3.5,
             "power_level": 100.0
         },
         "Fin de cycle": {
-            "control_rod_position": 5.0,
-            "boron_concentration": 10.0,
-            "moderator_temperature": 310.0,
-            "fuel_enrichment": 3.5
+            "control_rod_position": 95.0,
+            "boron_concentration": 50.0,
+            "moderator_temperature": 315.0,
+            "fuel_enrichment": 3.5,
+            "power_level": 100.0
         },
         "Surcritique": {
-            "control_rod_position": 0.0,
-            "boron_concentration": 400.0,
-            "moderator_temperature": 305.0,
-            "fuel_enrichment": 4.0
+            "control_rod_position": 70.0,
+            "boron_concentration": 700.0,
+            "moderator_temperature": 310.0,
+            "fuel_enrichment": 3.5,
+            "power_level": 100.0
         },
         "Sous-critique": {
-            "control_rod_position": 80.0,
-            "boron_concentration": 1200.0,
+            "control_rod_position": 90.0,
+            "boron_concentration": 900.0,
             "moderator_temperature": 310.0,
-            "fuel_enrichment": 3.0
+            "fuel_enrichment": 3.5,
+            "power_level": 100.0
         }
     }
 }
