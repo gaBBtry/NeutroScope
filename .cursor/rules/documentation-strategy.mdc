@@ -1,0 +1,36 @@
+---
+alwaysApply: true
+---
+### **Quand une décision d'architecture est prise...**
+*(Ex: Choix d'une nouvelle bibliothèque, modification d'un format de données)*
+
+-   **Action 1** : Rédiger un nouvel **ADR (Architecture Decision Record)** dans `docs/adr/` pour documenter le "pourquoi" de la décision.
+-   **Action 2** : Mettre à jour les documents `architecture.md` et `tech.md` pour refléter la nouvelle réalité technique.
+
+---
+
+### **Quand le plan de développement change...**
+*(Ex: Une tâche du `PLAN.md` est réévaluée, une nouvelle phase est ajoutée)*
+
+-   **Action 1** : Mettre à jour le `PLAN.md` pour que le calendrier et les tâches restent pertinents.
+-   **Action 2** : Évaluer si ce changement impacte l'analyse `SWOT.md` (ex: introduit un nouveau risque ou une nouvelle opportunité) et le mettre à jour si nécessaire.
+
+---
+
+### **Quand une nouvelle version est prête à être publiée...**
+
+-   **Action 1** : Suivre rigoureusement la checklist définie dans `docs/RELEASE_PROCESS.md`.
+-   **Action 2** : S'assurer que le `CHANGELOG.md` est finalisé pour la version.
+
+---
+
+### **À la fin de chaque session de travail significative...**
+
+-   **Action 1** : Mettre à jour le fichier `context.md` du Memory Bank. C'est l'action la plus cruciale pour assurer la continuité et une reprise de travail efficace. Le contexte doit résumer :
+    -   Ce qui a été accompli.
+    -   Les points de blocage éventuels.
+    -   Les prochaines étapes claires.
+
+## 3. Revue de Cohérence
+
+À la fin de chaque phase majeure définie dans le `PLAN.md`, une revue de cohérence globale de toute la documentation doit être effectuée pour s'assurer que tous les documents sont alignés.

@@ -1,0 +1,4 @@
+---
+alwaysApply: true
+---
+For python development, always use the binaries in the .venv/ folder.
