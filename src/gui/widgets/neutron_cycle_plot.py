@@ -13,7 +13,7 @@ from ..widgets.info_manager import InfoManager
 class NeutronCyclePlot(QWidget):
     def __init__(self, parent=None, info_manager: Optional[InfoManager] = None):
         super().__init__(parent)
-        self.setMinimumSize(700, 600)
+        self.setMinimumSize(900, 750)  # Increased minimum size to accommodate larger text
         self.data = None
         self.info_manager = info_manager
         self._box_positions = {}
@@ -73,8 +73,8 @@ class NeutronCyclePlot(QWidget):
         self._box_positions = {}
         self._factor_info = {}
 
-        box_width, box_height = 140, 60
-        margin = 50
+        box_width, box_height = 200, 90  # Further increased box size
+        margin = 70  # Increased margin
 
         center_x = self.width() / 2
         center_y = self.height() / 2
@@ -85,12 +85,36 @@ class NeutronCyclePlot(QWidget):
         num_boxes = 6
         
         box_defs = [
-            {'key': 'start', 'title': 'Fast Neutrons (Gen N)', 'desc': "Population de neutrons rapides issus de la fission de la génération précédente."},
-            {'key': 'after_P_AFR', 'title': 'After Fast Stage', 'desc': "Neutrons rapides restants après la fission rapide et les fuites rapides."},
-            {'key': 'after_p', 'title': 'After Resonance Escape', 'desc': "Neutrons ayant échappé à la capture par résonance pendant leur ralentissement."},
-            {'key': 'after_P_AFT', 'title': 'Thermal Neutrons', 'desc': "Neutrons devenus thermiques et n'ayant pas fui le réacteur."},
-            {'key': 'after_f', 'title': 'Absorbed in Fuel', 'desc': "Neutrons thermiques absorbés par le combustible (U-235, U-238, etc.)."},
-            {'key': 'final', 'title': 'Fast Neutrons (Gen N+1)', 'desc': "Nouveaux neutrons rapides produits par la fission thermique."},
+            {
+                'key': 'start', 
+                'title': 'Neutrons Rapides\n(Génération N)', 
+                'desc': "Population de neutrons rapides issus de la fission de la génération précédente.\n\nCes neutrons ont une énergie élevée (environ 2 MeV) et doivent être ralentis pour devenir efficaces dans les réactions de fission thermique."
+            },
+            {
+                'key': 'after_P_AFR', 
+                'title': 'Après Étape Rapide\n(ε × P_AFR)', 
+                'desc': "Neutrons rapides restants après la fission rapide et les fuites rapides.\n\nLa fission rapide (ε) augmente le nombre de neutrons, tandis que les fuites rapides (P_AFR) en font perdre une partie."
+            },
+            {
+                'key': 'after_p', 
+                'title': 'Après Échappement\naux Résonances (p)', 
+                'desc': "Neutrons ayant échappé à la capture par résonance pendant leur ralentissement.\n\nLe facteur antitrappe (p) représente la probabilité d'éviter l'absorption par l'U-238 lors du ralentissement."
+            },
+            {
+                'key': 'after_P_AFT', 
+                'title': 'Neutrons Thermiques\n(P_AFT)', 
+                'desc': "Neutrons devenus thermiques et n'ayant pas fui le réacteur.\n\nCes neutrons ont une énergie faible (0,025 eV) et sont très efficaces pour provoquer la fission de l'U-235."
+            },
+            {
+                'key': 'after_f', 
+                'title': 'Absorbés dans\nle Combustible (f)', 
+                'desc': "Neutrons thermiques absorbés par le combustible (U-235, U-238, etc.).\n\nLe facteur d'utilisation thermique (f) dépend de la concentration en bore et de la position des barres de contrôle."
+            },
+            {
+                'key': 'final', 
+                'title': 'Nouveaux Neutrons\n(Génération N+1)', 
+                'desc': "Nouveaux neutrons rapides produits par la fission thermique.\n\nLe facteur de reproduction (η) détermine combien de neutrons sont produits par neutron absorbé dans le combustible."
+            },
         ]
         
         for i, box_def in enumerate(box_defs):
@@ -105,35 +129,85 @@ class NeutronCyclePlot(QWidget):
         for box_def in box_defs:
             pop_value = pops.get(box_def['key'], 0)
             self._draw_box(painter, self._box_positions[box_def['key']], box_def['title'], f"{pop_value:.0f}")
-            self._factor_info[f"box_{box_def['key']}"] = f"{box_def['title']}\n\nPopulation: {pop_value:.0f}\n\n{box_def['desc']}"
+            
+            # Enhanced hover information
+            enhanced_info = (
+                f"{box_def['title'].replace(chr(10), ' ')}\n\n"
+                f"Population actuelle : {pop_value:.0f} neutrons\n"
+                f"Pourcentage du total initial : {(pop_value/pops.get('start', 1)*100):.1f}%\n\n"
+                f"{box_def['desc']}"
+            )
+            self._factor_info[f"box_{box_def['key']}"] = enhanced_info
+
+        # Enhanced factor descriptions
+        factor_descriptions = {
+            "epsilon_P_AFR": f"Facteur de fission rapide (ε = {factors.get('epsilon', 0):.4f}) et Probabilité de non-fuite rapide (P_AFR = {factors.get('P_AFR', 0):.4f})\n\nLa fission rapide augmente le nombre de neutrons grâce aux fissions induites par les neutrons rapides dans l'U-238. Les fuites rapides représentent les neutrons qui s'échappent du cœur avant d'être ralentis.",
+            "p": f"Facteur antitrappe (p = {factors.get('p', 0):.4f})\n\nReprésente la probabilité qu'un neutron évite la capture par résonance dans l'U-238 pendant son ralentissement. Dépend fortement de la température du combustible (effet Doppler).",
+            "P_AFT": f"Probabilité de non-fuite thermique (P_AFT = {factors.get('P_AFT', 0):.4f})\n\nProbabilité qu'un neutron thermique ne s'échappe pas du cœur. Dépend de la géométrie du réacteur et de la section efficace d'absorption.",
+            "f": f"Facteur d'utilisation thermique (f = {factors.get('f', 0):.4f})\n\nRapport des neutrons thermiques absorbés dans le combustible sur le total des neutrons thermiques absorbés. Diminue avec l'augmentation de la concentration en bore ou l'insertion des barres de contrôle.",
+            "eta": f"Facteur de reproduction (η = {factors.get('eta', 0):.4f})\n\nNombre moyen de neutrons de fission produits par neutron thermique absorbé dans le combustible. Dépend de l'enrichissement en U-235 et du taux de combustion.",
+            "feedback": "Cycle de vie du neutron\n\nCe diagramme montre le cycle complet d'une génération de neutrons. Pour maintenir la criticité (k_eff = 1), chaque génération doit produire exactement le même nombre de neutrons que la précédente."
+        }
 
         factor_mult = factors.get('epsilon', 1) * factors.get('P_AFR', 1)
-        self._draw_arrow_and_factor(painter, self._box_positions['start'], self._box_positions['after_P_AFR'], f"ε × P_AFR ≈ {factor_mult:.4f}", "epsilon_P_AFR", "Facteur de fission rapide (ε) et Prob. de non-fuite rapide (P_AFR)")
-        self._draw_arrow_and_factor(painter, self._box_positions['after_P_AFR'], self._box_positions['after_p'], f"p ≈ {factors.get('p', 0):.4f}", "p", "Facteur antitrappe (p)")
-        self._draw_arrow_and_factor(painter, self._box_positions['after_p'], self._box_positions['after_P_AFT'], f"P_AFT ≈ {factors.get('P_AFT', 0):.4f}", "P_AFT", "Prob. de non-fuite thermique (P_AFT)")
-        self._draw_arrow_and_factor(painter, self._box_positions['after_P_AFT'], self._box_positions['after_f'], f"f ≈ {factors.get('f', 0):.4f}", "f", "Facteur d'utilisation thermique (f)")
-        self._draw_arrow_and_factor(painter, self._box_positions['after_f'], self._box_positions['final'], f"η ≈ {factors.get('eta', 0):.4f}", "eta", "Facteur de reproduction (η)")
-        self._draw_arrow_and_factor(painter, self._box_positions['final'], self._box_positions['start'], "", "feedback", "Cycle de vie du neutron", is_feedback=True)
+        self._draw_arrow_and_factor(painter, self._box_positions['start'], self._box_positions['after_P_AFR'], f"ε × P_AFR ≈ {factor_mult:.4f}", "epsilon_P_AFR", factor_descriptions["epsilon_P_AFR"])
+        self._draw_arrow_and_factor(painter, self._box_positions['after_P_AFR'], self._box_positions['after_p'], f"p ≈ {factors.get('p', 0):.4f}", "p", factor_descriptions["p"])
+        self._draw_arrow_and_factor(painter, self._box_positions['after_p'], self._box_positions['after_P_AFT'], f"P_AFT ≈ {factors.get('P_AFT', 0):.4f}", "P_AFT", factor_descriptions["P_AFT"])
+        self._draw_arrow_and_factor(painter, self._box_positions['after_P_AFT'], self._box_positions['after_f'], f"f ≈ {factors.get('f', 0):.4f}", "f", factor_descriptions["f"])
+        self._draw_arrow_and_factor(painter, self._box_positions['after_f'], self._box_positions['final'], f"η ≈ {factors.get('eta', 0):.4f}", "eta", factor_descriptions["eta"])
+        self._draw_arrow_and_factor(painter, self._box_positions['final'], self._box_positions['start'], "", "feedback", factor_descriptions["feedback"], is_feedback=True)
 
+        # Enhanced center text with more information
         painter.save()
         painter.setPen(QColor("#1E8449"))
-        painter.setFont(QFont("Arial", 16, QFont.Weight.Bold))
-        text_rect = QRectF(center_x - 100, center_y - 25, 200, 50)
-        painter.drawText(text_rect, Qt.AlignmentFlag.AlignCenter, f"k_eff = {factors.get('k_eff', 0):.5f}")
+        painter.setFont(QFont("Arial", 24, QFont.Weight.Bold))  # Much larger font size
+        k_eff = factors.get('k_eff', 0)
+        
+        # Main k_eff value
+        main_text_rect = QRectF(center_x - 150, center_y - 50, 300, 40)
+        painter.drawText(main_text_rect, Qt.AlignmentFlag.AlignCenter, f"k_eff = {k_eff:.5f}")
+        
+        # Status indicator
+        painter.setFont(QFont("Arial", 16, QFont.Weight.Bold))  # Larger status text
+        status_color = QColor("#1E8449")  # Green for critical
+        status_text = "CRITIQUE"
+        
+        if k_eff > 1.001:
+            status_color = QColor("#E74C3C")  # Red for supercritical
+            status_text = "SURCRITIQUE"
+        elif k_eff < 0.999:
+            status_color = QColor("#F39C12")  # Orange for subcritical
+            status_text = "SOUS-CRITIQUE"
+            
+        painter.setPen(status_color)
+        status_rect = QRectF(center_x - 100, center_y - 5, 200, 25)
+        painter.drawText(status_rect, Qt.AlignmentFlag.AlignCenter, status_text)
+        
+        # Add formula reminder
+        painter.setPen(QColor("#7F8C8D"))
+        painter.setFont(QFont("Arial", 12))  # Larger formula text
+        formula_rect = QRectF(center_x - 140, center_y + 25, 280, 20)
+        painter.drawText(formula_rect, Qt.AlignmentFlag.AlignCenter, "k∞ × P_NL = η × ε × p × f × P_AFR × P_AFT")
+        
         painter.restore()
 
     def _draw_box(self, painter, rect, title, value):
         painter.save()
-        painter.setPen(QPen(QColor("#007BFF"), 2))
+        painter.setPen(QPen(QColor("#007BFF"), 3))  # Thicker border
         painter.setBrush(QColor("#E7F3FF"))
-        painter.drawRoundedRect(rect, 10, 10)
+        painter.drawRoundedRect(rect, 12, 12)  # Larger border radius
         
         painter.setPen(QColor("#333"))
-        painter.setFont(QFont("Arial", 9, QFont.Weight.Bold))
-        painter.drawText(rect.adjusted(5, 5, -5, -5), Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop, title)
+        painter.setFont(QFont("Arial", 14, QFont.Weight.Bold))  # Much larger title font
         
-        painter.setFont(QFont("Arial", 12, QFont.Weight.Bold))
-        painter.drawText(rect.adjusted(5, 5, -5, -5), Qt.AlignmentFlag.AlignCenter, value)
+        # Draw title with word wrapping
+        title_rect = rect.adjusted(8, 8, -8, -35)  # More padding
+        painter.drawText(title_rect, Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop | Qt.TextFlag.TextWordWrap, title)
+        
+        # Draw value
+        painter.setFont(QFont("Arial", 18, QFont.Weight.Bold))  # Much larger value font
+        value_rect = rect.adjusted(8, 35, -8, -8)  # More padding
+        painter.drawText(value_rect, Qt.AlignmentFlag.AlignCenter, value)
         painter.restore()
 
     def _draw_arrow_and_factor(self, painter, start_rect, end_rect, text, key, desc, is_feedback=False):
@@ -151,34 +225,35 @@ class NeutronCyclePlot(QWidget):
         
         if not is_feedback:
             painter.setPen(QColor("#D6336C"))
-            painter.setFont(QFont("Arial", 10, QFont.Weight.Bold))
+            painter.setFont(QFont("Arial", 14, QFont.Weight.Bold))  # Much larger factor font
             
             fm = painter.fontMetrics()
             text_rect = QRectF(fm.boundingRect(text))
             mid_point = (p1 + p2) / 2
             
-            offset_distance = 25
+            offset_distance = 40  # Increased offset to prevent overlap
             perp_vec = QPointF(-line_vec.y(), line_vec.x()) / line_len * offset_distance
             
             text_rect.moveCenter(mid_point + perp_vec)
             painter.drawText(text_rect, Qt.AlignmentFlag.AlignCenter, text)
             
-            # Store info for hover
-            self._factor_info[f"factor_{key}"] = {"rect": text_rect.adjusted(-5, -5, 5, 5), "text": f"{desc}\n\nValeur: {text}"}
+            # Store info for hover with enhanced descriptions
+            self._factor_info[f"factor_{key}"] = {"rect": text_rect.adjusted(-15, -15, 15, 15), "text": f"{desc}\n\nValeur actuelle : {text}"}
 
-        pen = QPen(QColor("#555"), 2, Qt.PenStyle.SolidLine if not is_feedback else Qt.PenStyle.DashLine)
+        pen = QPen(QColor("#555"), 4, Qt.PenStyle.SolidLine if not is_feedback else Qt.PenStyle.DashLine)  # Thicker lines
         pen.setCapStyle(Qt.PenCapStyle.RoundCap)
         painter.setPen(pen)
         painter.setBrush(Qt.BrushStyle.NoBrush)
         painter.drawLine(p1, p2)
 
+        # Larger arrow heads
         angle = math.atan2(line_vec.y(), line_vec.x()) * 180.0 / math.pi
         
         transform = QTransform()
         transform.translate(p2.x(), p2.y())
         transform.rotate(angle)
         
-        arrow_size = 10
+        arrow_size = 16  # Much larger arrows
         arrow_head = QPolygonF([
             QPointF(0, 0),
             QPointF(-arrow_size, -arrow_size / 2.0),
