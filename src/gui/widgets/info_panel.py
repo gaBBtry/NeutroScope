@@ -5,7 +5,7 @@ from PyQt6.QtWidgets import (
     QFrame, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
     QSizePolicy, QScrollArea, QTextEdit
 )
-from PyQt6.QtCore import Qt, pyqtSignal, QTimer
+from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QFont
 
 
@@ -24,11 +24,6 @@ class InfoPanel(QFrame):
         
         # State management
         self._current_text = ""
-        
-        # Animation timer for smooth updates
-        self._update_timer = QTimer()
-        self._update_timer.setSingleShot(True)
-        self._update_timer.timeout.connect(self._delayed_update)
         
         # Always visible
         self.setVisible(True)
@@ -116,19 +111,18 @@ class InfoPanel(QFrame):
         
     def update_info(self, text: str):
         """
-        Update the information text with debouncing for stability.
+        Update the information text immediately for fluid real-time updates.
         
         Args:
             text: The new information text to display
         """
         self._current_text = text.strip()
         
-        # Use timer to debounce rapid updates
-        self._update_timer.stop()
-        self._update_timer.start(50)  # 50ms delay
+        # Update immediately for fluid experience
+        self._update_content()
         
-    def _delayed_update(self):
-        """Perform the actual update after debouncing."""
+    def _update_content(self):
+        """Perform the actual content update."""
         if self._current_text:
             # Format the text with basic HTML for better presentation
             formatted_text = self._format_info_text(self._current_text)
@@ -136,7 +130,7 @@ class InfoPanel(QFrame):
         else:
             # Clear content
             self._set_default_content()
-            
+        
     def _format_info_text(self, text: str) -> str:
         """
         Format plain text into basic HTML for better presentation.
