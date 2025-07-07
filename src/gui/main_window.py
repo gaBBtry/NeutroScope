@@ -92,6 +92,9 @@ class MainWindow(QMainWindow):
         # Create the new centralized info management system
         self.info_manager = InfoManager()
         
+        # Track the info dialog state for toggling
+        self.info_dialog = None
+        
         # Create info panel and buttons for left side
         self.info_panel = InfoPanel()
         self.info_button = InfoButton()
@@ -236,14 +239,34 @@ class MainWindow(QMainWindow):
         return group_box
 
     def _show_info_dialog(self):
-        """Show a dialog with the detailed information of the last hovered item."""
+        """Toggle the info dialog - show if closed, close if open."""
+        # If dialog is open, close it
+        if self.info_dialog and self.info_dialog.isVisible():
+            self.info_dialog.close()
+            self.info_dialog = None
+            return
+            
+        # If dialog is closed or doesn't exist, open it
         current_html = self.info_panel.get_current_info_html()
         
-        InfoDialog.show_info(
+        if not current_html:
+            current_html = "<p><i>Aucune information à afficher. Survolez un élément pour obtenir des détails.</i></p>"
+        
+        self.info_dialog = InfoDialog(
             "Informations Détaillées",
-            current_html if current_html else "<p><i>Aucune information à afficher. Survolez un élément pour obtenir des détails.</i></p>",
+            current_html,
             self
         )
+        
+        # Connect close event to cleanup
+        self.info_dialog.finished.connect(self._on_info_dialog_closed)
+        
+        # Show the dialog non-modal so user can interact with the main window
+        self.info_dialog.show()
+    
+    def _on_info_dialog_closed(self):
+        """Clean up when info dialog is closed."""
+        self.info_dialog = None
     
     def on_preset_changed(self, preset_name):
         """Handle preset change from the combobox"""

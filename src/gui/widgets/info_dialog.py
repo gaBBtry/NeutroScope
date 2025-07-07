@@ -19,7 +19,7 @@ class InfoDialog(QDialog):
         
         self.setWindowTitle(title)
         self.setMinimumSize(500, 400)
-        self.setModal(True)
+        self.setModal(False)  # Allow interaction with main window
         
         # Main layout
         layout = QVBoxLayout(self)
@@ -42,6 +42,14 @@ class InfoDialog(QDialog):
         
         # Apply some styling
         self._setup_styles()
+        
+    def keyPressEvent(self, event):
+        """Handle key press events."""
+        # Close dialog on 'i' key or Escape
+        if event.key() == Qt.Key.Key_I or event.key() == Qt.Key.Key_Escape:
+            self.close()
+        else:
+            super().keyPressEvent(event)
         
     def _setup_styles(self):
         """Setup the visual styling for the dialog."""
