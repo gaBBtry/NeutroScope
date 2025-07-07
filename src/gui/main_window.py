@@ -7,6 +7,7 @@ from PyQt6.QtWidgets import (
     QPushButton
 )
 from PyQt6.QtCore import Qt, QEvent
+from PyQt6.QtGui import QKeySequence, QShortcut
 
 from src.controller.reactor_controller import ReactorController
 from src.gui.visualization import VisualizationPanel
@@ -118,9 +119,7 @@ class MainWindow(QMainWindow):
         left_layout.addWidget(self.info_panel)
         
         # Create visualization area (right side)
-        self.visualization_panel = VisualizationPanel(use_info_panel=False)
-        # Connect visualization panel to the info manager
-        self.visualization_panel.set_external_info_callback(self.info_manager)
+        self.visualization_panel = VisualizationPanel(info_manager=self.info_manager)
         
         # Add left and right containers to main layout
         main_layout.addWidget(left_container, 1)
@@ -133,6 +132,10 @@ class MainWindow(QMainWindow):
         
         # Initialize UI with a preset
         self.on_preset_changed("Démarrage")
+        
+        # Add QShortcut for 'i' key to show info dialog
+        self.info_shortcut = QShortcut(QKeySequence("i"), self)
+        self.info_shortcut.activated.connect(self._show_info_dialog)
     
     def connect_signals(self):
         """Connect all UI element signals to controller methods"""

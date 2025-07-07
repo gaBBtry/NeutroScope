@@ -3,16 +3,19 @@ Matplotlib canvas for plotting the pilotage diagram
 """
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
+from typing import Optional
+from ..widgets.info_manager import InfoManager
 
 
 class PilotageDiagramPlot(FigureCanvasQTAgg):
     """Matplotlib canvas for plotting the pilotage diagram"""
     
-    def __init__(self, parent=None, width=5, height=4, dpi=100):
+    def __init__(self, parent=None, width=5, height=4, dpi=100, info_manager: Optional[InfoManager] = None):
         self.fig = Figure(figsize=(width, height), dpi=dpi)
         self.axes = self.fig.add_subplot(111)
         super().__init__(self.fig)
         self.setParent(parent)
+        self.info_manager = info_manager
         
         self.axes.set_xlabel('Axial Offset (%)')
         self.axes.set_ylabel('Puissance du réacteur (%)')
@@ -92,10 +95,10 @@ class PilotageDiagramPlot(FigureCanvasQTAgg):
             f"Description : {general_explanation}"
         )
         
-        if hasattr(self.parent(), 'update_info_panel'):
-            self.parent().update_info_panel(info_text)
+        if self.info_manager:
+            self.info_manager.info_requested.emit(info_text)
 
     def on_axes_leave(self, event):
         """Handle mouse leaving the axes"""
-        if hasattr(self.parent(), 'update_info_panel'):
-            self.parent().update_info_panel("") 
+        if self.info_manager:
+            self.info_manager.info_cleared.emit() 

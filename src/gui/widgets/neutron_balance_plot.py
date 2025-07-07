@@ -4,16 +4,19 @@ Matplotlib canvas for plotting neutron balance
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
+from typing import Optional
+from ..widgets.info_manager import InfoManager
 
 
 class NeutronBalancePlot(FigureCanvasQTAgg):
     """Matplotlib canvas for plotting the neutron balance as a pie chart"""
     
-    def __init__(self, parent=None, width=5, height=4, dpi=100):
+    def __init__(self, parent=None, width=5, height=4, dpi=100, info_manager: Optional[InfoManager] = None):
         self.fig = Figure(figsize=(width, height), dpi=dpi)
         self.axes = self.fig.add_subplot(111)
         super().__init__(self.fig)
         self.setParent(parent)
+        self.info_manager = info_manager
         
         self.axes.set_title('Bilan Neutronique (Destin des Neutrons)')
         
@@ -70,8 +73,8 @@ class NeutronBalancePlot(FigureCanvasQTAgg):
         
     def on_axes_leave(self, event):
         """Handle mouse leaving the axes"""
-        if hasattr(self.parent(), 'update_info_panel'):
-            self.parent().update_info_panel("")
+        if self.info_manager:
+            self.info_manager.info_cleared.emit()
 
     def show_tooltip_in_panel(self, index):
         """Show tooltip information in the info panel"""
@@ -92,5 +95,5 @@ class NeutronBalancePlot(FigureCanvasQTAgg):
             
             full_info = f"Destin des Neutrons\n\n{info_text}\n\n{general_explanation}"
             
-            if hasattr(self.parent(), 'update_info_panel'):
-                self.parent().update_info_panel(full_info) 
+            if self.info_manager:
+                self.info_manager.info_requested.emit(full_info) 

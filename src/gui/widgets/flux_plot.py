@@ -4,16 +4,19 @@ Matplotlib canvas for plotting axial flux distribution
 import matplotlib
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
+from typing import Optional
+from ..widgets.info_manager import InfoManager
 
 
 class FluxDistributionPlot(FigureCanvasQTAgg):
     """Matplotlib canvas for plotting axial flux distribution"""
     
-    def __init__(self, parent=None, width=5, height=4, dpi=100):
+    def __init__(self, parent=None, width=5, height=4, dpi=100, info_manager: Optional[InfoManager] = None):
         self.fig = Figure(figsize=(width, height), dpi=dpi)
         self.axes = self.fig.add_subplot(111)
         super().__init__(self.fig)
         self.setParent(parent)
+        self.info_manager = info_manager
         
         # Initial empty plot - Vertical orientation
         self.line, = self.axes.plot([], [])
@@ -145,12 +148,11 @@ class FluxDistributionPlot(FigureCanvasQTAgg):
                 f"Observation : {specific_observation}{impact_barres}{recommandations}"
             )
             
-            # Emit a signal to update the info panel
-            if hasattr(self.parent(), 'update_info_panel'):
-                self.parent().update_info_panel(concise_info, detailed_info)
+            if self.info_manager:
+                self.info_manager.info_requested.emit(concise_info)
     
     def on_axes_leave(self, event):
         """Handle mouse leaving the axes"""
         self.tooltip_text = ""
-        if hasattr(self.parent(), 'update_info_panel'):
-            self.parent().update_info_panel("", "")  # Réinitialiser également les infos détaillées 
+        if self.info_manager:
+            self.info_manager.info_cleared.emit()
