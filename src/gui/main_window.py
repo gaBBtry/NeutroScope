@@ -239,19 +239,22 @@ class MainWindow(QMainWindow):
         return group_box
 
     def _show_info_dialog(self):
-        """Toggle the info dialog - show if closed, close if open."""
+        """Toggle the info dialog - show if closed, close if open. Only opens if there's content to show."""
         # If dialog is open, close it
         if self.info_dialog and self.info_dialog.isVisible():
             self.info_dialog.close()
             self.info_dialog = None
             return
             
-        # If dialog is closed or doesn't exist, open it
+        # Check if there's actual content to show
         current_html = self.info_panel.get_current_info_html()
+        current_text = self.info_panel.get_current_info_text()
         
-        if not current_html:
-            current_html = "<p><i>Aucune information à afficher. Survolez un élément pour obtenir des détails.</i></p>"
-        
+        # Don't open dialog if there's no meaningful content
+        if not current_text or not current_text.strip():
+            return
+            
+        # If dialog is closed or doesn't exist, open it with content
         self.info_dialog = InfoDialog(
             "Informations Détaillées",
             current_html,
