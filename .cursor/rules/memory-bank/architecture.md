@@ -44,8 +44,13 @@ NeutroScope/
 │
 ├── tests/                          # Tests unitaires et d'intégration
 ├── docs/                           # Documentation
+│   ├── adr/                        # Architecture Decision Records
+│   └── BUILD_WINDOWS.md            # Guide de build Windows complet
 ├── config.json                     # Configuration externe
-└── requirements.txt                # Dépendances Python
+├── requirements.txt                # Dépendances Python
+├── build_windows.py                # Script de build PyInstaller avancé
+├── build_windows.bat               # Script batch automatisé Windows
+└── INSTRUCTIONS_BUILD.txt          # Instructions rapides de build
 ```
 
 ### Flux de Données Principal (MVC)

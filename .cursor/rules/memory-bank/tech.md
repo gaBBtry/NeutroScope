@@ -30,6 +30,19 @@ This document outlines the technologies, tools, and practices used in the Neutro
 -   **Version Control**: **Git**
     -   All source code is managed in a Git repository.
 
+## Build and Deployment
+
+-   **Build Tool**: **PyInstaller**
+    -   Creates standalone Windows executables with all dependencies bundled.
+    -   Configuration optimized for PyQt6 applications with matplotlib integration.
+-   **Build Scripts**: 
+    -   `build_windows.bat`: Automated batch script for end users
+    -   `build_windows.py`: Python script with advanced error handling and validation
+-   **Deployment Method**: **OneDrive Enterprise Sharing**
+    -   Executable distributed via corporate OneDrive links
+    -   No installation required on target machines
+    -   Compatible with Windows 10/11 and Windows 8.1
+
 ## Project Structure
 
 -   The project follows a standard structure separating the model, view, and controller logic:

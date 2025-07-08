@@ -1,68 +1,67 @@
-# Context: Recent Improvements and Bug Fixes
+# Context: Build System and Deployment Setup
 
 ## Current Focus
-- Récemment terminé : Correction de la fonctionnalité de survol d'informations et amélioration du widget "Cycle neutronique"
+- Récemment terminé : Création d'un système complet de build Windows avec PyInstaller pour le partage via OneDrive
 
 ## Recent Changes
-- **Correction majeure du système InfoManager** : Le survol pour afficher les informations ne fonctionnait plus depuis le refactoring. Problème résolu en intégrant correctement l'InfoManager avec tous les widgets de visualisation.
-- **Amélioration massive du widget "Cycle neutronique"** : Textes agrandis significativement, traduction en français, et ajout d'informations détaillées pour une meilleure expérience éducative.
-- **Optimisation de l'affichage des informations** : Suppression du délai de 50ms pour un affichage en temps réel fluide.
-- **Amélioration de la touche 'i'** : Fonctionne maintenant comme un toggle et ne s'ouvre que s'il y a du contenu à afficher.
+- **Système de build Windows complet** : Création de scripts automatisés pour générer un exécutable Windows autonome avec PyInstaller
+- **Résolution problème PyInstaller** : Correction de l'erreur "ModuleNotFoundError: No module named 'src.controller'" via les options `--collect-submodules=src` et `--paths=src`
+- **Scripts de build utilisateur-friendly** : `build_windows.bat` pour automatisation complète et `build_windows.py` pour contrôle avancé
+- **Documentation de déploiement** : Guide complet dans `docs/BUILD_WINDOWS.md` et instructions rapides dans `INSTRUCTIONS_BUILD.txt`
+- **Optimisations exécutable** : Exclusion de modules inutiles (tkinter, unittest) pour réduire la taille de l'exécutable
 
 ## Current Status
 
-Le projet est maintenant dans un état très stable avec une interface utilisateur entièrement fonctionnelle.
+Le projet est maintenant prêt pour le déploiement avec un système de build Windows automatisé et un exécutable fonctionnel pour le partage OneDrive.
 
 ### Key Accomplishments Récents
 
-#### 1. **Correction du Système InfoManager**
-- **Problème** : Le survol ne fonctionnait plus sur les widgets de visualisation depuis le refactoring
-- **Solution** : Intégration complète de l'InfoManager avec tous les widgets matplotlib et QPainter
-- **Widgets corrigés** : 
-  - `FluxDistributionPlot` - Affichage d'informations détaillées sur la distribution axiale
-  - `FourFactorsPlot` - Informations contextuelles sur chaque facteur
-  - `NeutronBalancePlot` - Explication du bilan neutronique
-  - `PilotageDiagramPlot` - Analyse du point de fonctionnement
-  - `NeutronCyclePlot` - Informations complètes sur le cycle de vie des neutrons
+#### 1. **Système de Build Windows Automatisé**
+- **Objectif** : Créer un exécutable Windows autonome pour partage via OneDrive d'entreprise
+- **Solution** : Implementation complète avec PyInstaller et scripts automatisés
+- **Fichiers créés** : 
+  - `build_windows.py` - Script Python intelligent avec gestion d'erreurs
+  - `build_windows.bat` - Script batch Windows pour automatisation totale
+  - `docs/BUILD_WINDOWS.md` - Documentation complète avec dépannage
+  - `INSTRUCTIONS_BUILD.txt` - Instructions rapides d'utilisation
 
-#### 2. **Amélioration du Widget "Cycle neutronique"**
-- **Tailles de texte** : Augmentation significative (titres 9pt→14pt, valeurs 12pt→18pt, facteurs 10pt→14pt)
-- **Tailles des éléments** : Boîtes agrandies (160×70 → 200×90), marges augmentées (50→70px)
-- **Localisation** : Traduction complète en français des titres et descriptions
-- **Informations enrichies** : Descriptions détaillées avec contexte physique et valeurs d'énergie
-- **Affichage central** : k_eff plus grand (18pt→24pt) avec indicateur de statut coloré
-- **Formule** : Ajout de la formule des six facteurs sous le centre
+#### 2. **Résolution Problème PyInstaller**
+- **Problème initial** : `ModuleNotFoundError: No module named 'src.controller'` au lancement de l'exécutable
+- **Cause** : PyInstaller n'incluait pas automatiquement tous les modules du package `src`
+- **Solution** : Configuration avancée PyInstaller avec options spécialisées
+- **Options ajoutées** : 
+  - `--collect-submodules=src` - Inclusion récursive de tous les modules src
+  - `--paths=src` - Ajout du dossier src au chemin de recherche
+  - `--hidden-import` pour les modules critiques (controller, model, gui)
 
-#### 3. **Optimisations de l'Interface**
-- **InfoPanel** : Suppression du délai de débouncing pour un affichage instantané et fluide
-- **Touche 'i'** : 
-  - Fonctionne maintenant comme toggle (ouvre/ferme la fenêtre d'infos)
-  - Ne s'ouvre que s'il y a du contenu à afficher
-  - Raccourci global fonctionnel partout dans l'application
-  - Fenêtre non-modale permettant l'interaction avec l'application
+#### 3. **Optimisations de l'Exécutable**
+- **Taille réduite** : Exclusion de modules inutiles (tkinter, unittest, test) pour optimiser la taille
+- **Performance** : Ajout des imports cachés nécessaires pour matplotlib et PyQt6
+- **Robustesse** : Gestion complète des erreurs et validation automatique du build
+- **Ressources** : Inclusion automatique du fichier `config.json` via `--add-data`
 
-#### 4. **Architecture Technique**
-- **Injection de dépendances** : InfoManager passé directement lors de l'initialisation des widgets
-- **Code nettoyé** : Suppression des méthodes de fallback obsolètes
-- **Types coherents** : Correction des problèmes QPointF/QPoint dans le neutron cycle plot
-- **Gestion d'événements** : Événements de souris correctement propagés et traités
+#### 4. **Processus de Déploiement OneDrive**
+- **Méthode de partage** : Copie du dossier `releases/` sur OneDrive d'entreprise
+- **Utilisation finale** : Utilisateurs téléchargent et lancent directement `NeutroScope.exe`
+- **Aucune installation** : Exécutable autonome ne nécessitant pas Python sur la machine cible
+- **Compatibilité** : Windows 10/11 (et Windows 8.1) avec taille ~50-80 MB optimisée
 
 ### État Actuel du Système
-- ✅ **Affichage des informations** : Fonctionne parfaitement en temps réel sur tous les widgets
-- ✅ **Interface française** : Toute l'interface est en français avec terminologie technique appropriée
-- ✅ **Expérience utilisateur** : Navigation fluide avec informations contextuelles riches
-- ✅ **Robustesse** : Gestion propre des événements et nettoyage des ressources
-- ✅ **Éducatif** : Informations pédagogiques détaillées avec explications physiques
+- ✅ **Build Windows fonctionnel** : Scripts automatisés créent un exécutable stable
+- ✅ **Déploiement OneDrive** : Processus de partage d'entreprise opérationnel
+- ✅ **Documentation complète** : Guides utilisateur et dépannage disponibles
+- ✅ **Exécutable optimisé** : Taille réduite (~50-80 MB) avec toutes les dépendances
+- ✅ **Problèmes PyInstaller résolus** : Tous les modules src correctement inclus
 
 ### Next Steps
-- **Tests** : Ajouter des tests pour les nouvelles fonctionnalités InfoManager
-- **Performance** : Surveillance des performances avec les mises à jour en temps réel
-- **Accessibilité** : Considérer des améliorations d'accessibilité pour l'interface
-- **Documentation** : Documenter les patterns InfoManager pour futurs développements
+- **Test utilisateur final** : Validation de l'exécutable sur machines Windows "propres" (sans Python)
+- **Versioning** : Mise en place d'un système de numérotation de versions pour les releases
+- **Signature numérique** : Considérer la signature de l'exécutable pour éviter les avertissements antivirus
+- **Distribution automatisée** : Potentielle automatisation du upload OneDrive via scripts
 
 ## Architecture Notable
-Le système InfoManager constitue maintenant un pattern central :
-- **Centralisation** : Un seul InfoManager dans MainWindow
-- **Injection** : Passé à tous les widgets lors de l'initialisation
-- **Événements** : Utilise des signaux PyQt6 pour la communication
-- **Découplage** : Les widgets émettent des signaux, l'InfoManager gère l'affichage 
+Le système de build Windows constitue maintenant un élément central du projet :
+- **Scripts automatisés** : `build_windows.bat` pour utilisateurs, `build_windows.py` pour contrôle avancé
+- **Configuration PyInstaller** : Options optimisées pour compatibilité et taille réduite
+- **Gestion des ressources** : Inclusion automatique de `config.json` et autres fichiers critiques
+- **Documentation stratifiée** : Instructions rapides + guide complet + dépannage 

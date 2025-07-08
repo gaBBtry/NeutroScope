@@ -1,10 +1,13 @@
 # Core dependencies for the NeutroScope application
 PyQt6
 numpy
+matplotlib
+scipy
 
 # Testing dependencies
 pytest
 pytest-qt
 pytest-cov
-matplotlib
-scipy
+
+# Build dependencies
+pyinstaller
