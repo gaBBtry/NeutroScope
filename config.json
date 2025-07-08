@@ -18,7 +18,9 @@
         "p": {
             "BASE": 0.75,
             "REF_TEMP_K": 873.15,
-            "DOPPLER_COEFF": 0.008
+            "DOPPLER_COEFF": 0.008,
+            "MOD_TEMP_COEFF": 0.0015,
+            "REF_MOD_TEMP_C": 300.0
         },
         "f": {
             "BASE_ABS_RATIO": 0.408,
@@ -41,6 +43,15 @@
     },
     "doubling_time": {
         "DOUBLING_TIME_COEFF": 80.0
+    },
+    "xenon_dynamics": {
+        "IODINE_YIELD": 0.064,
+        "XENON_YIELD_DIRECT": 0.003,
+        "IODINE_DECAY_CONSTANT": 2.87e-5,
+        "XENON_DECAY_CONSTANT": 2.11e-5,
+        "XENON_ABSORPTION_CROSS_SECTION": 2.65e6,
+        "THERMAL_FLUX_NOMINAL": 3.0e13,
+        "FISSION_RATE_COEFF": 1.0e-6
     },
     "presets": {
         "Démarrage": {
@@ -77,6 +88,20 @@
             "moderator_temperature": 310.0,
             "fuel_enrichment": 3.5,
             "power_level": 100.0
+        },
+        "Fonctionnement Xénon équilibre": {
+            "control_rod_position": 80.0,
+            "boron_concentration": 800.0,
+            "moderator_temperature": 310.0,
+            "fuel_enrichment": 3.5,
+            "power_level": 100.0
+        },
+        "Post-arrêt pic Xénon": {
+            "control_rod_position": 95.0,
+            "boron_concentration": 1000.0,
+            "moderator_temperature": 290.0,
+            "fuel_enrichment": 3.5,
+            "power_level": 0.0
         }
     }
 }

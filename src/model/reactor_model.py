@@ -23,6 +23,12 @@ class ReactorModel:
         # Constantes physiques
         self.delayed_neutron_fraction = config.DELAYED_NEUTRON_FRACTION  # β
         
+        # Variables de dynamique Xénon-135 (concentrations en atomes/cm³)
+        self.iodine_concentration = 0.0  # I-135 concentration
+        self.xenon_concentration = 0.0   # Xe-135 concentration
+        self.simulation_time = 0.0       # temps de simulation en secondes
+        self.time_step = 3600.0          # pas de temps par défaut : 1 heure
+        
         # Paramètres calculés
         self.k_effective = 1.0
         self.reactivity = 0.0
@@ -41,8 +47,9 @@ class ReactorModel:
         # Dictionnaire des préréglages
         self.presets = config.PRESETS
         
-        # Calcul initial
+        # Calcul initial et initialisation des concentrations Xénon à l'équilibre
         self._update_temperatures()
+        self.calculate_xenon_equilibrium()  # Initialiser à l'équilibre pour le niveau de puissance actuel
         self.calculate_all()
     
     def _update_temperatures(self):
@@ -69,10 +76,19 @@ class ReactorModel:
         self.epsilon = config.EPSILON
         
         # Probabilité d'échapper aux résonances
-        # Affectée par la température du combustible (élargissement Doppler)
+        # Affectée par la température du combustible (élargissement Doppler) et la température du modérateur
+        
+        # 1. Effet Doppler (température du combustible)
         fuel_temp_K = self.fuel_temperature + config.CELSIUS_TO_KELVIN
         sqrt_T_diff = np.sqrt(fuel_temp_K) - np.sqrt(config.P_REF_TEMP_K)
-        self.p = config.P_BASE * np.exp(-config.P_DOPPLER_COEFF * sqrt_T_diff)
+        doppler_effect = np.exp(-config.P_DOPPLER_COEFF * sqrt_T_diff)
+        
+        # 2. Effet température du modérateur (densité et efficacité de ralentissement)
+        mod_temp_deviation = self.moderator_temperature - config.P_REF_MOD_TEMP_C
+        moderator_effect = 1.0 - config.P_MOD_TEMP_COEFF * mod_temp_deviation
+        
+        # 3. Combinaison des deux effets
+        self.p = config.P_BASE * doppler_effect * moderator_effect
         
         # Facteur d'utilisation thermique (f)
         # Nouveau modèle basé sur les rapports d'absorption : f = 1 / (1 + A_non_fuel)
@@ -89,8 +105,13 @@ class ReactorModel:
         # 3. Rapport d'absorption du bore
         boron_abs_ratio = config.F_BORON_WORTH_PER_PPM * self.boron_concentration
         
+        # 4. Rapport d'absorption du Xénon-135
+        thermal_flux = config.THERMAL_FLUX_NOMINAL * (self.power_level / 100.0)
+        xenon_abs_ratio = (config.XENON_ABSORPTION_CROSS_SECTION * 
+                          self.xenon_concentration * thermal_flux * 1e-24) / (thermal_flux + 1e-10)
+        
         # Rapport d'absorption total non-combustible
-        total_non_fuel_abs_ratio = base_abs_ratio + rod_abs_ratio + boron_abs_ratio
+        total_non_fuel_abs_ratio = base_abs_ratio + rod_abs_ratio + boron_abs_ratio + xenon_abs_ratio
         
         self.f = 1.0 / (1.0 + total_non_fuel_abs_ratio)
     
@@ -170,6 +191,90 @@ class ReactorModel:
                 self.doubling_time = period * np.log(2)
             else:
                 self.doubling_time = float('inf')
+
+    def calculate_xenon_equilibrium(self):
+        """
+        Calcule les concentrations d'équilibre de l'Iode-135 et du Xénon-135
+        pour le niveau de puissance actuel.
+        """
+        # Taux de fission basé sur le niveau de puissance
+        fission_rate = self.power_level * config.FISSION_RATE_COEFF * config.THERMAL_FLUX_NOMINAL
+        
+        # Concentrations d'équilibre
+        # Iode: λI * [I] = γI * Σf * Φ (production = disparition)
+        self.iodine_concentration = (config.IODINE_YIELD * fission_rate) / config.IODINE_DECAY_CONSTANT
+        
+        # Xénon: λX * [Xe] + σXe * Φ * [Xe] = γXe * Σf * Φ + λI * [I]
+        thermal_flux = config.THERMAL_FLUX_NOMINAL * (self.power_level / 100.0)
+        xenon_removal_rate = config.XENON_DECAY_CONSTANT + config.XENON_ABSORPTION_CROSS_SECTION * thermal_flux * 1e-24
+        xenon_production_rate = (config.XENON_YIELD_DIRECT * fission_rate + 
+                               config.IODINE_DECAY_CONSTANT * self.iodine_concentration)
+        
+        self.xenon_concentration = xenon_production_rate / xenon_removal_rate
+
+    def update_xenon_dynamics(self, dt=None):
+        """
+        Met à jour les concentrations d'Iode-135 et de Xénon-135 
+        selon les équations différentielles de Bateman.
+        
+        Args:
+            dt: pas de temps en secondes (utilise self.time_step par défaut)
+        """
+        if dt is None:
+            dt = self.time_step
+            
+        # Taux de fission actuel
+        fission_rate = self.power_level * config.FISSION_RATE_COEFF * config.THERMAL_FLUX_NOMINAL
+        thermal_flux = config.THERMAL_FLUX_NOMINAL * (self.power_level / 100.0)
+        
+        # Équation pour l'Iode-135: d[I]/dt = γI * Σf * Φ - λI * [I]
+        iodine_production = config.IODINE_YIELD * fission_rate
+        iodine_decay = config.IODINE_DECAY_CONSTANT * self.iodine_concentration
+        d_iodine_dt = iodine_production - iodine_decay
+        
+        # Équation pour le Xénon-135: d[Xe]/dt = γXe * Σf * Φ + λI * [I] - λXe * [Xe] - σXe * Φ * [Xe]
+        xenon_production_direct = config.XENON_YIELD_DIRECT * fission_rate
+        xenon_production_from_iodine = config.IODINE_DECAY_CONSTANT * self.iodine_concentration
+        xenon_decay = config.XENON_DECAY_CONSTANT * self.xenon_concentration
+        xenon_burnup = config.XENON_ABSORPTION_CROSS_SECTION * thermal_flux * self.xenon_concentration * 1e-24
+        
+        d_xenon_dt = xenon_production_direct + xenon_production_from_iodine - xenon_decay - xenon_burnup
+        
+        # Intégration d'Euler (première approximation)
+        self.iodine_concentration += d_iodine_dt * dt
+        self.xenon_concentration += d_xenon_dt * dt
+        self.simulation_time += dt
+        
+        # Assurer que les concentrations ne deviennent pas négatives
+        self.iodine_concentration = max(0, self.iodine_concentration)
+        self.xenon_concentration = max(0, self.xenon_concentration)
+
+    def get_xenon_reactivity_effect(self):
+        """
+        Calcule l'effet du Xénon-135 sur la réactivité (en pcm).
+        """
+        # Calcul de l'anti-réactivité due au Xénon-135
+        thermal_flux = config.THERMAL_FLUX_NOMINAL * (self.power_level / 100.0)
+        xenon_absorption_rate = (config.XENON_ABSORPTION_CROSS_SECTION * 
+                               self.xenon_concentration * thermal_flux * 1e-24)
+        
+        # Conversion approximative en pcm (cette formule dépend du réacteur)
+        # Ici, nous utilisons une approximation basée sur l'importance neutronique
+        xenon_reactivity_pcm = -xenon_absorption_rate * 1e5  # facteur de conversion approximatif
+        
+        return xenon_reactivity_pcm
+
+    def advance_time(self, hours=1.0):
+        """
+        Fait avancer la simulation temporelle et met à jour la dynamique Xénon.
+        
+        Args:
+            hours: nombre d'heures à simuler
+        """
+        dt_seconds = hours * 3600.0
+        self.update_xenon_dynamics(dt_seconds)
+        # Recalcul de tous les paramètres après la mise à jour Xénon
+        self.calculate_all()
 
     def _update_parameter(self, param_name, value, update_temperatures=False):
         """Méthode générique pour mettre à jour un paramètre et recalculer le modèle
@@ -383,6 +488,19 @@ class ReactorModel:
                 "after_f": n_after_f,
                 "final": n_final
             }
+        }
+    
+    def get_xenon_dynamics_data(self):
+        """
+        Get data for the xenon dynamics visualization.
+        Returns concentrations and reactivity effects.
+        """
+        return {
+            "time_hours": self.simulation_time / 3600.0,
+            "iodine_concentration": self.iodine_concentration,
+            "xenon_concentration": self.xenon_concentration,
+            "xenon_reactivity_pcm": self.get_xenon_reactivity_effect(),
+            "power_level": self.power_level
         }
     
     def apply_preset(self, preset_name):

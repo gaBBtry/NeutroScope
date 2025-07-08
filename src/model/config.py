@@ -56,6 +56,8 @@ _p = _four_factors.get("p", {})
 P_BASE = _p.get("BASE", 0.75)
 P_REF_TEMP_K = _p.get("REF_TEMP_K", 873.15)
 P_DOPPLER_COEFF = _p.get("DOPPLER_COEFF", 0.008)
+P_MOD_TEMP_COEFF = _p.get("MOD_TEMP_COEFF", 0.0015)
+P_REF_MOD_TEMP_C = _p.get("REF_MOD_TEMP_C", 300.0)
 
 _f = _four_factors.get("f", {})
 F_BASE = _f.get("BASE", 0.71)
@@ -81,6 +83,16 @@ POWER_TO_FUEL_TEMP_COEFF = _thermo.get("POWER_TO_FUEL_TEMP_COEFF", 3.0)
 # Calcul du temps de doublement
 _doubling = _config.get("doubling_time", {})
 DOUBLING_TIME_COEFF = _doubling.get("DOUBLING_TIME_COEFF", 80.0)
+
+# Dynamique Xénon-135
+_xenon = _config.get("xenon_dynamics", {})
+IODINE_YIELD = _xenon.get("IODINE_YIELD", 0.064)
+XENON_YIELD_DIRECT = _xenon.get("XENON_YIELD_DIRECT", 0.003)
+IODINE_DECAY_CONSTANT = _xenon.get("IODINE_DECAY_CONSTANT", 2.87e-5)  # s^-1
+XENON_DECAY_CONSTANT = _xenon.get("XENON_DECAY_CONSTANT", 2.11e-5)    # s^-1
+XENON_ABSORPTION_CROSS_SECTION = _xenon.get("XENON_ABSORPTION_CROSS_SECTION", 2.65e6)  # barns
+THERMAL_FLUX_NOMINAL = _xenon.get("THERMAL_FLUX_NOMINAL", 3.0e13)     # n/cm²/s
+FISSION_RATE_COEFF = _xenon.get("FISSION_RATE_COEFF", 1.0e-6)
 
 # Préréglages par défaut
 PRESETS = _config.get("presets", {}) 

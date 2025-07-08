@@ -19,6 +19,7 @@ from .widgets.pilotage_diagram_plot import PilotageDiagramPlot
 from .widgets.info_panel import InfoPanel
 from .widgets.info_button import InfoButton
 from .widgets.neutron_cycle_plot import NeutronCyclePlot
+from .widgets.xenon_plot import XenonVisualizationWidget
 from .widgets.info_manager import InfoManager
 
 
@@ -42,6 +43,7 @@ class VisualizationPanel(QWidget):
         self.factors_plot = FourFactorsPlot(info_manager=self.info_manager)
         self.neutron_balance_plot = NeutronBalancePlot(info_manager=self.info_manager)
         self.pilotage_diagram = PilotageDiagramPlot(info_manager=self.info_manager)
+        self.xenon_widget = XenonVisualizationWidget(info_manager=self.info_manager)
         
         # Add plots to tabs
         self.tabs.addTab(self.neutron_cycle_plot, "Cycle Neutronique")
@@ -49,6 +51,7 @@ class VisualizationPanel(QWidget):
         self.tabs.addTab(self.factors_plot, "Quatre Facteurs")
         self.tabs.addTab(self.neutron_balance_plot, "Bilan Neutronique")
         self.tabs.addTab(self.pilotage_diagram, "Diagramme de Pilotage")
+        self.tabs.addTab(self.xenon_widget, "Dynamique Xénon")
         
         layout.addWidget(self.tabs)
 
@@ -77,6 +80,14 @@ class VisualizationPanel(QWidget):
     def update_neutron_cycle_plot(self, data):
         """Update the neutron cycle plot."""
         self.neutron_cycle_plot.update_data(data)
+
+    def update_xenon_plot(self, data):
+        """Update the xenon dynamics plot."""
+        self.xenon_widget.update_data(data)
+
+    def get_xenon_controls(self):
+        """Get reference to xenon control widget for signal connections."""
+        return self.xenon_widget.controls
 
     # --- Info Panel Methods ---
     def get_info_manager(self):

@@ -133,6 +133,9 @@ class MainWindow(QMainWindow):
         # Connect signals
         self.connect_signals()
         
+        # Connect xenon dynamics controls
+        self.connect_xenon_signals()
+        
         # Initialize UI with a preset
         self.on_preset_changed("Démarrage")
         
@@ -151,6 +154,12 @@ class MainWindow(QMainWindow):
         
         # Info connections are now handled automatically by the InfoManager
         # No need for manual signal connections
+    
+    def connect_xenon_signals(self):
+        """Connecte les signaux des contrôles de dynamique Xénon"""
+        xenon_controls = self.visualization_panel.get_xenon_controls()
+        xenon_controls.time_advance_requested.connect(self.on_time_advance)
+        xenon_controls.reset_requested.connect(self.on_xenon_reset)
     
     def create_control_panel(self):
         """Crée le panneau de contrôle avec les contrôles des paramètres du réacteur"""
@@ -383,6 +392,20 @@ class MainWindow(QMainWindow):
             lambda: self.fuel_enrichment_label.setText(f"{enrichment:.1f} %")
         )
 
+    def on_time_advance(self, hours):
+        """Handle time advancement for xenon dynamics"""
+        params = self.controller.advance_time(hours)
+        self.update_reactor_params(params)
+        self.update_visualizations()
+    
+    def on_xenon_reset(self):
+        """Handle xenon reset to equilibrium"""
+        params = self.controller.reset_xenon_to_equilibrium()
+        self.update_reactor_params(params)
+        self.update_visualizations()
+        # Clear xenon plot history
+        self.visualization_panel.xenon_widget.clear_history()
+
     def update_reactor_params(self, params):
         """Update the display of reactor parameters"""
         k_eff = params["k_effective"]
@@ -419,6 +442,10 @@ class MainWindow(QMainWindow):
         # Neutron Cycle
         cycle_data = self.controller.get_neutron_cycle_data()
         self.visualization_panel.update_neutron_cycle_plot(cycle_data)
+        
+        # Xenon Dynamics
+        xenon_data = self.controller.get_xenon_dynamics_data()
+        self.visualization_panel.update_xenon_plot(xenon_data)
 
     def keyPressEvent(self, event):
         """Handle key press events for the main window"""

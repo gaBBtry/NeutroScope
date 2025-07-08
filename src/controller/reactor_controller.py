@@ -61,6 +61,20 @@ class ReactorController:
         """Get the neutron cycle data from the model"""
         return self.model.get_neutron_cycle_data()
     
+    def get_xenon_dynamics_data(self):
+        """Get the xenon dynamics data from the model"""
+        return self.model.get_xenon_dynamics_data()
+    
+    def advance_time(self, hours=1.0):
+        """Advance simulation time and update xenon dynamics"""
+        self.model.advance_time(hours)
+        return self.get_reactor_parameters()
+    
+    def reset_xenon_to_equilibrium(self):
+        """Reset xenon concentrations to equilibrium for current power level"""
+        self.model.calculate_xenon_equilibrium()
+        return self.get_reactor_parameters()
+    
     def get_preset_names(self):
         """Get list of available presets"""
         return self.model.get_preset_names()

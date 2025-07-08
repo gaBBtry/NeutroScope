@@ -4,6 +4,113 @@ Ce fichier documente les tâches répétitives et leurs workflows pour faciliter
 
 ---
 
+## Implémentation d'Optimisations Physiques Majeures
+
+**Dernière exécution :** Janvier 2025  
+**Contexte :** Transformation de NeutroScope d'un simulateur statique vers un simulateur dynamique avancé
+
+### Type de tâche :
+Extension majeure avec nouveaux modèles physiques et capacités temporelles
+
+### Fichiers principaux modifiés :
+- `config.json` - Nouveaux paramètres physiques et section xenon_dynamics
+- `src/model/config.py` - Extensions pour nouveaux paramètres  
+- `src/model/reactor_model.py` - Modèles physiques et équations temporelles
+- `src/controller/reactor_controller.py` - Nouvelles méthodes de contrôle temporel
+- `src/gui/widgets/xenon_plot.py` - **NOUVEAU** widget de visualisation temporelle
+- `src/gui/widgets/neutron_cycle_plot.py` - Info-bulles enrichies pour nouveaux effets
+- `src/gui/visualization.py` - Nouvel onglet et intégration
+- `src/gui/main_window.py` - Contrôles temporels et nouveaux presets
+
+### Workflow Phase 1 : Affinement Physique (Température Modérateur)
+
+**Étapes :**
+1. **Configuration** : Ajouter paramètres `P_MOD_TEMP_COEFF` et `P_REF_MOD_TEMP_C` dans `config.json`
+2. **Modèle** : Étendre `calculate_four_factors()` pour intégrer l'effet modérateur sur facteur `p`
+3. **Validation** : Vérifier cohérence physique (effet opposé à l'effet Doppler)
+4. **Interface** : Enrichir tooltips du widget `NeutronCyclePlot` avec explications du double effet
+5. **Tests** : Valider que les valeurs par défaut donnent des résultats physiquement sensés
+
+### Workflow Phase 2 : Dynamique Temporelle (Xénon-135)
+
+**Étapes :**
+1. **Configuration étendue** :
+   - Section `xenon_dynamics` avec constantes de désintégration, rendements, sections efficaces
+   - Paramètres physiques basés sur données REP réelles
+
+2. **Modèle physique** :
+   - Implémentation équations de Bateman (I-135 → Xe-135)
+   - Méthodes `calculate_xenon_equilibrium()` et `update_xenon_dynamics()`
+   - Intégration dans le facteur `f` (utilisation thermique)
+   - Gestion de l'historique temporel
+
+3. **Nouveau widget de visualisation** :
+   - Création `XenonVisualizationWidget` avec architecture MVC complète
+   - Graphiques jumeaux : concentrations + réactivité
+   - Contrôles intégrés : avancement temps, reset équilibre
+   - Gestion des échelles et légendes dynamiques
+
+4. **Extensions de l'architecture** :
+   - Nouvelles méthodes dans `ReactorController` pour contrôles temporels
+   - Nouvel onglet "Dynamique Xénon" dans l'interface principale
+   - Connexion des signaux et slots pour contrôles temps réel
+
+5. **Presets enrichis** :
+   - "Fonctionnement Xénon équilibre" : État stable puissance nominale
+   - "Post-arrêt pic Xénon" : Simulation phénomène transitoire
+
+### Bonnes pratiques identifiées :
+
+#### Architecture
+- **Respect MVC strict** : Même avec complexité temporelle, maintenir séparation claire
+- **Configuration externalisée** : Tous nouveaux paramètres dans `config.json`
+- **Performance** : Solutions analytiques plutôt que numériques pour stabilité
+
+#### Interface temporelle
+- **Contrôles intuitifs** : Boutons pour avancement par heures (1h, 6h, 12h, 24h)
+- **Visualisation continue** : Graphiques mis à jour en temps réel avec historique
+- **Reset intelligent** : Retour à l'équilibre avec recalcul complet de l'état
+
+#### Physique
+- **Constantes réalistes** : Utiliser données de réacteurs REP pour crédibilité
+- **Validation croisée** : Vérifier cohérence entre modèles statique et temporel
+- **Pédagogie** : Maintenir explications physiques dans tous les nouveaux éléments
+
+### Points critiques :
+
+1. **Gestion du temps** : Architecture pour historique sans fuite mémoire
+2. **Performance temps réel** : Calculs optimisés (<100ms par step)
+3. **Interface réactive** : Mise à jour asynchrone des graphiques
+4. **Cohérence des unités** : Vérification systématique (concentrations, temps, réactivité)
+5. **Tests de validation** : Comparaison avec valeurs théoriques connues
+
+### Code type pour extension temporelle :
+
+```python
+# Dans ReactorModel - équations de Bateman
+def update_xenon_dynamics(self, dt_hours: float):
+    # Solution analytique exacte
+    lambda_i = self.config.xenon_dynamics['I135_DECAY_CONSTANT']
+    lambda_xe = self.config.xenon_dynamics['XE135_DECAY_CONSTANT']
+    # ... équations de Bateman ...
+
+# Dans le widget - contrôles temporels
+def setup_time_controls(self):
+    time_layout = QHBoxLayout()
+    for hours in [1, 6, 12, 24]:
+        btn = QPushButton(f"+{hours}h")
+        btn.clicked.connect(lambda checked, h=hours: self.advance_time(h))
+        time_layout.addWidget(btn)
+```
+
+### Extensions possibles futures :
+- Autres isotopes (Samarium-149, etc.)
+- Couplages thermohydrauliques
+- Cinétique point avec précurseurs retardés
+- Contrôle automatique/pilotage
+
+---
+
 ## Intégrer InfoManager avec un Widget de Visualisation
 
 **Dernière exécution :** 07/07/2025  
