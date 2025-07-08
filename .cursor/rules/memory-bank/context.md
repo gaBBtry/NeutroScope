@@ -2,7 +2,7 @@
 
 ## Focus Actuel
 - **STATUT FINAL** : NeutroScope est maintenant un simulateur pédagogique complet et professionnel, avec toutes les fonctionnalités majeures implémentées et opérationnelles.
-- **Dernière modification** : Suppression du bouton d'info de l'interface - la touche 'i' reste le seul moyen d'accéder aux informations détaillées, simplifiant l'interface utilisateur.
+- **Dernière modification** : Ajout d'un bouton Reset dans l'interface des presets qui permet de revenir aux paramètres originaux du preset sélectionné si l'utilisateur a fait des modifications. Le bouton est automatiquement activé/désactivé selon l'état de correspondance entre les paramètres actuels et le preset sélectionné.
 
 ## Accomplissements Majeurs Récents
 

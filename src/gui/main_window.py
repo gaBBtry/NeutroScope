@@ -77,7 +77,9 @@ class MainWindow(QMainWindow):
                 "- Fin de cycle: Configuration typique en fin de cycle du combustible\n"
                 "- Surcritique: État où le réacteur voit sa puissance augmenter\n"
                 "- Sous-critique: État où le réacteur voit sa puissance diminuer\n\n"
-                "Le préréglage 'Personnalisé' est automatiquement sélectionné lorsque vous modifiez manuellement les paramètres."
+                "Le préréglage 'Personnalisé' est automatiquement sélectionné lorsque vous modifiez manuellement les paramètres.\n\n"
+                "Bouton 'Reset': Permet de revenir aux paramètres originaux du preset sélectionné si des modifications ont été apportées.\n"
+                "Bouton 'Gérer...': Ouvre l'interface avancée de gestion des presets."
             )
         }
         
@@ -137,6 +139,9 @@ class MainWindow(QMainWindow):
         # Initialize UI with a preset
         self.on_preset_changed("Démarrage")
         
+        # Initialize reset button state
+        self.update_reset_button_state()
+        
         # Add QShortcut for 'i' key to show info dialog
         self.info_shortcut = QShortcut(QKeySequence("i"), self)
         self.info_shortcut.activated.connect(self._show_info_dialog)
@@ -182,6 +187,14 @@ class MainWindow(QMainWindow):
         self.manage_presets_button.setMaximumWidth(80)
         self.manage_presets_button.clicked.connect(self.open_preset_manager)
         preset_controls_layout.addWidget(self.manage_presets_button)
+        
+        # Bouton de reset pour revenir au preset sélectionné
+        self.reset_preset_button = QPushButton("Reset")
+        self.reset_preset_button.setMaximumWidth(60)
+        self.reset_preset_button.setEnabled(False)  # Désactivé par défaut
+        self.reset_preset_button.setToolTip("Revenir aux paramètres du preset sélectionné")
+        self.reset_preset_button.clicked.connect(self.reset_to_selected_preset)
+        preset_controls_layout.addWidget(self.reset_preset_button)
         
         preset_layout.addLayout(preset_controls_layout)
         self.presets_group.setLayout(preset_layout)
@@ -290,14 +303,41 @@ class MainWindow(QMainWindow):
         """Clean up when info dialog is closed."""
         self.info_dialog = None
     
+    def reset_to_selected_preset(self):
+        """Reset tous les paramètres au preset actuellement sélectionné dans le combo"""
+        selected_preset = self.preset_combo.currentText()
+        if selected_preset and selected_preset != "Personnalisé":
+            # Appliquer le preset sélectionné
+            config = self.controller.apply_preset(selected_preset)
+            if config:
+                self.update_ui_from_preset(config)
+    
+    def update_reset_button_state(self):
+        """Met à jour l'état du bouton Reset selon si l'état actuel correspond au preset sélectionné"""
+        selected_preset = self.preset_combo.currentText()
+        current_preset = self.controller.get_current_preset_name()
+        
+        # Le bouton est activé seulement si :
+        # 1. Un preset non-personnalisé est sélectionné ET
+        # 2. L'état actuel ne correspond pas au preset sélectionné
+        should_enable = (selected_preset and 
+                        selected_preset != "Personnalisé" and
+                        current_preset != selected_preset)
+        
+        self.reset_preset_button.setEnabled(should_enable)
+    
     def on_preset_changed(self, preset_name):
         """Handle preset change from the combobox"""
         if preset_name == "Personnalisé":
+            # Mettre à jour l'état du bouton quand on passe en mode personnalisé
+            self.update_reset_button_state()
             return
             
         config = self.controller.apply_preset(preset_name)
         if config:
             self.update_ui_from_preset(config)
+            # Mettre à jour l'état du bouton après avoir appliqué le preset
+            self.update_reset_button_state()
             
     def update_ui_from_preset(self, config):
         """Update all UI controls from a preset configuration"""
@@ -338,6 +378,9 @@ class MainWindow(QMainWindow):
         current_preset_name = self.controller.get_current_preset_name()
         if self.preset_combo.currentText() != current_preset_name:
             self.preset_combo.setCurrentText(current_preset_name)
+        
+        # Mettre à jour l'état du bouton Reset
+        self.update_reset_button_state()
 
     def _update_parameter_and_ui(self, controller_method, value, label_update_func=None):
         """Méthode générique pour mettre à jour un paramètre et l'interface
@@ -407,6 +450,7 @@ class MainWindow(QMainWindow):
         params = self.controller.advance_time(hours)
         self.update_reactor_params(params)
         self.update_visualizations()
+        self.check_for_custom_preset()
     
     def on_xenon_reset(self):
         """Handle xenon reset to equilibrium"""
@@ -415,6 +459,7 @@ class MainWindow(QMainWindow):
         self.update_visualizations()
         # Clear xenon plot history
         self.visualization_panel.xenon_widget.clear_history()
+        self.check_for_custom_preset()
     
     def open_preset_manager(self):
         """Ouvre le gestionnaire de presets avancé"""
@@ -446,6 +491,8 @@ class MainWindow(QMainWindow):
             self.update_ui_from_preset(config)
             # Mettre à jour le combo pour refléter le preset sélectionné
             self.preset_combo.setCurrentText(preset_name)
+            # Mettre à jour l'état du bouton Reset
+            self.update_reset_button_state()
     
     def refresh_preset_combo(self):
         """Rafraîchit la liste des presets dans le QComboBox"""
@@ -468,6 +515,9 @@ class MainWindow(QMainWindow):
             self.preset_combo.setCurrentText(current_preset)
         
         self.preset_combo.blockSignals(False)
+        
+        # Mettre à jour l'état du bouton Reset après rafraîchissement
+        self.update_reset_button_state()
 
     def update_reactor_params(self, params):
         """Update the display of reactor parameters"""
