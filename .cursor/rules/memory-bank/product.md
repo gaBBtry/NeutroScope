@@ -1,144 +1,144 @@
-# Product Vision: NeutroScope
+# Vision Produit : NeutroScope
 
-## 1. What is NeutroScope?
+## 1. Qu'est-ce que NeutroScope ?
 
-NeutroScope is an advanced interactive educational desktop application designed to teach the fundamental and **advanced** principles of nuclear reactor physics. Originally conceived as a static visualization tool, it has evolved into a **sophisticated temporal simulator** capable of modeling complex reactor kinetics, time-dependent phenomena, and advanced preset management. While not an engineering-grade simulation tool, it serves as a comprehensive and professionally-grade learning aid for students, trainees, and professionals at multiple levels of reactor physics education.
+NeutroScope est une application de bureau interactive éducative avancée conçue pour enseigner les principes fondamentaux et **avancés** de la physique des réacteurs nucléaires. Initialement conçu comme un outil de visualisation statique, il a évolué vers un **simulateur temporel sophistiqué** capable de modéliser la cinétique réacteur complexe, les phénomènes dépendants du temps, et la gestion avancée de presets. Bien qu'il ne soit pas un outil de simulation de niveau ingénierie, il sert d'aide pédagogique complète et de niveau professionnel pour les étudiants, stagiaires et professionnels à plusieurs niveaux d'éducation en physique des réacteurs.
 
-## 2. What Problem Does It Solve?
+## 2. Quel Problème Résout-il ?
 
-### Original Challenge (Solved)
-The core concepts of reactor physics—such as criticality, reactivity, and the neutron lifecycle—are abstract and can be difficult to grasp from textbooks alone.
+### Défi Original (Résolu)
+Les concepts fondamentaux de la physique des réacteurs—tels que la criticité, la réactivité et le cycle de vie des neutrons—sont abstraits et peuvent être difficiles à saisir à partir des manuels seulement.
 
-### Advanced Challenge (Fully Addressed)
-**Temporal reactor phenomena**—such as xenon poisoning dynamics, temperature feedback effects, and transient behavior—require understanding of complex interactions that develop over time. Traditional educational tools often cannot demonstrate these crucial real-world reactor behaviors.
+### Défi Avancé (Entièrement Adressé)
+**Les phénomènes temporels de réacteur**—tels que la dynamique d'empoisonnement au xénon, les effets de contre-réaction de température, et le comportement transitoire—nécessitent la compréhension d'interactions complexes qui se développent dans le temps. Les outils éducatifs traditionnels ne peuvent souvent pas démontrer ces comportements cruciaux de réacteurs réels.
 
-### Educational Management Challenge (Newly Solved)
-**Scenario management and educational continuity**—instructors need sophisticated tools to create, organize, and share reactor scenarios for different learning levels. Students need to progress through structured learning paths with appropriate complexity levels.
+### Défi de Gestion Éducative (Nouvellement Résolu)
+**Gestion de scénarios et continuité éducative**—les instructeurs ont besoin d'outils sophistiqués pour créer, organiser et partager des scénarios de réacteur pour différents niveaux d'apprentissage. Les étudiants doivent progresser à travers des parcours d'apprentissage structurés avec des niveaux de complexité appropriés.
 
-NeutroScope now comprehensively solves all these challenges by providing a complete "virtual reactor laboratory" where learners can:
+NeutroScope résout maintenant de manière complète tous ces défis en fournissant un "laboratoire de réacteur virtuel" complet où les apprenants peuvent :
 
--   **Visualize abstract concepts**: See how a population of neutrons evolves over a generation AND over time with detailed visual feedback.
--   **Understand temporal dynamics**: Observe xenon concentration buildup, equilibrium states, and post-shutdown transients in real-time with dual-axis plotting.
--   **Experiment safely**: Manipulate key reactor parameters (control rods, boron, temperature) and see both immediate AND time-delayed impacts on reactor stability.
--   **Explore advanced physics**: Study counter-effects of temperature (fuel Doppler + moderator effects), neutron poison dynamics, and sophisticated six-factor interactions.
--   **Manage learning scenarios**: Create, organize, and share advanced preset configurations with comprehensive metadata and categorization.
--   **Track temporal states**: Save and restore complex reactor states including poison concentrations and simulation history.
+-   **Visualiser des concepts abstraits** : Voir comment une population de neutrons évolue sur une génération ET dans le temps avec des retours visuels détaillés.
+-   **Comprendre la dynamique temporelle** : Observer l'accumulation de concentration de xénon, les états d'équilibre, et les transitoires post-arrêt en temps réel avec des graphiques à axes doubles.
+-   **Expérimenter en sécurité** : Manipuler des paramètres clés du réacteur (barres de contrôle, bore, température) et voir les impacts immédiats ET retardés sur la stabilité du réacteur.
+-   **Explorer la physique avancée** : Étudier les contre-effets de température (Doppler combustible + effets modérateur), la dynamique des poisons neutroniques, et les interactions sophistiquées à six facteurs.
+-   **Gérer les scénarios d'apprentissage** : Créer, organiser et partager des configurations de presets avancées avec des métadonnées complètes et une catégorisation.
+-   **Suivre les états temporels** : Sauvegarder et restaurer des états complexes de réacteur incluant les concentrations de poisons et l'historique de simulation.
 
-## 3. How Should NeutroScope Work?
+## 3. Comment NeutroScope Devrait-il Fonctionner ?
 
-### User Experience Goals
+### Objectifs d'Expérience Utilisateur
 
-#### **Immediate Learning (Static Mode)**
-- **Quick understanding**: Users can instantly see how parameter changes affect reactor behavior
-- **Interactive exploration**: Real-time manipulation of control parameters with immediate visual feedback
-- **Comprehensive information**: Rich tooltips and contextual help at every interface element
+#### **Apprentissage Immédiat (Mode Statique)**
+- **Compréhension rapide** : Les utilisateurs peuvent instantanément voir comment les changements de paramètres affectent le comportement du réacteur
+- **Exploration interactive** : Manipulation en temps réel des paramètres de contrôle avec retour visuel immédiat
+- **Information complète** : Info-bulles riches et aide contextuelle sur chaque élément d'interface
 
-#### **Advanced Learning (Temporal Mode)**
-- **Dynamic simulation**: Users can advance time and observe poison buildup, decay, and equilibrium states
-- **Complex scenarios**: Study challenging situations like xenon dead-time, peak xenon effects, and restart procedures
-- **Temporal visualization**: Dual-axis plots showing concentration evolution and reactivity effects over time
+#### **Apprentissage Avancé (Mode Temporel)**
+- **Simulation dynamique** : Les utilisateurs peuvent avancer le temps et observer l'accumulation, la décroissance et les états d'équilibre des poisons
+- **Scénarios complexes** : Étudier des situations difficiles comme le temps mort xénon, les effets de pic xénon, et les procédures de redémarrage
+- **Visualisation temporelle** : Graphiques à axes doubles montrant l'évolution de concentration et les effets de réactivité dans le temps
 
-#### **Professional Scenario Management**
-- **Structured learning**: Presets organized by complexity levels (Base, Temporal, Advanced, Custom)
-- **Easy sharing**: Import/export functionality for distributing educational scenarios
-- **Flexible creation**: Intuitive preset creation from current reactor state with rich metadata
-- **Version control**: Track creation dates, authors, and modification history for scenarios
+#### **Gestion Professionnelle de Scénarios**
+- **Apprentissage structuré** : Presets organisés par niveaux de complexité (Base, Temporel, Avancé, Personnalisé)
+- **Partage facile** : Fonctionnalité d'import/export pour distribuer des scénarios éducatifs
+- **Création flexible** : Création intuitive de presets à partir de l'état actuel du réacteur avec des métadonnées riches
+- **Contrôle de version** : Suivi des dates de création, auteurs, et historique de modifications pour les scénarios
 
-### Core Functionality Pillars
+### Piliers de Fonctionnalité Centrale
 
-#### **1. Neutron Physics Excellence**
-- **Six-factor model**: Complete implementation of η, ε, p, f, and both leakage probabilities
-- **Temperature effects**: Sophisticated Doppler broadening and moderator temperature coefficients
-- **Poison dynamics**: Full implementation of I-135 → Xe-135 chain with Bateman equations
-- **Real-time calculation**: All parameters updated simultaneously with parameter changes
+#### **1. Excellence en Physique Neutronique**
+- **Modèle à six facteurs** : Implémentation complète de η, ε, p, f, et des deux probabilités de fuite
+- **Effets de température** : Élargissement Doppler sophistiqué et coefficients de température du modérateur
+- **Dynamique des poisons** : Implémentation complète de la chaîne I-135 → Xe-135 avec équations de Bateman
+- **Calcul temps réel** : Tous les paramètres mis à jour simultanément avec les changements de paramètres
 
-#### **2. Temporal Simulation Capabilities**
-- **Time advancement**: Controllable time steps from 1 hour to 24 hours
-- **Poison tracking**: Real-time evolution of iodine and xenon concentrations
-- **Equilibrium calculations**: Automatic calculation of equilibrium states for any power level
-- **Reset functionality**: Instant return to equilibrium conditions for experimental comparison
+#### **2. Capacités de Simulation Temporelle**
+- **Avancement temporel** : Pas de temps contrôlables de 1 heure à 24 heures
+- **Suivi des poisons** : Évolution temps réel des concentrations d'iode et de xénon
+- **Calculs d'équilibre** : Calcul automatique des états d'équilibre pour tout niveau de puissance
+- **Fonctionnalité de remise à zéro** : Retour instantané aux conditions d'équilibre pour comparaison expérimentale
 
-#### **3. Advanced Preset Management System**
-- **Professional organization**: Hierarchical view with categories and filtering
-- **Rich metadata**: Descriptions, creation dates, authors, tags, and custom notes
-- **Import/Export capabilities**: JSON-based sharing for educational distribution
-- **State preservation**: Complete reactor state including temporal parameters
-- **Validation system**: Automated checking of parameter ranges and physical consistency
+#### **3. Système Avancé de Gestion de Presets**
+- **Organisation professionnelle** : Vue hiérarchique avec catégories et filtrage
+- **Métadonnées riches** : Descriptions, dates de création, auteurs, tags, et notes personnalisées
+- **Capacités d'import/export** : Partage basé sur JSON pour distribution éducative
+- **Préservation d'état** : État complet du réacteur incluant les paramètres temporels
+- **Système de validation** : Vérification automatique des plages de paramètres et cohérence physique
 
-#### **4. Comprehensive Educational Support**
-- **Universal tooltips**: Every interface element provides contextual physics education
-- **Interactive information**: Press 'i' for detailed explanations of hovered elements
-- **Visual coherence**: Consistent color coding and professional presentation
-- **Progressive complexity**: From basic criticality concepts to advanced temporal phenomena
+#### **4. Support Éducatif Complet**
+- **Info-bulles universelles** : Chaque élément d'interface fournit une éducation physique contextuelle
+- **Information interactive** : Appuyer sur 'i' pour des explications détaillées des éléments survolés
+- **Cohérence visuelle** : Codage couleur cohérent et présentation professionnelle
+- **Complexité progressive** : Des concepts de criticité de base aux phénomènes temporels avancés
 
-## 4. Target Users
+## 4. Utilisateurs Cibles
 
-### **Primary Users**
-- **Nuclear engineering students**: Learning fundamental reactor physics concepts
-- **Professional trainees**: Preparing for reactor operator certification
-- **Instructors and educators**: Teaching nuclear reactor physics at various levels
+### **Utilisateurs Primaires**
+- **Étudiants en ingénierie nucléaire** : Apprentissage des concepts fondamentaux de physique des réacteurs
+- **Stagiaires professionnels** : Préparation à la certification d'opérateur de réacteur
+- **Instructeurs et éducateurs** : Enseignement de la physique des réacteurs nucléaires à divers niveaux
 
-### **Secondary Users**
-- **Industry professionals**: Refreshing knowledge or exploring specific scenarios
-- **Researchers**: Using as a reference tool for educational material development
-- **Curious learners**: Self-study of nuclear reactor principles
+### **Utilisateurs Secondaires**
+- **Professionnels de l'industrie** : Rafraîchissement des connaissances ou exploration de scénarios spécifiques
+- **Chercheurs** : Utilisation comme outil de référence pour le développement de matériel éducatif
+- **Apprenants curieux** : Auto-apprentissage des principes de réacteurs nucléaires
 
-## 5. Educational Impact and Value
+## 5. Impact et Valeur Éducatifs
 
-### **Foundational Understanding**
-NeutroScope provides a solid foundation in reactor physics by making abstract concepts visible and interactive. The six-factor formula becomes intuitive through visual representation and immediate feedback.
+### **Compréhension Fondamentale**
+NeutroScope fournit une base solide en physique des réacteurs en rendant visibles et interactifs les concepts abstraits. La formule à six facteurs devient intuitive grâce à la représentation visuelle et au retour immédiat.
 
-### **Advanced Phenomenon Comprehension**
-The temporal capabilities allow users to understand complex phenomena that occur over hours or days in real reactors, such as:
-- Xenon dead-time after reactor shutdown
-- Peak xenon effects on restart capability
-- Temperature coefficient interactions
-- Equilibrium versus transient states
+### **Compréhension des Phénomènes Avancés**
+Les capacités temporelles permettent aux utilisateurs de comprendre des phénomènes complexes qui se produisent sur des heures ou des jours dans les réacteurs réels, tels que :
+- Temps mort xénon après arrêt du réacteur
+- Effets de pic xénon sur la capacité de redémarrage
+- Interactions des coefficients de température
+- États d'équilibre versus transitoires
 
-### **Practical Scenario Training**
-The advanced preset system enables:
-- **Structured curriculum**: Educators can create learning progressions
-- **Scenario sharing**: Distribution of specific case studies
-- **Hands-on experience**: Students can experiment with saved reactor states
-- **Assessment tools**: Standardized scenarios for evaluation
+### **Formation de Scénarios Pratiques**
+Le système de presets avancé permet :
+- **Curriculum structuré** : Les éducateurs peuvent créer des progressions d'apprentissage
+- **Partage de scénarios** : Distribution d'études de cas spécifiques
+- **Expérience pratique** : Les étudiants peuvent expérimenter avec des états de réacteur sauvegardés
+- **Outils d'évaluation** : Scénarios standardisés pour l'évaluation
 
-### **Professional Development**
-For industry professionals, NeutroScope offers:
-- **Refresher training**: Quick review of fundamental concepts
-- **Scenario exploration**: Investigation of specific reactor conditions
-- **Educational tool development**: Creation of training materials
+### **Développement Professionnel**
+Pour les professionnels de l'industrie, NeutroScope offre :
+- **Formation de mise à jour** : Révision rapide des concepts fondamentaux
+- **Exploration de scénarios** : Investigation de conditions spécifiques de réacteur
+- **Développement d'outils éducatifs** : Création de matériel de formation
 
-## 6. Success Metrics
+## 6. Métriques de Succès
 
-### **Educational Effectiveness**
-- **Concept comprehension**: Users demonstrate understanding of criticality, reactivity, and temporal effects
-- **Scenario mastery**: Ability to predict and explain reactor behavior under various conditions
-- **Knowledge retention**: Long-term understanding of complex reactor physics principles
+### **Efficacité Éducative**
+- **Compréhension des concepts** : Les utilisateurs démontrent une compréhension de la criticité, réactivité, et effets temporels
+- **Maîtrise des scénarios** : Capacité à prédire et expliquer le comportement du réacteur sous diverses conditions
+- **Rétention des connaissances** : Compréhension à long terme des principes complexes de physique des réacteurs
 
-### **Tool Adoption**
-- **User engagement**: Regular use by students and professionals
-- **Educator adoption**: Integration into nuclear engineering curricula
-- **Community growth**: Active sharing and creation of educational scenarios
+### **Adoption de l'Outil**
+- **Engagement utilisateur** : Utilisation régulière par les étudiants et professionnels
+- **Adoption par les éducateurs** : Intégration dans les curricula d'ingénierie nucléaire
+- **Croissance communautaire** : Partage actif et création de scénarios éducatifs
 
-### **Technical Excellence**
-- **Performance reliability**: Smooth operation across different computer platforms
-- **Educational accuracy**: Faithful representation of real reactor physics
-- **User satisfaction**: Positive feedback on interface design and functionality
+### **Excellence Technique**
+- **Fiabilité de performance** : Fonctionnement fluide sur différentes plateformes informatiques
+- **Précision éducative** : Représentation fidèle de la physique réelle des réacteurs
+- **Satisfaction utilisateur** : Retours positifs sur la conception d'interface et la fonctionnalité
 
-## 7. Future Evolution Potential
+## 7. Potentiel d'Évolution Future
 
-### **Near-term Enhancements**
-- **Additional isotopes**: Samarium-149 and other fission products
-- **Control system modeling**: Automatic reactor control simulation
-- **Enhanced scenarios**: Complex multi-step educational sequences
+### **Améliorations à Court Terme**
+- **Isotopes supplémentaires** : Samarium-149 et autres produits de fission
+- **Modélisation de systèmes de contrôle** : Simulation de contrôle automatique de réacteur
+- **Scénarios améliorés** : Séquences éducatives complexes multi-étapes
 
-### **Long-term Vision**
-- **Thermohydraulic coupling**: Temperature and flow interactions
-- **Safety system simulation**: SCRAM conditions and emergency procedures
-- **Multi-reactor concepts**: BWR and advanced reactor types
+### **Vision à Long Terme**
+- **Couplage thermohydraulique** : Interactions température et débit
+- **Simulation de systèmes de sécurité** : Conditions SCRAM et procédures d'urgence
+- **Concepts multi-réacteurs** : Types BWR et réacteurs avancés
 
 ## 8. Conclusion
 
-NeutroScope has evolved from a simple educational tool into a comprehensive nuclear reactor physics simulation platform. It successfully bridges the gap between theoretical knowledge and practical understanding, providing both immediate learning satisfaction and deep educational value. The combination of rigorous physics modeling, intuitive interface design, and advanced educational management tools makes it a unique and valuable resource for nuclear education at all levels.
+NeutroScope a évolué d'un simple outil éducatif vers une plateforme complète de simulation de physique des réacteurs nucléaires. Il comble avec succès le fossé entre la connaissance théorique et la compréhension pratique, fournissant à la fois une satisfaction d'apprentissage immédiate et une valeur éducative profonde. La combinaison de modélisation physique rigoureuse, de conception d'interface intuitive, et d'outils de gestion éducative avancés en fait une ressource unique et précieuse pour l'éducation nucléaire à tous les niveaux.
 
-The application's strength lies in its ability to make complex reactor physics concepts accessible while maintaining scientific accuracy and providing tools for sophisticated educational scenarios. This positions NeutroScope as an essential tool for modern nuclear engineering education and professional development. 
+La force de l'application réside dans sa capacité à rendre accessibles les concepts complexes de physique des réacteurs tout en maintenant la précision scientifique et en fournissant des outils pour des scénarios éducatifs sophistiqués. Cela positionne NeutroScope comme un outil essentiel pour l'éducation moderne en ingénierie nucléaire et le développement professionnel. 
