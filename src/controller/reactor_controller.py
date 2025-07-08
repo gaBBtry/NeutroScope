@@ -2,6 +2,7 @@
 Controller module connecting the UI with the reactor model
 """
 from src.model.reactor_model import ReactorModel
+from src.model.preset_model import PresetCategory, PresetType
 
 class ReactorController:
     """
@@ -88,6 +89,7 @@ class ReactorController:
                 "boron_concentration": self.model.boron_concentration,
                 "moderator_temperature": self.model.moderator_temperature,
                 "fuel_enrichment": self.model.fuel_enrichment,
+                "power_level": self.model.power_level,
                 "reactor_params": self.get_reactor_parameters()
             }
         return None
@@ -96,9 +98,9 @@ class ReactorController:
         """Get the name of the current preset if matching any"""
         return self.model.get_current_preset_name()
     
-    def save_preset(self, name, overwrite=False):
+    def save_preset(self, name, description="", overwrite=False):
         """Save current configuration as a preset"""
-        return self.model.save_preset(name, overwrite)
+        return self.model.save_preset(name, description, overwrite)
     
     def get_current_configuration(self):
         """Get current reactor configuration"""
@@ -106,5 +108,76 @@ class ReactorController:
             "control_rod_position": self.model.control_rod_position,
             "boron_concentration": self.model.boron_concentration,
             "moderator_temperature": self.model.moderator_temperature,
-            "fuel_enrichment": self.model.fuel_enrichment
-        } 
+            "fuel_enrichment": self.model.fuel_enrichment,
+            "power_level": self.model.power_level
+        }
+    
+    # Nouvelles méthodes pour le système de presets avancé
+    
+    def get_preset_manager(self):
+        """Retourne le gestionnaire de presets pour accès avancé"""
+        return self.model.get_preset_manager()
+    
+    def get_presets_by_category(self, category: PresetCategory):
+        """Retourne les presets d'une catégorie donnée"""
+        return self.model.get_presets_by_category(category)
+    
+    def delete_preset(self, preset_name):
+        """Supprime un preset utilisateur"""
+        return self.model.delete_preset(preset_name)
+    
+    def get_current_state_as_preset_data(self):
+        """Retourne l'état actuel sous forme de PresetData"""
+        return self.model.get_current_state_as_preset_data()
+    
+    def create_preset_from_current_state(self, name, description="", category=None):
+        """Crée un nouveau preset basé sur l'état actuel"""
+        current_params = {
+            "control_rod_position": self.model.control_rod_position,
+            "boron_concentration": self.model.boron_concentration,
+            "moderator_temperature": self.model.moderator_temperature,
+            "fuel_enrichment": self.model.fuel_enrichment,
+            "power_level": self.model.power_level,
+            "iodine_concentration": self.model.iodine_concentration,
+            "xenon_concentration": self.model.xenon_concentration,
+            "simulation_time": self.model.simulation_time
+        }
+        
+        # Déterminer automatiquement la catégorie si non spécifiée
+        if category is None:
+            if self.model.simulation_time > 0 or self.model.xenon_concentration > 0:
+                category = PresetCategory.TEMPOREL
+            else:
+                category = PresetCategory.PERSONNALISE
+        
+        try:
+            preset = self.model.preset_manager.create_preset(
+                name=name,
+                description=description or f"Preset créé: {name}",
+                parameters=current_params,
+                category=category
+            )
+            return preset is not None
+        except ValueError:
+            return False
+    
+    def export_presets(self, file_path, preset_ids=None):
+        """Exporte des presets vers un fichier"""
+        return self.model.preset_manager.export_presets(file_path, preset_ids)
+    
+    def import_presets(self, file_path, overwrite=False):
+        """Importe des presets depuis un fichier"""
+        return self.model.preset_manager.import_presets(file_path, overwrite)
+    
+    def validate_preset_data(self, preset_data):
+        """Valide les données d'un preset"""
+        try:
+            errors = preset_data.validate()
+            return len(errors) == 0, errors
+        except Exception as e:
+            return False, [str(e)]
+    
+    def update_power_level(self, power_level):
+        """Met à jour le niveau de puissance"""
+        self.model.update_power_level(power_level)
+        return self.get_reactor_parameters() 

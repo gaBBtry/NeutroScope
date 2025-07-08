@@ -3,6 +3,7 @@ Modèle de physique des réacteurs pour les calculs de neutronique
 """
 import numpy as np
 from . import config
+from .preset_model import PresetManager, PresetData, PresetCategory, PresetType
 
 class ReactorModel:
     """
@@ -44,8 +45,8 @@ class ReactorModel:
         self.thermal_non_leakage_prob = 1.0
         self.fast_non_leakage_prob = 1.0
         
-        # Dictionnaire des préréglages
-        self.presets = config.PRESETS
+        # Nouveau système de gestion des presets avancé
+        self.preset_manager = PresetManager()
         
         # Calcul initial et initialisation des concentrations Xénon à l'équilibre
         self._update_temperatures()
@@ -504,51 +505,145 @@ class ReactorModel:
         }
     
     def apply_preset(self, preset_name):
-        """Apply a preset configuration"""
-        if preset_name in self.presets:
-            preset = self.presets[preset_name]
-            self.control_rod_position = preset["control_rod_position"]
-            self.boron_concentration = preset["boron_concentration"]
-            self.moderator_temperature = preset["moderator_temperature"]
-            self.fuel_enrichment = preset["fuel_enrichment"]
-            if "power_level" in preset:
-                self.power_level = preset["power_level"]
-            self._update_temperatures()
-            self.calculate_all()
-            return True
-        return False
+        """Apply a preset configuration using the new advanced system"""
+        preset = self.preset_manager.get_preset_by_name(preset_name)
+        if not preset:
+            return False
+        
+        # Appliquer les paramètres de base
+        self.control_rod_position = preset.control_rod_position
+        self.boron_concentration = preset.boron_concentration
+        self.moderator_temperature = preset.moderator_temperature
+        self.fuel_enrichment = preset.fuel_enrichment
+        self.power_level = preset.power_level
+        
+        # Appliquer les états temporels si disponibles
+        if preset.iodine_concentration is not None:
+            self.iodine_concentration = preset.iodine_concentration
+        
+        if preset.xenon_concentration is not None:
+            self.xenon_concentration = preset.xenon_concentration
+        else:
+            # Si pas de concentration Xénon spécifiée, calculer l'équilibre
+            self.calculate_xenon_equilibrium()
+        
+        if preset.simulation_time is not None:
+            self.simulation_time = preset.simulation_time
+        
+        # Mettre à jour tous les calculs
+        self._update_temperatures()
+        self.calculate_all()
+        return True
     
     def get_preset_names(self):
         """Return a list of available preset names"""
-        return list(self.presets.keys())
+        return self.preset_manager.get_preset_names()
     
     def get_current_preset_name(self):
         """
         Get the name of the current preset if the current parameters match one.
         If no preset matches, return 'Personnalisé'.
         """
-        current_config = {
-            "control_rod_position": self.control_rod_position,
-            "boron_concentration": self.boron_concentration,
-            "moderator_temperature": self.moderator_temperature,
-            "fuel_enrichment": self.fuel_enrichment,
-            "power_level": self.power_level
-        }
-        for name, preset_config in self.presets.items():
-            # Use np.isclose for robust floating point comparison
-            if all(np.isclose(current_config.get(key, 0), preset_config.get(key, 0)) for key in preset_config):
-                return name
+        for preset in self.preset_manager.get_all_presets().values():
+            # Comparer les paramètres de base
+            if (np.isclose(self.control_rod_position, preset.control_rod_position, atol=0.1) and
+                np.isclose(self.boron_concentration, preset.boron_concentration, atol=1.0) and
+                np.isclose(self.moderator_temperature, preset.moderator_temperature, atol=0.5) and
+                np.isclose(self.fuel_enrichment, preset.fuel_enrichment, atol=0.01) and
+                np.isclose(self.power_level, preset.power_level, atol=0.1)):
+                
+                # Pour les presets temporels, vérifier aussi les concentrations Xénon
+                if preset.category == PresetCategory.TEMPOREL:
+                    if (preset.xenon_concentration is not None and
+                        not np.isclose(self.xenon_concentration, preset.xenon_concentration, atol=1e12)):
+                        continue
+                    if (preset.iodine_concentration is not None and
+                        not np.isclose(self.iodine_concentration, preset.iodine_concentration, atol=1e12)):
+                        continue
+                
+                return preset.name
+        
         return "Personnalisé"
     
-    def save_preset(self, name, overwrite=False):
-        """Save current configuration as a preset"""
-        if name not in self.presets or overwrite:
-            self.presets[name] = {
+    def save_preset(self, name, description="", overwrite=False):
+        """Save current configuration as a preset using the advanced system"""
+        try:
+            # Préparer les paramètres actuels
+            current_params = {
                 "control_rod_position": self.control_rod_position,
                 "boron_concentration": self.boron_concentration,
                 "moderator_temperature": self.moderator_temperature,
                 "fuel_enrichment": self.fuel_enrichment,
-                "power_level": self.power_level
+                "power_level": self.power_level,
+                "iodine_concentration": self.iodine_concentration,
+                "xenon_concentration": self.xenon_concentration,
+                "simulation_time": self.simulation_time
             }
-            return True
+            
+            # Déterminer la catégorie basée sur l'état temporel
+            category = PresetCategory.PERSONNALISE
+            if self.simulation_time > 0 or self.xenon_concentration > 0:
+                category = PresetCategory.TEMPOREL
+            
+            # Vérifier si un preset avec ce nom existe déjà
+            existing_preset = self.preset_manager.get_preset_by_name(name)
+            if existing_preset and not overwrite:
+                return False
+            
+            if existing_preset and overwrite:
+                # Mettre à jour le preset existant
+                return self.preset_manager.update_preset(
+                    existing_preset.id,
+                    description=description or existing_preset.description,
+                    **current_params
+                )
+            else:
+                # Créer un nouveau preset
+                preset = self.preset_manager.create_preset(
+                    name=name,
+                    description=description or f"Preset personnalisé: {name}",
+                    parameters=current_params,
+                    category=category
+                )
+                return preset is not None
+                
+        except ValueError as e:
+            print(f"Erreur lors de la sauvegarde du preset: {e}")
+            return False
+    
+    def get_preset_manager(self):
+        """Retourne le gestionnaire de presets pour l'interface avancée"""
+        return self.preset_manager
+    
+    def get_presets_by_category(self, category: PresetCategory):
+        """Retourne les presets d'une catégorie donnée"""
+        return self.preset_manager.get_presets_by_category(category)
+    
+    def delete_preset(self, preset_name):
+        """Supprime un preset utilisateur par son nom"""
+        preset = self.preset_manager.get_preset_by_name(preset_name)
+        if preset and preset.preset_type == PresetType.UTILISATEUR:
+            return self.preset_manager.delete_preset(preset.id)
         return False
+    
+    def get_current_state_as_preset_data(self):
+        """Retourne l'état actuel sous forme de PresetData temporaire"""
+        from datetime import datetime
+        
+        return PresetData(
+            id="temp_current_state",
+            name="État Actuel",
+            description="État actuel du réacteur",
+            category=PresetCategory.TEMPOREL if self.simulation_time > 0 else PresetCategory.BASE,
+            preset_type=PresetType.UTILISATEUR,
+            created_date=datetime.now(),
+            modified_date=datetime.now(),
+            control_rod_position=self.control_rod_position,
+            boron_concentration=self.boron_concentration,
+            moderator_temperature=self.moderator_temperature,
+            fuel_enrichment=self.fuel_enrichment,
+            power_level=self.power_level,
+            iodine_concentration=self.iodine_concentration,
+            xenon_concentration=self.xenon_concentration,
+            simulation_time=self.simulation_time
+        )

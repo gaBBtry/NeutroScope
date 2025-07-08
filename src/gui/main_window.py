@@ -17,6 +17,7 @@ from src.gui.widgets.credits_button import CreditsButton
 from src.gui.widgets.info_manager import InfoManager
 from src.gui.widgets.enhanced_widgets import InfoGroupBox
 from src.gui.widgets.info_dialog import InfoDialog
+from src.gui.widgets.preset_manager_dialog import PresetManagerDialog
 
 
 class MainWindow(QMainWindow):
@@ -170,10 +171,22 @@ class MainWindow(QMainWindow):
         # Presets
         self.presets_group = self.create_info_groupbox("Préréglages", self.info_texts["presets"])
         preset_layout = QVBoxLayout()
+        
+        # Première ligne : ComboBox + Bouton Gérer
+        preset_controls_layout = QHBoxLayout()
+        
         self.preset_combo = QComboBox()
         self.preset_combo.addItems(self.controller.get_preset_names())
         self.preset_combo.setCurrentText(self.controller.get_current_preset_name())
-        preset_layout.addWidget(self.preset_combo)
+        preset_controls_layout.addWidget(self.preset_combo)
+        
+        # Bouton pour ouvrir le gestionnaire de presets avancé
+        self.manage_presets_button = QPushButton("Gérer...")
+        self.manage_presets_button.setMaximumWidth(80)
+        self.manage_presets_button.clicked.connect(self.open_preset_manager)
+        preset_controls_layout.addWidget(self.manage_presets_button)
+        
+        preset_layout.addLayout(preset_controls_layout)
         self.presets_group.setLayout(preset_layout)
         
         # Control Rods
@@ -405,6 +418,59 @@ class MainWindow(QMainWindow):
         self.update_visualizations()
         # Clear xenon plot history
         self.visualization_panel.xenon_widget.clear_history()
+    
+    def open_preset_manager(self):
+        """Ouvre le gestionnaire de presets avancé"""
+        try:
+            # Obtenir le gestionnaire de presets et l'état actuel
+            preset_manager = self.controller.get_preset_manager()
+            current_state = self.controller.get_current_state_as_preset_data()
+            
+            # Créer et afficher le dialog
+            dialog = PresetManagerDialog(preset_manager, current_state, self)
+            
+            # Connecter le signal d'application de preset
+            dialog.preset_applied.connect(self.on_preset_applied_from_manager)
+            
+            # Afficher le dialog de manière modale
+            if dialog.exec() == dialog.DialogCode.Accepted:
+                # Rafraîchir la liste des presets dans le combo
+                self.refresh_preset_combo()
+                
+        except Exception as e:
+            from PyQt6.QtWidgets import QMessageBox
+            QMessageBox.critical(self, "Erreur", f"Erreur lors de l'ouverture du gestionnaire de presets:\n{str(e)}")
+    
+    def on_preset_applied_from_manager(self, preset_name):
+        """Gère l'application d'un preset depuis le gestionnaire avancé"""
+        # Appliquer le preset via la méthode existante
+        config = self.controller.apply_preset(preset_name)
+        if config:
+            self.update_ui_from_preset(config)
+            # Mettre à jour le combo pour refléter le preset sélectionné
+            self.preset_combo.setCurrentText(preset_name)
+    
+    def refresh_preset_combo(self):
+        """Rafraîchit la liste des presets dans le QComboBox"""
+        current_selection = self.preset_combo.currentText()
+        self.preset_combo.blockSignals(True)
+        
+        # Sauvegarder l'ancienne sélection et vider le combo
+        self.preset_combo.clear()
+        
+        # Recharger tous les presets
+        self.preset_combo.addItems(self.controller.get_preset_names())
+        
+        # Rétablir la sélection si elle existe encore
+        index = self.preset_combo.findText(current_selection)
+        if index >= 0:
+            self.preset_combo.setCurrentIndex(index)
+        else:
+            # Si le preset n'existe plus, sélectionner le preset actuel
+            current_preset = self.controller.get_current_preset_name()
+            self.preset_combo.setCurrentText(current_preset)
+        
+        self.preset_combo.blockSignals(False)
 
     def update_reactor_params(self, params):
         """Update the display of reactor parameters"""

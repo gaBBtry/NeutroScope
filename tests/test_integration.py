@@ -230,7 +230,7 @@ def test_gui_boron_spinbox_coherence(app, qtbot):
     new_boron = 850
 
     # Simulate user changing the value of the boron spinbox
-    app.on_boron_concentration_changed(new_boron)
+    app.on_boron_spinbox_changed(new_boron)
     
     # Assert that the model was updated
     assert app.controller.model.boron_concentration == new_boron
