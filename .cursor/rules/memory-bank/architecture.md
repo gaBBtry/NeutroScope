@@ -1,131 +1,251 @@
 # Architecture de NeutroScope
 
-Ce document décrit l'architecture logicielle de l'application NeutroScope, en se concentrant sur la séparation des responsabilités et le flux de données.
+Ce document décrit l'architecture logicielle finale de l'application NeutroScope, en se concentrant sur la séparation des responsabilités et le flux de données dans sa forme complète et opérationnelle.
 
-## Vue d'ensemble : Modèle-Vue-Contrôleur (MVC) avec Extensions Temporelles
+## Vue d'ensemble : Modèle-Vue-Contrôleur (MVC) Avancé
 
-Le projet est structuré selon une variante du design pattern **Modèle-Vue-Contrôleur (MVC)** pour garantir une séparation claire entre la logique métier (la physique du réacteur), l'interface utilisateur et la gestion des entrées.
+Le projet est structuré selon une variante sophistiquée du design pattern **Modèle-Vue-Contrôleur (MVC)** pour garantir une séparation claire entre la logique métier (la physique du réacteur), l'interface utilisateur et la gestion des entrées, même avec les extensions temporelles et de gestion de presets.
 
-**ÉVOLUTION MAJEURE** : L'architecture a été étendue pour supporter la **simulation temporelle** avec la dynamique Xénon-135, transformant NeutroScope d'un simulateur statique en un simulateur dynamique avancé.
+**ARCHITECTURE FINALE** : L'architecture a été étendue pour supporter la **simulation temporelle complète** avec la dynamique Xénon-135, un **système de presets avancé** avec métadonnées et persistance, et des **outils pédagogiques sophistiqués**, transformant NeutroScope d'un simulateur statique en un **simulateur pédagogique professionnel**.
 
--   **Modèle (`src/model/`)**: Contient la logique de simulation pure, maintenant avec dimension temporelle. Il ne connaît rien de l'interface utilisateur et est entièrement piloté par `config.json`.
--   **Vue (`src/gui/`)**: Responsable de l'affichage de l'information et de la capture des interactions de l'utilisateur, maintenant avec visualisations temporelles.
--   **Contrôleur (`src/controller/`)**: Sert de pont simple et direct entre le Modèle et la Vue, étendu pour les contrôles temporels.
+-   **Modèle (`src/model/`)**: Contient la logique de simulation pure avec dimension temporelle, système de presets avancé et validation physique. Il ne connaît rien de l'interface utilisateur et est entièrement piloté par `config.json`.
+-   **Vue (`src/gui/`)**: Responsable de l'affichage de l'information et de la capture des interactions de l'utilisateur, avec visualisations temporelles, interface de gestion de presets et système d'information contextuel.
+-   **Contrôleur (`src/controller/`)**: Sert de pont sophistiqué entre le Modèle et la Vue, étendu pour les contrôles temporels, gestion de presets et orchestration complète.
 
 ## Structure du Projet et Relations des Composants
 
 ```
-NeutroScope/
+NeutroScope/ (Architecture Finale Complète)
 ├── src/
-│   ├── model/                      # MODÈLE (Logique métier + temporel)
-│   │   ├── reactor_model.py        # Cœur de la simulation physique + Xénon
-│   │   └── config.py               # Chargeur pour config.json
+│   ├── model/                      # MODÈLE (Logique métier complète)
+│   │   ├── reactor_model.py        # Simulation physique + Xénon + Presets
+│   │   ├── preset_model.py         # Système de presets avancé complet
+│   │   ├── config.py               # Chargeur configuration étendue
+│   │   └── calculators/            # Modules de calcul spécialisés
 │   │
-│   ├── controller/                 # CONTRÔLEUR (Orchestration + temporel)
-│   │   └── reactor_controller.py   # Pont entre Modèle et Vue + contrôles temps
+│   ├── controller/                 # CONTRÔLEUR (Orchestration complète)
+│   │   └── reactor_controller.py   # Contrôleur unifié + temporel + presets
 │   │
-│   └── gui/                        # VUE (Interface + visualisations temporelles)
-│       ├── main_window.py          # Fenêtre principale + onglet Xénon
-│       ├── visualization.py        # Gestionnaire des visualisations
-│       └── widgets/                # Composants d'interface réutilisables
-│           ├── xenon_plot.py       # NOUVEAU: Visualisation temporelle Xénon
-│           └── [autres widgets]
+│   └── gui/                        # VUE (Interface professionnelle)
+│       ├── main_window.py          # Fenêtre principale + onglets + presets
+│       ├── visualization.py        # Gestionnaire visualisations étendues
+│       └── widgets/                # Écosystème de widgets complets
+│           ├── preset_manager_dialog.py      # Gestionnaire presets GUI
+│           ├── xenon_plot.py                 # Visualisation temporelle Xénon
+│           ├── neutron_cycle_plot.py         # Cycle neutronique interactif
+│           ├── flux_plot.py                  # Distribution axiale du flux
+│           ├── four_factors_plot.py          # Facteurs neutroniques
+│           ├── neutron_balance_plot.py       # Bilan neutronique
+│           ├── pilotage_diagram_plot.py      # Diagramme de pilotage
+│           ├── enhanced_widgets.py           # Widgets avec info contextuelle
+│           ├── info_manager.py               # Système d'information unifié
+│           ├── info_panel.py                 # Panneau d'affichage info
+│           ├── info_dialog.py                # Dialog information détaillée
+│           ├── info_button.py                # Bouton d'information
+│           └── credits_button.py             # Bouton crédits
 │
 ├── tests/                          # Tests unitaires et d'intégration
-├── docs/                           # Documentation
+├── docs/                           # Documentation et décisions architecture
 │   ├── adr/                        # Architecture Decision Records
-│   └── architecture.md             # Ce fichier
-├── config.json                     # TOUTES les constantes + paramètres Xénon
+│   ├── architecture.md             # Ce fichier
+│   └── BUILD_WINDOWS.md             # Documentation déploiement
+├── config.json                     # Configuration complète et constantes physiques
+├── user_presets.json               # Presets utilisateur (généré automatiquement)
 ├── requirements.txt                # Dépendances Python
 ├── build_windows.py                # Script de build PyInstaller optimisé
-└── build_windows.bat               # Script batch automatisé pour Windows
+├── build_windows.bat               # Script batch automatisé pour Windows
+└── main.py                         # Point d'entrée de l'application
 ```
 
 ---
-## 1. Le Modèle (`src/model/`) - Extensions Temporelles
+## 1. Le Modèle (`src/model/`) - Simulation Complète
 
-Le cœur de la simulation, maintenant avec capacités temporelles.
+Le cœur de la simulation, maintenant avec toutes les capacités temporelles et de gestion avancée.
 
--   **`reactor_model.py`**:
-    -   Classe principale : `ReactorModel`.
-    -   Implémente les calculs physiques basés sur la **formule des six facteurs** et la théorie de la diffusion.
-    -   **NOUVEAU** : Modélisation temporelle avec équations différentielles de Bateman (Iode-135 → Xénon-135).
-    -   **Physique Avancée** :
-        - Effet de température du modérateur sur le facteur `p`
-        - Cinétique des poisons neutroniques avec constantes de désintégration
-        - Calcul d'équilibre Xénon et évolution temporelle
-    -   Contient l'état interne du réacteur ET l'historique temporel, mis à jour via une méthode `_update_parameter` générique.
-    -   **Nouvelles méthodes clés** :
-        - `calculate_xenon_equilibrium()` : Calcul de l'état d'équilibre
-        - `update_xenon_dynamics()` : Évolution temporelle selon Bateman
-        - `advance_time()` : Avancement temporel avec mise à jour complète
-    -   **Totalement découplé** : Ne contient aucune valeur "magique". Tous les coefficients, constantes physiques et paramètres de simulation sont chargés depuis le module `config`.
+### **`reactor_model.py`** - Simulation Physique Complète
+-   **Classe principale** : `ReactorModel` - Implémentation complète de la physique des réacteurs
+-   **Physique de base** : Calculs basés sur la **formule des six facteurs** et la théorie de la diffusion neutronique
+-   **Extensions temporelles** : 
+    - Modélisation temporelle avec équations différentielles de Bateman (Iode-135 → Xénon-135)
+    - Calculs d'équilibre et évolution temporelle avec solutions analytiques exactes
+    - Gestion de l'historique temporel pour visualisations continues
+-   **Physique avancée** :
+    - Effet Doppler du combustible (facteur `p`)
+    - Effet de température du modérateur sur l'absorption et les fuites
+    - Cinétique des poisons neutroniques avec constantes de désintégration réalistes
+    - Calculs de réactivité incluant l'anti-réactivité Xénon
+-   **Méthodes clés** :
+    - `calculate_all()` : Calcul complet de tous les paramètres neutroniques
+    - `calculate_xenon_equilibrium()` : Calcul de l'état d'équilibre Xénon
+    - `update_xenon_dynamics(dt)` : Évolution temporelle selon Bateman
+    - `advance_time(hours)` : Avancement temporel avec mise à jour complète
+    - `get_xenon_dynamics_data()` : Données pour visualisation temporelle
+-   **Intégration presets** : Support complet du nouveau système de presets avec état temporel
+-   **Découplage total** : Aucune valeur "magique" - tous les coefficients depuis `config.py`
 
--   **`config.py`**:
-    -   Charge et expose les paramètres de `config.json`.
-    -   **ÉTENDU** : Gestion des nouvelles sections de configuration (xenon_dynamics, températures).
-    -   Ne contient aucune logique, uniquement des données de configuration.
+### **`preset_model.py`** - Système de Presets Professionnel
+-   **Architecture de données** :
+    - `PresetData` : Dataclass complète avec validation, métadonnées et sérialisation
+    - `PresetCategory` : Enum pour catégorisation (BASE, TEMPOREL, AVANCÉ, PERSONNALISÉ)
+    - `PresetType` : Enum pour type (SYSTÈME, UTILISATEUR)
+-   **`PresetManager`** : Gestionnaire sophistiqué avec :
+    - CRUD complet (Create, Read, Update, Delete) avec validation
+    - Chargement automatique depuis `config.json` et `user_presets.json`
+    - Import/Export JSON pour partage entre utilisateurs
+    - Recherche, filtrage et organisation par catégories
+    - Persistance automatique et gestion des versions
+-   **Validation robuste** : Vérification automatique des plages physiques et cohérence
+-   **Métadonnées complètes** : ID unique, dates, auteur, descriptions, tags, notes
+-   **État temporel** : Support complet des concentrations I-135/Xe-135 et temps simulation
 
-## 2. Le Contrôleur (`src/controller/`) - Extensions Temporelles
+### **`config.py`** - Configuration Étendue
+-   **Chargement unifié** : Exposition des paramètres de `config.json` vers le modèle
+-   **Sections étendues** :
+    - `physical_constants` : Constantes physiques fondamentales
+    - `four_factors` : Coefficients pour calculs neutroniques avec effets température
+    - `neutron_leakage` : Paramètres de géométrie et diffusion
+    - `thermal_hydraulics` : Couplages thermiques
+    - `xenon_dynamics` : Constantes pour dynamique temporelle Xénon-135
+    - `presets` : Configurations prédéfinies système
+-   **Aucune logique** : Uniquement accès aux données de configuration
 
-L'orchestrateur de l'application, étendu pour les simulations temporelles.
+## 2. Le Contrôleur (`src/controller/`) - Orchestration Complète
 
--   **`reactor_controller.py`**:
-    -   Classe principale : `ReactorController`.
-    -   Agit comme une simple **façade** pour le modèle.
-    -   **ÉTENDU** : Nouvelles méthodes pour contrôles temporels :
-        - `advance_time_hours()` : Avancement temporel avec validation
-        - `reset_xenon_to_equilibrium()` : Remise à l'équilibre
-    -   Traduit les actions de la Vue en appels au Modèle sans ajouter de logique.
+L'orchestrateur sophistiqué de l'application, gérant toutes les interactions.
 
-## 3. La Vue (`src/gui/`) - Visualisations Temporelles
+### **`reactor_controller.py`** - Contrôleur Unifié
+-   **Classe principale** : `ReactorController` - Façade complète pour le modèle
+-   **Méthodes de base** : Gestion des paramètres physiques (barres, bore, température, etc.)
+-   **Extensions temporelles** :
+    - `advance_time_hours(hours)` : Avancement temporel avec validation
+    - `reset_xenon_to_equilibrium()` : Remise à l'équilibre
+    - `get_xenon_dynamics_data()` : Récupération données temporelles
+-   **Gestion presets avancée** :
+    - `get_preset_manager()` : Accès au gestionnaire de presets
+    - `create_preset_from_current_state()` : Création depuis état actuel
+    - `export_presets()` / `import_presets()` : Fonctions import/export
+    - `get_current_state_as_preset_data()` : Conversion état → preset
+-   **Méthodes de récupération** : Toutes les données nécessaires pour la vue
+-   **Aucune logique métier** : Translation pure des actions Vue → Modèle
 
-L'interface et l'expérience utilisateur, enrichie des visualisations temporelles.
+## 3. La Vue (`src/gui/`) - Interface Professionnelle
 
--   **`main_window.py`**:
-    -   Classe principale : `MainWindow`.
-    -   Construit l'interface et assemble les widgets.
-    -   **ÉTENDU** : Nouvel onglet "Dynamique Xénon" avec contrôles temporels.
-    -   Instancie le `ReactorController`.
-    -   Connecte les signaux des widgets à des slots qui appellent le contrôleur via une méthode générique `_update_parameter_and_ui`.
-    -   **NOUVEAU** : Gestion des contrôles temporels (boutons avancement temps, reset).
-    -   Utilise `blockSignals` pour une synchronisation claire et robuste entre les widgets (ex: slider et spinbox).
+L'interface et l'expérience utilisateur complète avec tous les outils pédagogiques.
 
-### Widgets de Visualisation - Extensions Temporelles
+### **`main_window.py`** - Interface Principale
+-   **Classe principale** : `MainWindow` - Assemblage de l'interface complète
+-   **Structure étendue** :
+    - Panneau de contrôle avec sliders et spinboxes synchronisés
+    - Système de presets avec QComboBox + bouton "Gérer..."
+    - Connexion complète des signaux avec gestion des presets avancés
+-   **Méthodes clés** :
+    - `open_preset_manager()` : Ouverture gestionnaire presets avancé
+    - `on_preset_applied()` : Gestion application preset depuis gestionnaire
+    - `update_preset_combo()` : Synchronisation liste presets
+    - `connect_signals()` : Connexion complète des signaux UI
+-   **Gestion temporelle** : Connexion des contrôles Xénon avec signaux appropriés
+-   **Architecture info** : Intégration système d'information contextuel
 
--   **`widgets/`**: Contient tous les composants graphiques, y compris les graphiques Matplotlib et les widgets QPainter.
--   **`widgets/xenon_plot.py`** (**NOUVEAU**) :
-    -   Widget spécialisé pour la visualisation temporelle Xénon-135
-    -   Graphiques jumeaux : concentrations I-135/Xe-135 et effet sur réactivité
-    -   Contrôles intégrés : avancement temps (1-24h), reset équilibre
-    -   Architecture modulaire compatible MVC
--   **`visualization.py`**: Gère la disposition des graphiques dans un `QTabWidget`, étendu pour l'onglet Xénon.
+### **`visualization.py`** - Gestionnaire de Visualisations
+-   **Organisation en onglets** : QTabWidget avec tous les graphiques
+-   **Onglets disponibles** :
+    - "Neutronique" : Cycle neutronique, facteurs, flux, bilan
+    - "Pilotage" : Diagramme de pilotage et contrôles
+    - "Dynamique Xénon" : Visualisations temporelles et contrôles temps
+-   **Méthode d'update** : `update_all_plots(data)` pour synchronisation générale
+-   **Gestion info** : Distribution du `InfoManager` vers tous les widgets
 
-## Flux de Données Temporelles
+### Widgets de Visualisation - Écosystème Complet
 
-### Simulation Statique (existante)
+#### **Widgets de Simulation Physique**
+-   **`neutron_cycle_plot.py`** : 
+    - Visualisation du cycle neutronique avec populations détaillées
+    - Info-bulles enrichies avec explications physiques complètes
+    - Animations et feedback visuel pour concepts pédagogiques
+-   **`four_factors_plot.py`** : 
+    - Graphique des quatre facteurs avec k_inf et k_eff
+    - Ligne critique et annotations automatiques
+    - Tooltips détaillés pour chaque facteur
+-   **`flux_plot.py`** : 
+    - Distribution axiale du flux avec effet des barres de contrôle
+    - Interaction souris avec informations contextuelles
+    - Visualisation impact géométrique
+-   **`neutron_balance_plot.py`** : Bilan neutronique en secteurs
+-   **`pilotage_diagram_plot.py`** : Diagramme de pilotage professionnel
+
+#### **Widgets Temporels**
+-   **`xenon_plot.py`** (**NOUVEAU**) :
+    - Classe `XenonPlot` : Graphiques jumeaux concentrations + réactivité
+    - Classe `XenonControlWidget` : Contrôles temporels intégrés
+    - Classe `XenonVisualizationWidget` : Widget complet avec historique
+    - Architecture modulaire compatible MVC
+    - Gestion échelles logarithmiques et mise à jour temps réel
+
+#### **Widgets de Gestion**
+-   **`preset_manager_dialog.py`** (**NOUVEAU**) :
+    - Interface complète de gestion de presets avec onglets
+    - Vue hiérarchique par catégories avec filtrage
+    - Formulaires de création/édition avec validation
+    - Fonctions import/export avec gestion d'erreurs
+    - Prévisualisation et comparaison de presets
+
+#### **Système d'Information Unifié**
+-   **`info_manager.py`** : Gestionnaire centralisé des informations contextuelles
+-   **`info_panel.py`** : Panneau d'affichage des informations
+-   **`info_dialog.py`** : Dialog pour informations détaillées
+-   **`enhanced_widgets.py`** : Widgets avec support info intégré
+
+## Flux de Données - Architecture Complète
+
+### **Simulation Statique** (existante)
 1. Interface → Contrôleur → Modèle → Calcul instantané → Contrôleur → Interface
 
-### Simulation Temporelle (nouvelle)
+### **Simulation Temporelle** (nouvelle)
 1. Interface (contrôle temporel) → Contrôleur → Modèle
-2. Modèle : Résolution équations différentielles + mise à jour état
+2. Modèle : Résolution équations différentielles + mise à jour état + historique
 3. Modèle → Contrôleur → Interface (mise à jour graphiques temporels)
-4. Historique sauvegardé pour visualisation continue
 
-## Principes de Conception après Extensions Temporelles
+### **Gestion de Presets** (nouvelle)
+1. Interface → Contrôleur → PresetManager → Validation + Persistance
+2. PresetManager → Contrôleur → Interface (synchronisation listes)
+3. Import/Export : PresetManager ↔ Fichiers JSON ↔ Interface
 
-1.  **Séparation Stricte des Responsabilités** : MVC clairement implémenté, même avec extensions temporelles.
-2.  **Configuration Externalisée** : `config.json` est la source unique de vérité pour toutes les constantes, y compris Xénon.
-3.  **Don't Repeat Yourself (DRY)** : Logique dupliquée éliminée dans le modèle (`_update_parameter`) et la vue (`_update_parameter_and_ui`).
-4.  **Cohérence Linguistique** : Interface, commentaires et documentation principalement en français.
-5.  **Build Optimisé** : Le script `build_windows.py` a été nettoyé des options redondantes.
-6.  **NOUVEAU** : **Extensibilité Temporelle** : Architecture conçue pour supporter facilement d'autres phénomènes temporels (autres isotopes, transitoires).
-7.  **NOUVEAU** : **Performance Temps Réel** : Calculs optimisés pour simulation fluide avec visualisation continue.
+### **Système d'Information** (nouveau)
+1. Survol souris → Widget → InfoManager → InfoPanel
+2. Appui touche 'i' → InfoManager → InfoDialog → Affichage détaillé
 
-## Impact Architectural
+## Principes de Conception Finaux
 
-Cette extension transforme NeutroScope d'une **calculatrice physique statique** en un **simulateur dynamique avancé** tout en préservant :
-- La clarté de l'architecture MVC
-- La séparation des responsabilités
-- La configurabilité externalisée
-- La facilité de maintenance et d'extension 
+1.  **Séparation Stricte des Responsabilités** : MVC rigoureusement implémenté, même avec toutes les extensions
+2.  **Configuration Externalisée Complète** : `config.json` source unique de vérité pour toutes les constantes
+3.  **Don't Repeat Yourself (DRY)** : Élimination de toute duplication avec méthodes génériques
+4.  **Cohérence Linguistique** : Interface, commentaires et documentation en français
+5.  **Build Optimisé** : Scripts de compilation streamlinés et performants
+6.  **Extensibilité Architecturale** : Support facile d'autres phénomènes temporels et fonctionnalités
+7.  **Performance Temps Réel** : Calculs optimisés pour simulation fluide avec visualisation continue
+8.  **Validation Systématique** : Vérification automatique à tous les niveaux (physique, UI, persistance)
+9.  **Modularité Complète** : Chaque composant indépendant et testable
+10. **Évolutivité Éducative** : Architecture préparée pour extensions pédagogiques futures
+
+## Impact Architectural Final
+
+Cette architecture finale transforme NeutroScope d'une **calculatrice physique statique** en un **simulateur pédagogique professionnel complet** tout en préservant et renforçant :
+
+- **Clarté architecturale** : MVC encore plus évident avec responsabilités étendues
+- **Séparation des responsabilités** : Chaque couche a un rôle précis et bien défini
+- **Configurabilité** : Tout paramètre externalisé et modifiable
+- **Maintenabilité** : Code modulaire facilitant évolutions et corrections
+- **Extensibilité** : Ajout facile de nouvelles fonctionnalités sans impact architecture
+- **Testabilité** : Chaque composant indépendamment testable
+- **Performance** : Optimisations permettant usage temps réel fluide
+- **Qualité éducative** : Support architectural pour outils pédagogiques sophistiqués
+
+## Conclusion Architecturale
+
+L'architecture finale de NeutroScope représente un **équilibre optimal** entre :
+- **Sophistication technique** : Capacités avancées de simulation et gestion
+- **Simplicité conceptuelle** : MVC clair et compréhensible
+- **Flexibilité éducative** : Support de multiples approches pédagogiques
+- **Robustesse opérationnelle** : Fiabilité pour usage en production éducative
+
+Cette architecture constitue une **base solide et évolutive** pour un outil éducatif de niveau professionnel dans le domaine de la physique des réacteurs nucléaires. 

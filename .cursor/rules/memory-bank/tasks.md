@@ -4,6 +4,186 @@ Ce fichier documente les tâches répétitives et leurs workflows pour faciliter
 
 ---
 
+## Refactor Complet d'un Système de Gestion (Presets Avancés)
+
+**Dernière exécution :** Janvier 2025  
+**Contexte :** Transformation du système de presets simple vers un système professionnel complet
+
+### Type de tâche :
+Refactor majeur avec nouveau modèle de données, interface GUI sophistiquée, et intégration complète
+
+### Fichiers principaux créés/modifiés :
+- **NOUVEAU** `src/model/preset_model.py` - Système de données avancé complet
+- **NOUVEAU** `src/gui/widgets/preset_manager_dialog.py` - Interface GUI sophistiquée
+- **NOUVEAU** `user_presets.json` - Fichier de persistance utilisateur
+- `src/model/reactor_model.py` - Extensions pour intégration presets avancés
+- `src/controller/reactor_controller.py` - Méthodes de gestion presets
+- `src/gui/main_window.py` - Bouton d'accès et synchronisation
+
+### Workflow Phase 1 : Architecture de Données
+
+**Étapes :**
+1. **Analyse des besoins** :
+   - Identifier limitations du système existant (pas de métadonnées, validation, organisation)
+   - Définir exigences nouvelles (catégorisation, temporel, import/export, validation)
+   - Concevoir structure de données extensible
+
+2. **Création du modèle de données** :
+   - Implémenter `PresetData` comme dataclass avec validation intégrée
+   - Créer enums `PresetCategory` et `PresetType` pour organisation
+   - Ajouter métadonnées complètes (ID, dates, auteur, descriptions, tags)
+   - Support état temporel (concentrations I-135/Xe-135, temps simulation)
+
+3. **Gestionnaire sophistiqué** :
+   - Classe `PresetManager` avec CRUD complet
+   - Chargement automatique depuis `config.json` (système) et `user_presets.json` (utilisateur)
+   - Validation robuste avec vérification plages physiques
+   - Persistance automatique avec gestion versions
+
+### Workflow Phase 2 : Interface Graphique Avancée
+
+**Étapes :**
+1. **Dialog principal** :
+   - Créer `PresetManagerDialog` avec architecture en onglets
+   - Onglet "Parcourir" : Vue hiérarchique par catégories avec filtrage
+   - Onglet "Créer/Modifier" : Formulaires avec validation temps réel
+   - Onglet "Import/Export" : Fonctions partage avec gestion erreurs
+
+2. **Widgets spécialisés** :
+   - Vue arborescente avec icônes par catégorie
+   - Formulaires adaptatifs selon type de preset
+   - Prévisualisation et comparaison de presets
+   - Gestion des métadonnées avec interfaces intuitives
+
+3. **Gestion des signaux** :
+   - Signal `preset_applied` pour communication avec interface principale
+   - Validation en temps réel avec feedback visuel
+   - Synchronisation bidirectionnelle avec système existant
+
+### Workflow Phase 3 : Intégration Système
+
+**Étapes :**
+1. **Extension du modèle** :
+   - Intégrer `PresetManager` dans `ReactorModel`
+   - Adapter méthodes `apply_preset()` et `save_preset()` pour nouveau système
+   - Support des états temporels dans les presets
+   - Maintenir rétrocompatibilité avec presets existants
+
+2. **Extension du contrôleur** :
+   - Nouvelles méthodes dans `ReactorController`
+   - `get_preset_manager()`, `create_preset_from_current_state()`
+   - `export_presets()`, `import_presets()`
+   - `get_current_state_as_preset_data()`
+
+3. **Interface principale** :
+   - Ajouter bouton "Gérer..." à côté du QComboBox existant
+   - Méthode `open_preset_manager()` avec gestion signaux
+   - Synchronisation `update_preset_combo()` pour actualisation
+   - Préservation expérience utilisateur existante
+
+### Bonnes pratiques identifiées :
+
+#### **Architecture de Données**
+- **Validation intégrée** : Dataclass avec méthodes `validate()` automatiques
+- **Sérialisation robuste** : `to_dict()` et `from_dict()` avec gestion types Python
+- **Extensibilité** : Structure prête pour ajout futurs champs sans breaking changes
+- **Versioning** : Support versions de format pour migrations futures
+
+#### **Interface Utilisateur**
+- **Progressive disclosure** : Interface adaptée niveau utilisateur (débutant → expert)
+- **Feedback immédiat** : Validation temps réel avec messages clairs
+- **Cohérence visuelle** : Respect guidelines Qt avec icônes et couleurs cohérentes
+- **Accessibilité** : Raccourcis clavier et navigation au clavier
+
+#### **Intégration Système**
+- **Rétrocompatibilité** : Ancien système continue de fonctionner pendant transition
+- **Migration douce** : Presets existants automatiquement convertis au nouveau format
+- **Synchronisation** : État cohérent entre ancien et nouveau système
+- **Fallback gracieux** : Gestion élégante des erreurs de chargement/sauvegarde
+
+### Points critiques :
+
+1. **Gestion des versions** : Format de fichier évolutif sans perte de données
+2. **Performance** : Chargement rapide même avec nombreux presets
+3. **Validation** : Vérification cohérence sans bloquer interface
+4. **Import/Export** : Gestion robuste erreurs avec feedback utilisateur
+5. **Tests** : Validation complète fonctionnalités CRUD et intégration
+
+### Code type pour extension système gestion :
+
+```python
+# Modèle de données avec validation
+@dataclass
+class PresetData:
+    # Champs requis
+    name: str
+    description: str
+    category: PresetCategory
+    # Paramètres physiques
+    control_rod_position: float
+    # ... autres paramètres
+    # Métadonnées
+    created_date: datetime = field(default_factory=datetime.now)
+    id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    
+    def validate(self) -> List[str]:
+        """Validation avec retour d'erreurs explicites"""
+        errors = []
+        if not (0 <= self.control_rod_position <= 100):
+            errors.append("Position barres doit être 0-100%")
+        return errors
+
+# Gestionnaire avec CRUD complet
+class PresetManager:
+    def __init__(self):
+        self._presets = {}
+        self._load_system_presets()
+        self._load_user_presets()
+    
+    def create_preset(self, name: str, **params) -> Optional[PresetData]:
+        """Création avec validation automatique"""
+        preset = PresetData(name=name, **params)
+        errors = preset.validate()
+        if errors:
+            raise ValueError(f"Validation échouée: {', '.join(errors)}")
+        
+        self._presets[preset.id] = preset
+        self._save_user_presets()
+        return preset
+
+# Interface avec validation temps réel
+class PresetManagerDialog(QDialog):
+    preset_applied = pyqtSignal(str)  # Signal pour communication
+    
+    def setup_validation(self):
+        """Connexion validation temps réel"""
+        self.name_edit.textChanged.connect(self.validate_form)
+        self.description_edit.textChanged.connect(self.validate_form)
+        # ... autres connexions
+    
+    def validate_form(self):
+        """Validation avec feedback visuel immédiat"""
+        errors = []
+        if not self.name_edit.text().strip():
+            errors.append("Nom requis")
+        
+        if errors:
+            self.create_button.setEnabled(False)
+            self.error_label.setText("; ".join(errors))
+        else:
+            self.create_button.setEnabled(True)
+            self.error_label.clear()
+```
+
+### Extensions futures possibles :
+- Presets avec dépendances temporelles (séquences)
+- Sharing cloud avec authentification
+- Templates de presets pour créations rapides
+- Historique des modifications avec rollback
+- Export formats multiples (PDF, PowerPoint pour cours)
+
+---
+
 ## Implémentation d'Optimisations Physiques Majeures
 
 **Dernière exécution :** Janvier 2025  
@@ -133,64 +313,39 @@ def setup_time_controls(self):
 **Modifications requises :**
 1. **Constructeur :** Ajouter `info_manager: Optional[InfoManager] = None`
 2. **Stockage :** `self.info_manager = info_manager`
-3. **Mouse tracking :** `self.setMouseTracking(True)` (déjà présent généralement)
-4. **Événements :** Implémenter `mouseMoveEvent` et `leaveEvent`
-5. **Hit testing :** Logique pour détecter sur quoi survole l'utilisateur
-6. **Émission :** Utiliser `self.info_manager.info_requested.emit()` et `self.info_manager.info_cleared.emit()`
+3. **Méthodes d'événements :** Implémenter ou modifier `mouseMoveEvent` et `leaveEvent`
+4. **Gestion des zones :** Utiliser des rectangles ou régions pour détecter le survol
 
-### Modifications dans les classes parentes :
+### Workflow général :
 
-#### VisualizationPanel
-**Fichier :** `src/gui/visualization.py`
+1. **Modification du constructeur du widget**
+2. **Implémentation/modification des gestionnaires d'événements souris**
+3. **Mise à jour de la création du widget dans la classe parent** pour passer `info_manager`
+4. **Test du système de survol** avec différents éléments du widget
 
-1. **Constructeur :** Ajouter `info_manager: InfoManager` comme paramètre requis
-2. **Stockage :** `self.info_manager = info_manager`
-3. **Initialisation des widgets :** Passer `info_manager=self.info_manager` à tous les widgets de visualisation
-4. **Nettoyage :** Supprimer les méthodes obsolètes comme `set_external_info_callback`
-
-#### MainWindow
-**Fichier :** `src/gui/main_window.py`
-
-1. **Création :** Passer l'InfoManager lors de la création du VisualizationPanel :
-   ```python
-   self.visualization_panel = VisualizationPanel(self, info_manager=self.info_manager)
-   ```
-
-### Workflow étape par étape :
-
-1. **Identifier le type de widget** (Matplotlib vs QPainter)
-2. **Modifier le constructeur** pour accepter InfoManager
-3. **Adapter les événements de souris** selon le type
-4. **Remplacer les anciens callbacks** par les émissions de signaux InfoManager
-5. **Supprimer le code de fallback** (ex: `elif hasattr(self.parent(), 'update_info_panel')`)
-6. **Mettre à jour la chaîne d'initialisation** depuis MainWindow → VisualizationPanel → Widgets
-7. **Tester** le survol et la fonctionnalité de la touche 'i'
-
-### Points critiques à retenir :
-
-- **Types cohérents :** Attention aux `QPointF` vs `QPoint` dans les widgets QPainter
-- **Nettoyage automatique :** L'InfoManager gère automatiquement l'enregistrement/désenregistrement
-- **Pas de fallback :** Supprimer complètement les anciens mécanismes de callback
-- **Tests :** Vérifier que les informations s'affichent correctement et que la touche 'i' fonctionne
-- **Performance :** Les émissions de signaux sont légères et n'impactent pas les performances
-
-### Exemple de code type :
+### Exemple de code :
 
 ```python
-# Dans le constructeur
-def __init__(self, parent=None, width=5, height=4, dpi=100, info_manager: Optional[InfoManager] = None):
-    # ... init existant ...
+# Pour Matplotlib
+def __init__(self, parent=None, info_manager: Optional[InfoManager] = None):
+    super().__init__(parent)
     self.info_manager = info_manager
-
-# Dans les callbacks de souris
-def on_mouse_move(self, event):
-    # ... logique de détection ...
     if self.info_manager:
+        self.mpl_connect('motion_notify_event', self.on_mouse_move)
+        self.mpl_connect('axes_leave_event', self.on_axes_leave)
+
+def on_mouse_move(self, event):
+    if self.info_manager and event.inaxes:
+        info_text = "Information contextuelle appropriée..."
         self.info_manager.info_requested.emit(info_text)
 
-def on_axes_leave(self, event):
+# Pour QPainter  
+def mouseMoveEvent(self, event):
     if self.info_manager:
-        self.info_manager.info_cleared.emit()
+        # Logique pour déterminer la zone survolée
+        zone_info = self._get_zone_info(event.pos())
+        if zone_info:
+            self.info_manager.info_requested.emit(zone_info)
 ```
 
 ---
