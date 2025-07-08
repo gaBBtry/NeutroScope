@@ -2,6 +2,7 @@
 
 ## Focus Actuel
 - **STATUT FINAL** : NeutroScope est maintenant un simulateur pédagogique complet et professionnel, avec toutes les fonctionnalités majeures implémentées et opérationnelles.
+- **Dernière modification** : Suppression du bouton d'info de l'interface - la touche 'i' reste le seul moyen d'accéder aux informations détaillées, simplifiant l'interface utilisateur.
 
 ## Accomplissements Majeurs Récents
 

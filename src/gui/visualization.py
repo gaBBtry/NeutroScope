@@ -17,7 +17,7 @@ from .widgets.four_factors_plot import FourFactorsPlot
 from .widgets.neutron_balance_plot import NeutronBalancePlot
 from .widgets.pilotage_diagram_plot import PilotageDiagramPlot
 from .widgets.info_panel import InfoPanel
-from .widgets.info_button import InfoButton
+
 from .widgets.neutron_cycle_plot import NeutronCyclePlot
 from .widgets.xenon_plot import XenonVisualizationWidget
 from .widgets.info_manager import InfoManager

@@ -12,7 +12,7 @@ from PyQt6.QtGui import QKeySequence, QShortcut
 from src.controller.reactor_controller import ReactorController
 from src.gui.visualization import VisualizationPanel
 from src.gui.widgets.info_panel import InfoPanel
-from src.gui.widgets.info_button import InfoButton
+
 from src.gui.widgets.credits_button import CreditsButton
 from src.gui.widgets.info_manager import InfoManager
 from src.gui.widgets.enhanced_widgets import InfoGroupBox
@@ -98,7 +98,6 @@ class MainWindow(QMainWindow):
         
         # Create info panel and buttons for left side
         self.info_panel = InfoPanel()
-        self.info_button = InfoButton()
         self.credits_button = CreditsButton()
         
         # Connect the new info management system
@@ -106,7 +105,6 @@ class MainWindow(QMainWindow):
         self.info_manager.info_cleared.connect(self.info_panel.clear_info)
         
         # Connect UI signals
-        self.info_button.clicked.connect(self._show_info_dialog)
         
         # Create control panel (left side)
         control_panel = self.create_control_panel()
@@ -115,7 +113,6 @@ class MainWindow(QMainWindow):
         buttons_layout = QHBoxLayout()
         buttons_layout.addStretch(1)
         buttons_layout.addWidget(self.credits_button)
-        buttons_layout.addWidget(self.info_button)
         
         # Add components to left container
         left_layout.addWidget(control_panel)
