@@ -1,67 +1,33 @@
-# Context: Build System and Deployment Setup
+# Contexte : Audit et Refactorisation du Code
 
-## Current Focus
-- Récemment terminé : Création d'un système complet de build Windows avec PyInstaller pour le partage via OneDrive
+## Focus Actuel
+- Récemment terminé : Un audit complet du code suivi d'une refactorisation majeure pour améliorer la robustesse, la lisibilité et la maintenance du projet.
 
-## Recent Changes
-- **Système de build Windows complet** : Création de scripts automatisés pour générer un exécutable Windows autonome avec PyInstaller
-- **Résolution problème PyInstaller** : Correction de l'erreur "ModuleNotFoundError: No module named 'src.controller'" via les options `--collect-submodules=src` et `--paths=src`
-- **Scripts de build utilisateur-friendly** : `build_windows.bat` pour automatisation complète et `build_windows.py` pour contrôle avancé
-- **Documentation de déploiement** : Guide complet dans `docs/BUILD_WINDOWS.md` et instructions rapides dans `INSTRUCTIONS_BUILD.txt`
-- **Optimisations exécutable** : Exclusion de modules inutiles (tkinter, unittest) pour réduire la taille de l'exécutable
+## Changements Récents
+- **Audit Complet du Code** : Analyse de l'ensemble du projet qui a identifié des duplications de code, des "nombres magiques" et des incohérences.
+- **Refactorisation du Modèle (`reactor_model.py`)** :
+    - Élimination des "nombres magiques" en les centralisant dans `config.json`.
+    - Création d'une méthode `_update_parameter` générique pour supprimer la duplication de code dans les méthodes de mise à jour.
+- **Refactorisation de la Vue (`main_window.py`)** :
+    - Création d'une méthode `_update_parameter_and_ui` pour unifier la logique des gestionnaires d'événements.
+    - Simplification de la synchronisation entre widgets (slider/spinbox) en utilisant `blockSignals`.
+- **Optimisation du Build (`build_windows.py`)** :
+    - Suppression des options `--hidden-import` redondantes pour les modules `src`, rendant le script plus simple et plus robuste.
+- **Amélioration de la Documentation** :
+    - Création d'un document d'architecture (`docs/architecture.md`).
+    - Standardisation et traduction de nombreux commentaires en français.
 
-## Current Status
+## Statut Actuel
 
-Le projet est maintenant prêt pour le déploiement avec un système de build Windows automatisé et un exécutable fonctionnel pour le partage OneDrive.
+Le projet est maintenant dans un état beaucoup plus sain et maintenable. Le code est plus propre, la configuration est entièrement centralisée, et la documentation d'architecture fournit une vue d'ensemble claire.
 
-### Key Accomplishments Récents
+### Accomplissements Clés
+- **Code plus Robuste** : Moins de duplication signifie moins de risques d'erreurs lors de futures modifications.
+- **Configuration Centralisée** : `config.json` est maintenant la source unique de vérité pour toutes les constantes et tous les préréglages, facilitant les ajustements de la simulation.
+- **Lisibilité Accrue** : Le code est plus facile à comprendre grâce à la refactorisation et à l'harmonisation des commentaires.
+- **Documentation Fondamentale** : Le nouveau document d'architecture est un pilier pour la compréhension et l'évolution du projet.
 
-#### 1. **Système de Build Windows Automatisé**
-- **Objectif** : Créer un exécutable Windows autonome pour partage via OneDrive d'entreprise
-- **Solution** : Implementation complète avec PyInstaller et scripts automatisés
-- **Fichiers créés** : 
-  - `build_windows.py` - Script Python intelligent avec gestion d'erreurs
-  - `build_windows.bat` - Script batch Windows pour automatisation totale
-  - `docs/BUILD_WINDOWS.md` - Documentation complète avec dépannage
-  - `INSTRUCTIONS_BUILD.txt` - Instructions rapides d'utilisation
-
-#### 2. **Résolution Problème PyInstaller**
-- **Problème initial** : `ModuleNotFoundError: No module named 'src.controller'` au lancement de l'exécutable
-- **Cause** : PyInstaller n'incluait pas automatiquement tous les modules du package `src`
-- **Solution** : Configuration avancée PyInstaller avec options spécialisées
-- **Options ajoutées** : 
-  - `--collect-submodules=src` - Inclusion récursive de tous les modules src
-  - `--paths=src` - Ajout du dossier src au chemin de recherche
-  - `--hidden-import` pour les modules critiques (controller, model, gui)
-
-#### 3. **Optimisations de l'Exécutable**
-- **Taille réduite** : Exclusion de modules inutiles (tkinter, unittest, test) pour optimiser la taille
-- **Performance** : Ajout des imports cachés nécessaires pour matplotlib et PyQt6
-- **Robustesse** : Gestion complète des erreurs et validation automatique du build
-- **Ressources** : Inclusion automatique du fichier `config.json` via `--add-data`
-
-#### 4. **Processus de Déploiement OneDrive**
-- **Méthode de partage** : Copie du dossier `releases/` sur OneDrive d'entreprise
-- **Utilisation finale** : Utilisateurs téléchargent et lancent directement `NeutroScope.exe`
-- **Aucune installation** : Exécutable autonome ne nécessitant pas Python sur la machine cible
-- **Compatibilité** : Windows 10/11 (et Windows 8.1) avec taille ~50-80 MB optimisée
-
-### État Actuel du Système
-- ✅ **Build Windows fonctionnel** : Scripts automatisés créent un exécutable stable
-- ✅ **Déploiement OneDrive** : Processus de partage d'entreprise opérationnel
-- ✅ **Documentation complète** : Guides utilisateur et dépannage disponibles
-- ✅ **Exécutable optimisé** : Taille réduite (~50-80 MB) avec toutes les dépendances
-- ✅ **Problèmes PyInstaller résolus** : Tous les modules src correctement inclus
-
-### Next Steps
-- **Test utilisateur final** : Validation de l'exécutable sur machines Windows "propres" (sans Python)
-- **Versioning** : Mise en place d'un système de numérotation de versions pour les releases
-- **Signature numérique** : Considérer la signature de l'exécutable pour éviter les avertissements antivirus
-- **Distribution automatisée** : Potentielle automatisation du upload OneDrive via scripts
-
-## Architecture Notable
-Le système de build Windows constitue maintenant un élément central du projet :
-- **Scripts automatisés** : `build_windows.bat` pour utilisateurs, `build_windows.py` pour contrôle avancé
-- **Configuration PyInstaller** : Options optimisées pour compatibilité et taille réduite
-- **Gestion des ressources** : Inclusion automatique de `config.json` et autres fichiers critiques
-- **Documentation stratifiée** : Instructions rapides + guide complet + dépannage 
+### Prochaines Étapes
+- Poursuivre la traduction des commentaires restants.
+- Exécuter les tests pour s'assurer que la refactorisation n'a introduit aucune régression.
+- Envisager d'ajouter des tests pour les nouvelles constantes de configuration. 

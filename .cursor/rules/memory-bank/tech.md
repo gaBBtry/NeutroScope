@@ -1,54 +1,51 @@
-# Technology Stack and Development Environment
+# Technologies et Environnement de Développement
 
-This document outlines the technologies, tools, and practices used in the NeutroScope project.
+Ce document décrit les technologies, outils et pratiques utilisés dans le projet NeutroScope.
 
-## Core Technologies
+## Technologies Clés
 
--   **Programming Language**: **Python 3.13+**
-    -   Chosen for its extensive scientific computing ecosystem, readability, and rapid development capabilities.
--   **User Interface (UI)**: **PyQt6**
-    -   A robust, cross-platform GUI framework that provides a native look and feel.
+-   **Langage** : **Python 3.12+**
+    -   Choisi pour son écosystème scientifique (NumPy, Matplotlib), sa lisibilité et sa rapidité de développement.
+-   **Interface Utilisateur (UI)** : **PyQt6**
+    -   Framework GUI robuste et multi-plateforme offrant une apparence native.
 
-## Key Libraries
+## Librairies Principales
 
--   **Numerical Operations**: **NumPy**
-    -   Used for all numerical calculations, especially array and matrix operations in the reactor model.
--   **Data Visualization**: **Matplotlib**
-    -   Integrated with PyQt6 to generate all plots and graphs (flux distribution, four-factors, etc.).
+-   **Calculs Numériques** : **NumPy**
+    -   Utilisé pour toutes les opérations numériques, notamment les calculs sur les tableaux dans le modèle du réacteur.
+-   **Visualisation de Données** : **Matplotlib**
+    -   Intégré à PyQt6 pour générer tous les graphiques (distribution de flux, quatre facteurs, etc.).
+-   **Utilitaires Scientifiques** : **SciPy**
+    -   Utilisé pour des fonctions scientifiques spécifiques si nécessaire.
 
-## Development and Tooling
+## Outillage et Développement
 
--   **Environment Management**: **venv**
-    -   Standard Python tool for creating isolated virtual environments to manage dependencies.
--   **Dependency Management**: `requirements.txt`
-    -   A standard file listing all necessary Python packages.
--   **Testing Framework**: **Pytest**
-    -   Used for writing and running all unit and integration tests.
-    -   **Plugins**:
-        -   `pytest-qt`: For testing PyQt6 components.
-        -   `pytest-cov`: For measuring test coverage.
--   **Version Control**: **Git**
-    -   All source code is managed in a Git repository.
+-   **Gestion d'Environnement** : **venv**
+    -   Outil standard de Python pour créer des environnements virtuels isolés.
+-   **Gestion des Dépendances** : `requirements.txt`
+    -   Fichier standard listant tous les paquets Python requis.
+-   **Tests** : **Pytest**
+    -   Framework utilisé pour les tests unitaires et d'intégration.
+    -   **Plugins** : `pytest-qt` (test des composants PyQt6), `pytest-cov` (mesure de la couverture de test).
+-   **Contrôle de Version** : **Git**
+    -   Tout le code source est géré dans un dépôt Git.
 
-## Build and Deployment
+## Build et Déploiement
 
--   **Build Tool**: **PyInstaller**
-    -   Creates standalone Windows executables with all dependencies bundled.
-    -   Configuration optimized for PyQt6 applications with matplotlib integration.
--   **Build Scripts**: 
-    -   `build_windows.bat`: Automated batch script for end users
-    -   `build_windows.py`: Python script with advanced error handling and validation
--   **Deployment Method**: **OneDrive Enterprise Sharing**
-    -   Executable distributed via corporate OneDrive links
-    -   No installation required on target machines
-    -   Compatible with Windows 10/11 and Windows 8.1
+-   **Outil de Build** : **PyInstaller**
+    -   Crée des exécutables Windows autonomes avec toutes les dépendances incluses.
+    -   La configuration est optimisée pour les applications PyQt6 avec Matplotlib, et les options redondantes ont été supprimées pour simplifier la maintenance.
+-   **Scripts de Build** :
+    -   `build_windows.bat` : Script batch automatisé pour une utilisation simple.
+    -   `build_windows.py` : Script Python pour un contrôle avancé, le nettoyage et la validation.
+-   **Déploiement** : Partage via **OneDrive** d'entreprise.
 
-## Project Structure
+## Structure du Projet
 
--   The project follows a standard structure separating the model, view, and controller logic:
-    -   `src/model`: Core simulation logic.
-    -   `src/gui`: UI components.
-    -   `src/controller`: Connects the model and the GUI.
-    -   `tests/`: Contains all test files.
-    -   `docs/`: Project documentation.
-    -   `config.json`: External configuration for presets and physical parameters. 
+-   Le projet suit une architecture MVC claire :
+    -   `src/model/` : Logique de simulation.
+    -   `src/gui/` : Composants de l'interface.
+    -   `src/controller/` : Pont entre le modèle et l'interface.
+    -   `tests/` : Tous les fichiers de test.
+    -   `docs/` : Documentation du projet.
+    -   `config.json` : **Source unique de vérité** pour toutes les constantes physiques et les préréglages. 

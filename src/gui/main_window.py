@@ -1,5 +1,5 @@
 """
-Main window implementation for the Neutro_EDF application
+Implémentation de la fenêtre principale pour l'application Neutro_EDF
 """
 from PyQt6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
@@ -20,7 +20,7 @@ from src.gui.widgets.info_dialog import InfoDialog
 
 
 class MainWindow(QMainWindow):
-    """Main application window with control panel and visualization area"""
+    """Fenêtre principale de l'application avec panneau de contrôle et zone de visualisation"""
     
     def __init__(self):
         super().__init__()
@@ -141,7 +141,7 @@ class MainWindow(QMainWindow):
         self.info_shortcut.activated.connect(self._show_info_dialog)
     
     def connect_signals(self):
-        """Connect all UI element signals to controller methods"""
+        """Connecte tous les signaux des éléments UI aux méthodes du contrôleur"""
         self.rod_slider.valueChanged.connect(self.on_rod_position_changed)
         self.boron_slider.valueChanged.connect(self.on_boron_slider_changed)
         self.boron_spinbox.valueChanged.connect(self.on_boron_spinbox_changed)
@@ -153,7 +153,7 @@ class MainWindow(QMainWindow):
         # No need for manual signal connections
     
     def create_control_panel(self):
-        """Create the control panel with reactor parameter controls"""
+        """Crée le panneau de contrôle avec les contrôles des paramètres du réacteur"""
         control_panel = QWidget()
         control_layout = QVBoxLayout()
         control_panel.setLayout(control_layout)
@@ -234,7 +234,7 @@ class MainWindow(QMainWindow):
         return control_panel
     
     def create_info_groupbox(self, title, info_text):
-        """Helper to create a group box with info capabilities"""
+        """Aide pour créer une boîte de groupe avec capacités d'information"""
         group_box = InfoGroupBox(title, info_text, self.info_manager)
         return group_box
 
@@ -320,47 +320,68 @@ class MainWindow(QMainWindow):
         if self.preset_combo.currentText() != current_preset_name:
             self.preset_combo.setCurrentText(current_preset_name)
 
-    def on_rod_position_changed(self, value):
-        """Handle control rod position change"""
-        self.rod_label.setText(f"{value} %")
-        params = self.controller.update_control_rod_position(float(value))
+    def _update_parameter_and_ui(self, controller_method, value, label_update_func=None):
+        """Méthode générique pour mettre à jour un paramètre et l'interface
+        
+        Args:
+            controller_method: Méthode du contrôleur à appeler
+            value: Valeur à passer à la méthode
+            label_update_func: Fonction optionnelle pour mettre à jour un label
+        """
+        # Mettre à jour l'affichage si nécessaire
+        if label_update_func:
+            label_update_func()
+            
+        # Mettre à jour le modèle via le contrôleur
+        params = controller_method(float(value))
+        
+        # Mettre à jour l'interface
         self.update_reactor_params(params)
         self.update_visualizations()
         self.check_for_custom_preset()
+
+    def on_rod_position_changed(self, value):
+        """Handle control rod position change"""
+        self._update_parameter_and_ui(
+            self.controller.update_control_rod_position,
+            value,
+            lambda: self.rod_label.setText(f"{value} %")
+        )
 
     def on_boron_slider_changed(self, value):
         """Sync spinbox with slider"""
+        self.boron_spinbox.blockSignals(True)
         self.boron_spinbox.setValue(float(value))
-        # on_boron_spinbox_changed will handle the rest
+        self.boron_spinbox.blockSignals(False)
         
     def on_boron_spinbox_changed(self, value):
         """Sync slider with spinbox and update model"""
+        self.boron_slider.blockSignals(True)
         self.boron_slider.setValue(int(value))
-        self.on_boron_concentration_changed(value)
+        self.boron_slider.blockSignals(False)
+        self._update_parameter_and_ui(
+            self.controller.update_boron_concentration,
+            value
+        )
 
-    def on_boron_concentration_changed(self, value):
-        """Handle boron concentration change"""
-        params = self.controller.update_boron_concentration(float(value))
-        self.update_reactor_params(params)
-        self.update_visualizations()
-        self.check_for_custom_preset()
+
 
     def on_moderator_temperature_changed(self, value):
         """Handle moderator temperature change"""
-        self.moderator_temp_label.setText(f"{value} °C")
-        params = self.controller.update_moderator_temperature(float(value))
-        self.update_reactor_params(params)
-        self.update_visualizations()
-        self.check_for_custom_preset()
+        self._update_parameter_and_ui(
+            self.controller.update_moderator_temperature,
+            value,
+            lambda: self.moderator_temp_label.setText(f"{value} °C")
+        )
 
     def on_fuel_enrichment_changed(self, value):
         """Handle fuel enrichment change"""
         enrichment = value / 10.0
-        self.fuel_enrichment_label.setText(f"{enrichment:.1f} %")
-        params = self.controller.update_fuel_enrichment(enrichment)
-        self.update_reactor_params(params)
-        self.update_visualizations()
-        self.check_for_custom_preset()
+        self._update_parameter_and_ui(
+            self.controller.update_fuel_enrichment,
+            enrichment,
+            lambda: self.fuel_enrichment_label.setText(f"{enrichment:.1f} %")
+        )
 
     def update_reactor_params(self, params):
         """Update the display of reactor parameters"""

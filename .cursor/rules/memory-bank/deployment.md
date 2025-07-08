@@ -25,12 +25,18 @@ NeutroScope utilise PyInstaller pour créer un exécutable Windows autonome qui 
 ### Configuration PyInstaller
 
 ```python
-# Options critiques pour résoudre les problèmes de modules
-"--collect-submodules=src",     # Inclusion récursive tous modules src
-"--paths=src",                  # Ajout src au chemin de recherche
-"--hidden-import=src.controller.reactor_controller",
-"--hidden-import=src.model.reactor_model",
-"--hidden-import=src.gui.main_window",
+# Options critiques pour la découverte de modules
+"--collect-submodules=src",     # Inclusion récursive de tous les modules src
+"--paths=src",                  # Ajout de src au chemin de recherche
+
+# Imports cachés nécessaires pour les dépendances externes
+"--hidden-import=PyQt6.QtCore",
+"--hidden-import=PyQt6.QtGui",
+"--hidden-import=PyQt6.QtWidgets",
+"--hidden-import=matplotlib.backends.backend_qt5agg",
+"--hidden-import=matplotlib.backends.backend_agg",
+"--hidden-import=numpy",
+"--hidden-import=scipy",
 
 # Optimisations de taille
 "--exclude-module=tkinter",
@@ -38,7 +44,7 @@ NeutroScope utilise PyInstaller pour créer un exécutable Windows autonome qui 
 "--exclude-module=test",
 
 # Ressources
-"--add-data=config.json;.",     # Inclusion fichier configuration
+"--add-data=config.json;.",     # Inclusion du fichier de configuration
 ```
 
 ## Problèmes Résolus

@@ -1,95 +1,95 @@
 """
-Reactor physics model for neutronics calculations
+Modèle de physique des réacteurs pour les calculs de neutronique
 """
 import numpy as np
 from . import config
 
 class ReactorModel:
     """
-    Basic reactor model implementing neutronics calculations for a PWR
+    Modèle de réacteur de base implémentant les calculs de neutronique pour un REP
     """
     
     def __init__(self):
-        # Default parameters
+        # Paramètres par défaut
         self.control_rod_position = 0.0  # 0-100%
         self.boron_concentration = 500.0  # ppm
         self.moderator_temperature = 310.0  # °C
         self.power_level = 100.0 # %
         self.fuel_enrichment = 3.5  # %
         
-        # This is now a calculated value, not a direct input
-        self.fuel_temperature = 0.0  # °C, will be calculated
+        # Ceci est maintenant une valeur calculée, pas une entrée directe
+        self.fuel_temperature = 0.0  # °C, sera calculée
         
-        # Physical constants
+        # Constantes physiques
         self.delayed_neutron_fraction = config.DELAYED_NEUTRON_FRACTION  # β
         
-        # Calculated parameters
+        # Paramètres calculés
         self.k_effective = 1.0
         self.reactivity = 0.0
-        self.doubling_time = float('inf')  # seconds
+        self.doubling_time = float('inf')  # secondes
         
-        # Four factors
-        self.eta = 2.0  # average number of neutrons per fission
-        self.epsilon = 1.03  # fast fission factor
-        self.p = 0.75  # resonance escape probability
-        self.f = 0.71  # thermal utilization factor
+        # Quatre facteurs
+        self.eta = 2.0  # nombre moyen de neutrons par fission
+        self.epsilon = 1.03  # facteur de fission rapide
+        self.p = 0.75  # probabilité d'échapper aux résonances
+        self.f = 0.71  # facteur d'utilisation thermique
         
-        # Neutron leakage factors
+        # Facteurs de fuite neutronique
         self.thermal_non_leakage_prob = 1.0
         self.fast_non_leakage_prob = 1.0
         
-        # Presets dictionary
+        # Dictionnaire des préréglages
         self.presets = config.PRESETS
         
-        # Initial calculation
+        # Calcul initial
         self._update_temperatures()
         self.calculate_all()
     
     def _update_temperatures(self):
-        """Calculate fuel temperature based on power level and moderator temperature."""
+        """Calcule la température du combustible en fonction du niveau de puissance et de la température du modérateur."""
         self.fuel_temperature = self.moderator_temperature + (self.power_level * config.POWER_TO_FUEL_TEMP_COEFF)
 
     def calculate_all(self):
-        """Calculate all reactor parameters based on current inputs"""
+        """Calcule tous les paramètres du réacteur en fonction des entrées actuelles"""
         self.calculate_four_factors()
         self.calculate_k_effective()
         self.calculate_reactivity()
         self.calculate_doubling_time()
     
     def calculate_four_factors(self):
-        """Calculate the four factors of the neutron cycle"""
-        # Simplified calculation for educational purposes
+        """Calcule les quatre facteurs du cycle neutronique"""
+        # Calcul simplifié à des fins pédagogiques
         
-        # Eta (average number of neutrons per fission)
-        # Depends primarily on fuel enrichment
-        self.eta = config.ETA_BASE + config.ETA_ENRICHMENT_COEFF * (self.fuel_enrichment - 3.0) / 2.0
+        # Eta (nombre moyen de neutrons par fission)
+        # Dépend principalement de l'enrichissement du combustible
+        self.eta = config.ETA_BASE + config.ETA_ENRICHMENT_COEFF * (self.fuel_enrichment - config.ETA_ENRICHMENT_REF) / config.ETA_ENRICHMENT_SCALE
         
-        # Epsilon (fast fission factor)
-        # Typically constant for a given reactor design
+        # Epsilon (facteur de fission rapide)
+        # Typiquement constant pour une conception de réacteur donnée
         self.epsilon = config.EPSILON
         
-        # Resonance escape probability
-        # Affected by fuel temperature (Doppler broadening)
-        fuel_temp_K = self.fuel_temperature + 273.15
+        # Probabilité d'échapper aux résonances
+        # Affectée par la température du combustible (élargissement Doppler)
+        fuel_temp_K = self.fuel_temperature + config.CELSIUS_TO_KELVIN
         sqrt_T_diff = np.sqrt(fuel_temp_K) - np.sqrt(config.P_REF_TEMP_K)
         self.p = config.P_BASE * np.exp(-config.P_DOPPLER_COEFF * sqrt_T_diff)
         
-        # Thermal utilization factor (f)
-        # New model based on absorption ratios: f = 1 / (1 + A_non_fuel)
-        # A_non_fuel is the ratio of absorption in non-fuel materials to fuel
+        # Facteur d'utilisation thermique (f)
+        # Nouveau modèle basé sur les rapports d'absorption : f = 1 / (1 + A_non_fuel)
+        # A_non_fuel est le rapport d'absorption dans les matériaux non-combustibles par rapport au combustible
         
-        # 1. Base absorption ratio, adjusted for moderator temperature
+        # 1. Rapport d'absorption de base, ajusté pour la température du modérateur
         temp_deviation = self.moderator_temperature - config.F_REF_MOD_TEMP_C
         mod_temp_effect = config.F_MOD_TEMP_ABS_COEFF * temp_deviation
         base_abs_ratio = config.F_BASE_ABS_RATIO * (1 + mod_temp_effect)
         
-        # 2. Control rod absorption ratio
+        # 2. Rapport d'absorption des barres de contrôle
         rod_abs_ratio = config.F_CONTROL_ROD_WORTH * (self.control_rod_position / 100.0)
         
-        # 3. Boron absorption ratio
+        # 3. Rapport d'absorption du bore
         boron_abs_ratio = config.F_BORON_WORTH_PER_PPM * self.boron_concentration
         
-        # Total non-fuel absorption ratio
+        # Rapport d'absorption total non-combustible
         total_non_fuel_abs_ratio = base_abs_ratio + rod_abs_ratio + boron_abs_ratio
         
         self.f = 1.0 / (1.0 + total_non_fuel_abs_ratio)
@@ -102,24 +102,24 @@ class ReactorModel:
 
     def _calculate_k_effective_analytical(self):
         """Calcul k-effectif avec le modèle analytique."""
-        # --- Analytical Calculation ---
+        # --- Calcul analytique ---
         k_infinite = self.eta * self.epsilon * self.p * self.f
         
-        # New leakage calculation based on two-group diffusion theory
-        # 1. Geometric Buckling B^2
+        # Nouveau calcul de fuite basé sur la théorie de diffusion à deux groupes
+        # 1. Laplacien géométrique B^2
         R = config.CORE_DIAMETER_M / 2.0
         H = config.CORE_HEIGHT_M
-        geometric_buckling = (np.pi / H)**2 + (2.405 / R)**2
+        geometric_buckling = (np.pi / H)**2 + (config.BESSEL_J0_FIRST_ZERO / R)**2
         
-        # 2. Temperature effect on moderator density and diffusion areas
-        # L^2 and L_s^2 are proportional to (rho_ref/rho_T)^2
+        # 2. Effet de la température sur la densité du modérateur et les aires de diffusion
+        # L^2 et L_s^2 sont proportionnels à (rho_ref/rho_T)^2
         temp_deviation = self.moderator_temperature - config.F_REF_MOD_TEMP_C
         density_ratio = 1.0 / (1.0 - config.MODERATOR_DENSITY_COEFF * temp_deviation)
         
         thermal_diffusion_area = config.THERMAL_DIFFUSION_AREA_M2 * (density_ratio**2)
         fast_diffusion_area = config.FAST_DIFFUSION_AREA_M2 * (density_ratio**2)
         
-        # 3. Non-leakage probabilities
+        # 3. Probabilités de non-fuite
         self.fast_non_leakage_prob = 1.0 / (1.0 + geometric_buckling * fast_diffusion_area)
         self.thermal_non_leakage_prob = 1.0 / (1.0 + geometric_buckling * thermal_diffusion_area)
         
@@ -134,69 +134,75 @@ class ReactorModel:
     
     def calculate_doubling_time(self):
         """
-        Calculate reactor period/doubling time using a standard approximation.
-        The reactor period T is the time required for the neutron population to change by a factor of e.
-        The doubling time is T * ln(2).
+        Calcule la période du réacteur/temps de doublement en utilisant une approximation standard.
+        La période du réacteur T est le temps nécessaire pour que la population de neutrons change d'un facteur e.
+        Le temps de doublement est T * ln(2).
         """
         if self.reactivity <= 0:
             self.doubling_time = float('inf')
             return
 
-        # Use reactivity in absolute units, not pcm or %
+        # Utiliser la réactivité en unités absolues, pas en pcm ou %
         rho = self.reactivity
 
         if rho >= self.delayed_neutron_fraction:
-            # Prompt critical - very short period
-            # Using prompt jump approximation: T = l / (ρ - β)
+            # Critique prompt - période très courte
+            # Utilisation de l'approximation du saut prompt : T = l / (ρ - β)
             prompt_reactivity = rho - self.delayed_neutron_fraction
             if prompt_reactivity > 0:
                 period = config.PROMPT_NEUTRON_LIFETIME / prompt_reactivity
                 self.doubling_time = period * np.log(2)
             else:
-                # Exactly prompt critical, period is theoretically zero.
+                # Exactement critique prompt, la période est théoriquement zéro.
                 self.doubling_time = 0.0
         else:
-            # Delayed critical period calculation
-            # T ≈ (β - ρ) / (λ_eff * ρ) - this is more accurate than the previous one
-            # for ρ close to β. Let's stick to the simpler one for now.
-            # Using one-group delayed neutron approximation T ≈ β / (λ * ρ)
-            # where λ is the effective delayed neutron precursor decay constant.
-            # A typical value for λ_eff is ~0.1 s⁻¹
-            effective_decay_constant = 0.1  # lambda_eff (s^-1)
+            # Calcul de la période critique retardée
+            # T ≈ (β - ρ) / (λ_eff * ρ) - ceci est plus précis que l'approximation précédente
+            # pour ρ proche de β. Restons avec la plus simple pour l'instant.
+            # Utilisation de l'approximation à un groupe de neutrons retardés T ≈ β / (λ * ρ)
+            # où λ est la constante de décroissance effective des précurseurs de neutrons retardés.
+            # Une valeur typique pour λ_eff est ~0.1 s⁻¹
+            effective_decay_constant = config.EFFECTIVE_DECAY_CONSTANT  # lambda_eff (s^-1)
             
-            # A simpler and more common approximation for small reactivity is T ≈ β / (λ * ρ)
+            # Une approximation plus simple et plus courante pour une petite réactivité est T ≈ β / (λ * ρ)
             if rho > 0:
                 period = self.delayed_neutron_fraction / (rho * effective_decay_constant)
                 self.doubling_time = period * np.log(2)
             else:
                 self.doubling_time = float('inf')
 
+    def _update_parameter(self, param_name, value, update_temperatures=False):
+        """Méthode générique pour mettre à jour un paramètre et recalculer le modèle
+        
+        Args:
+            param_name: Nom de l'attribut à mettre à jour
+            value: Nouvelle valeur
+            update_temperatures: Si True, met à jour les températures avant de recalculer
+        """
+        setattr(self, param_name, value)
+        if update_temperatures:
+            self._update_temperatures()
+        self.calculate_all()
+
     def update_control_rod_position(self, position):
         """Update control rod position and recalculate"""
-        self.control_rod_position = position
-        self.calculate_all()
+        self._update_parameter('control_rod_position', position)
     
     def update_boron_concentration(self, concentration):
         """Update boron concentration and recalculate"""
-        self.boron_concentration = concentration
-        self.calculate_all()
+        self._update_parameter('boron_concentration', concentration)
     
     def update_moderator_temperature(self, temperature):
         """Update moderator temperature and recalculate"""
-        self.moderator_temperature = temperature
-        self._update_temperatures()
-        self.calculate_all()
+        self._update_parameter('moderator_temperature', temperature, update_temperatures=True)
     
     def update_power_level(self, power_level):
         """Update power level and recalculate"""
-        self.power_level = power_level
-        self._update_temperatures()
-        self.calculate_all()
+        self._update_parameter('power_level', power_level, update_temperatures=True)
     
     def update_fuel_enrichment(self, enrichment):
         """Update fuel enrichment and recalculate"""
-        self.fuel_enrichment = enrichment
-        self.calculate_all()
+        self._update_parameter('fuel_enrichment', enrichment)
     
     def get_axial_flux_distribution(self):
         """
@@ -213,7 +219,7 @@ class ReactorModel:
         # Control rod effect (simplified)
         if self.control_rod_position > 0:
             rod_depth = self.control_rod_position / 100
-            rod_effect = np.exp(-10 * (height - (1 - rod_depth))**2)
+            rod_effect = np.exp(-config.CONTROL_ROD_EFFECT_COEFF * (height - (1 - rod_depth))**2)
             rod_effect[height < (1 - rod_depth)] = 1
             flux = flux * rod_effect
         
@@ -267,7 +273,7 @@ class ReactorModel:
         
         # To split fuel absorptions, we use eta. eta = nu * Sigma_f / Sigma_a_fuel
         # Fraction of absorptions causing fission is eta/nu.
-        nu = 2.43  # Neutrons per thermal fission in U-235
+        nu = config.NEUTRONS_PER_THERMAL_FISSION_U235  # Neutrons per thermal fission in U-235
         fission_fraction_in_fuel = self.eta / nu
         fission_fraction_in_fuel = min(fission_fraction_in_fuel, 1.0) # Cannot be > 1
 
