@@ -11,8 +11,9 @@ class ReactorModel:
     """
     
     def __init__(self):
-        # Paramètres par défaut
-        self.control_rod_position = 0.0  # 0-100%
+        # Paramètres par défaut - nouveaux groupes de barres
+        self.rod_group_R_position = 0  # 0-228 pas (Groupe de Régulation)
+        self.rod_group_GCP_position = 0  # 0-228 pas (Groupe de Compensation de Puissance)
         self.boron_concentration = 500.0  # ppm
         self.average_temperature = 310.0  # °C
         self.power_level = 100.0 # %
@@ -53,7 +54,7 @@ class ReactorModel:
         self._update_temperatures()
         self.calculate_xenon_equilibrium()  # Initialiser à l'équilibre pour le niveau de puissance actuel
         self.calculate_all()
-    
+
     def _update_temperatures(self):
         """Calcule la température du combustible en fonction du niveau de puissance et de la température du modérateur."""
         self.fuel_temperature = self.average_temperature + (self.power_level * config.POWER_TO_FUEL_TEMP_COEFF)
@@ -103,7 +104,7 @@ class ReactorModel:
         
         # 2. Rapport d'absorption des barres de contrôle
         # Nouvelle convention: 0% = insérées, 100% = retirées
-        rod_insertion_fraction = (100.0 - self.control_rod_position) / 100.0
+        rod_insertion_fraction = (100.0 - self._get_equivalent_rod_position_percent()) / 100.0
         rod_abs_ratio = config.F_CONTROL_ROD_WORTH * rod_insertion_fraction
         
         # 3. Rapport d'absorption du bore
@@ -308,9 +309,22 @@ class ReactorModel:
             self._update_temperatures()
         self.calculate_all()
 
+    def update_rod_group_R_position(self, position):
+        """Update R group position and recalculate"""
+        self._update_parameter('rod_group_R_position', int(position))
+    
+    def update_rod_group_GCP_position(self, position):
+        """Update GCP group position and recalculate"""
+        self._update_parameter('rod_group_GCP_position', int(position))
+    
     def update_control_rod_position(self, position):
-        """Update control rod position and recalculate"""
-        self._update_parameter('control_rod_position', position)
+        """Méthode de rétrocompatibilité - convertit % en positions équivalentes R et GCP"""
+        # Conversion approximative pour maintenir la rétrocompatibilité
+        steps_max = config.control_rod_groups['conversion']['steps_to_percent']
+        equivalent_steps = int((100.0 - position) * steps_max / 100.0)
+        self.rod_group_R_position = equivalent_steps
+        self.rod_group_GCP_position = equivalent_steps
+        self.calculate_all()
     
     def update_boron_concentration(self, concentration):
         """Update boron concentration and recalculate"""
@@ -342,8 +356,8 @@ class ReactorModel:
         
         # Control rod effect (simplified)
         # Nouvelle convention: 0% = insérées, 100% = retirées
-        if self.control_rod_position > 0 and self.control_rod_position < 100:
-            rod_withdrawal_fraction = self.control_rod_position / 100.0  # Fraction de retrait
+        if self._get_equivalent_rod_position_percent() > 0 and self._get_equivalent_rod_position_percent() < 100:
+            rod_withdrawal_fraction = self._get_equivalent_rod_position_percent() / 100.0  # Fraction de retrait
             rod_insertion_depth = 1.0 - rod_withdrawal_fraction  # Profondeur d'insertion réelle
             rod_insertion_point = 1 - rod_insertion_depth  # Position des pointes des barres
             
@@ -545,7 +559,8 @@ class ReactorModel:
             return False
         
         # Appliquer les paramètres de base
-        self.control_rod_position = preset.control_rod_position
+        self.rod_group_R_position = preset.rod_group_R_position
+        self.rod_group_GCP_position = preset.rod_group_GCP_position
         self.boron_concentration = preset.boron_concentration
         self.average_temperature = preset.average_temperature
         self.fuel_enrichment = preset.fuel_enrichment
@@ -580,7 +595,8 @@ class ReactorModel:
         """
         for preset in self.preset_manager.get_all_presets().values():
             # Comparer les paramètres de base
-            if (np.isclose(self.control_rod_position, preset.control_rod_position, atol=0.1) and
+            if (np.isclose(self.rod_group_R_position, preset.rod_group_R_position, atol=1) and
+            np.isclose(self.rod_group_GCP_position, preset.rod_group_GCP_position, atol=1) and
                 np.isclose(self.boron_concentration, preset.boron_concentration, atol=1.0) and
                 np.isclose(self.average_temperature, preset.average_temperature, atol=0.5) and
                 np.isclose(self.fuel_enrichment, preset.fuel_enrichment, atol=0.01) and
@@ -604,7 +620,8 @@ class ReactorModel:
         try:
             # Préparer les paramètres actuels
             current_params = {
-                "control_rod_position": self.control_rod_position,
+                "rod_group_R_position": self.rod_group_R_position,
+            "rod_group_GCP_position": self.rod_group_GCP_position,
                 "boron_concentration": self.boron_concentration,
                 "average_temperature": self.average_temperature,
                 "fuel_enrichment": self.fuel_enrichment,
@@ -672,7 +689,8 @@ class ReactorModel:
             preset_type=PresetType.UTILISATEUR,
             created_date=datetime.now(),
             modified_date=datetime.now(),
-            control_rod_position=self.control_rod_position,
+            rod_group_R_position=self.rod_group_R_position,
+            rod_group_GCP_position=self.rod_group_GCP_position,
             boron_concentration=self.boron_concentration,
             average_temperature=self.average_temperature,
             fuel_enrichment=self.fuel_enrichment,
@@ -681,3 +699,37 @@ class ReactorModel:
             xenon_concentration=self.xenon_concentration,
             simulation_time=self.simulation_time
         )
+
+    def _get_total_rod_worth_fraction(self):
+        """
+        Calcule la valeur totale d'anti-réactivité des barres basée sur leurs positions
+        et leurs worth relatives.
+        
+        Returns:
+            float: Fraction totale d'anti-réactivité (0.0 à 1.0)
+        """
+        # Conversion des positions en fractions d'insertion (0 = extrait, 1 = inséré)
+        steps_max = config.control_rod_groups['conversion']['steps_to_percent']
+        
+        r_insertion_fraction = (steps_max - self.rod_group_R_position) / steps_max
+        gcp_insertion_fraction = (steps_max - self.rod_group_GCP_position) / steps_max
+        
+        # Calcul des contributions pondérées
+        r_worth = config.control_rod_groups['R']['worth_fraction']
+        gcp_worth = config.control_rod_groups['GCP']['worth_fraction']
+        
+        total_worth_fraction = (r_insertion_fraction * r_worth + 
+                               gcp_insertion_fraction * gcp_worth)
+        
+        return total_worth_fraction
+
+    def _get_equivalent_rod_position_percent(self):
+        """
+        Calcule une position équivalente en pourcentage pour rétrocompatibilité
+        avec les visualisations existantes.
+        
+        Returns:
+            float: Position équivalente en % (0-100, où 0% = inséré, 100% = extrait)
+        """
+        total_insertion_fraction = self._get_total_rod_worth_fraction()
+        return (1.0 - total_insertion_fraction) * 100.0

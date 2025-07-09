@@ -53,37 +53,62 @@
         "THERMAL_FLUX_NOMINAL": 3.0e13,
         "FISSION_RATE_COEFF": 1.0e-6
     },
+    "control_rod_groups": {
+        "R": {
+            "description": "Groupe de Régulation",
+            "worth_fraction": 0.3,
+            "min_step": 1,
+            "max_step": 10,
+            "normal_step": 5,
+            "position_range": [
+                0,
+                228
+            ]
+        },
+        "GCP": {
+            "description": "Groupe de Compensation de Puissance",
+            "worth_fraction": 0.7,
+            "min_step": 5,
+            "max_step": 50,
+            "normal_step": 20,
+            "position_range": [
+                0,
+                228
+            ]
+        },
+        "conversion": {
+            "steps_to_percent": 228,
+            "reference_worth": 0.26
+        }
+    },
     "presets": {
         "PMD en début de cycle": {
-            "control_rod_position": 100.0,
+            "rod_group_R_position": 228,
+            "rod_group_GCP_position": 228,
             "boron_concentration": 500.0,
             "average_temperature": 304.6,
             "fuel_enrichment": 3.5,
             "power_level": 100.0
         },
         "PMD en cours de cycle": {
-            "control_rod_position": 100.0,
+            "rod_group_R_position": 228,
+            "rod_group_GCP_position": 228,
             "boron_concentration": 1000.0,
             "average_temperature": 304.6,
             "fuel_enrichment": 3.5,
             "power_level": 100.0
         },
-        "Démarrage avec Xenon": {
-            "control_rod_position": 20.0,
-            "boron_concentration": 1020.0,
-            "average_temperature": 280.0,
-            "fuel_enrichment": 3.5,
-            "power_level": 10.0
-        },
-        "Démarrage sans Xenon": {
-            "control_rod_position": 20.0,
+        "Démarrage": {
+            "rod_group_R_position": 46,
+            "rod_group_GCP_position": 46,
             "boron_concentration": 1020.0,
             "average_temperature": 280.0,
             "fuel_enrichment": 3.5,
             "power_level": 10.0
         },
         "Fin de cycle": {
-            "control_rod_position": 5.0,
+            "rod_group_R_position": 11,
+            "rod_group_GCP_position": 11,
             "boron_concentration": 50.0,
             "average_temperature": 315.0,
             "fuel_enrichment": 3.5,

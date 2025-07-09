@@ -39,7 +39,8 @@ class PresetData:
     tags: List[str] = None
     
     # Paramètres de base du réacteur
-    control_rod_position: float = 0.0  # 0-100%
+    rod_group_R_position: int = 0  # 0-228 pas (Groupe de Régulation)
+    rod_group_GCP_position: int = 0  # 0-228 pas (Groupe de Compensation de Puissance)
     boron_concentration: float = 500.0  # ppm
     average_temperature: float = 310.0  # °C
     fuel_enrichment: float = 3.5  # %
@@ -88,8 +89,11 @@ class PresetData:
         errors = []
         
         # Validation des paramètres de base
-        if not (0 <= self.control_rod_position <= 100):
-            errors.append("Position barres de contrôle doit être entre 0 et 100%")
+        if not (0 <= self.rod_group_R_position <= 228):
+            errors.append("Position groupe R doit être entre 0 et 228 pas")
+        
+        if not (0 <= self.rod_group_GCP_position <= 228):
+            errors.append("Position groupe GCP doit être entre 0 et 228 pas")
         
         if not (0 <= self.boron_concentration <= 5000):
             errors.append("Concentration bore doit être entre 0 et 5000 ppm")
@@ -124,9 +128,10 @@ class PresetData:
         return errors
     
     def get_basic_parameters(self) -> Dict[str, float]:
-        """Retourne les paramètres de base compatibles avec l'ancien système"""
+        """Retourne les paramètres de base"""
         return {
-            "control_rod_position": self.control_rod_position,
+            "rod_group_R_position": self.rod_group_R_position,
+            "rod_group_GCP_position": self.rod_group_GCP_position,
             "boron_concentration": self.boron_concentration,
             "average_temperature": self.average_temperature,
             "fuel_enrichment": self.fuel_enrichment,

@@ -33,12 +33,21 @@ class MainWindow(QMainWindow):
         
         # Dictionary of information texts for different controls
         self.info_texts = {
-            "rod_control": (
-                "Barres de contrôle\n\n"
-                "Les barres de contrôle sont des éléments absorbants de neutrons qui permettent "
-                "de contrôler rapidement la réactivité du cœur. Leur insertion dans le cœur "
-                "réduit le facteur de multiplication k et donc la puissance du réacteur.\n\n"
-                "Plage: 0% (barres complètement insérées) à 100% (barres extraites)"
+            "rod_control_R": (
+                "Groupe de Régulation (R)\n\n"
+                "Le groupe R est utilisé pour le contrôle fin de la réactivité et les ajustements "
+                "de puissance. Il représente environ 30% de la valeur totale des barres de contrôle.\n\n"
+                "Position: 0 pas (barres extraites) à 228 pas (barres insérées)\n"
+                "Curseur: gauche = extraites, droite = insérées\n"
+                "Pas recommandés: 1-10 pas pour les ajustements fins"
+            ),
+            "rod_control_GCP": (
+                "Groupe de Compensation de Puissance (GCP)\n\n"
+                "Le groupe GCP est utilisé pour la compensation des variations de réactivité dues "
+                "au burn-up et aux effets xénon. Il représente environ 70% de la valeur totale.\n\n"
+                "Position: 0 pas (barres extraites) à 228 pas (barres insérées)\n"
+                "Curseur: gauche = extraites, droite = insérées\n"
+                "Pas recommandés: 5-50 pas pour les ajustements significatifs"
             ),
             "boron": (
                 "Concentration en bore\n\n"
@@ -146,9 +155,19 @@ class MainWindow(QMainWindow):
     
     def connect_signals(self):
         """Connecte tous les signaux des éléments UI aux méthodes du contrôleur"""
-        self.rod_slider.valueChanged.connect(self.on_rod_position_changed)
-        # La modification du slider met à jour le spinbox.
-        # La modification du spinbox met à jour le modèle et le slider.
+        # Groupe R signals
+        self.rod_R_slider.valueChanged.connect(self.on_rod_R_slider_changed)
+        self.rod_R_spinbox.valueChanged.connect(self.on_rod_R_spinbox_changed)
+        self.rod_R_plus_btn.clicked.connect(lambda: self.adjust_rod_R(1))
+        self.rod_R_minus_btn.clicked.connect(lambda: self.adjust_rod_R(-1))
+        
+        # Groupe GCP signals
+        self.rod_GCP_slider.valueChanged.connect(self.on_rod_GCP_slider_changed)
+        self.rod_GCP_spinbox.valueChanged.connect(self.on_rod_GCP_spinbox_changed)
+        self.rod_GCP_plus_btn.clicked.connect(lambda: self.adjust_rod_GCP(5))
+        self.rod_GCP_minus_btn.clicked.connect(lambda: self.adjust_rod_GCP(-5))
+        
+        # Other controls
         self.boron_slider.valueChanged.connect(self.on_boron_slider_changed)
         self.boron_spinbox.valueChanged.connect(self.on_boron_spinbox_changed)
         self.moderator_temp_slider.valueChanged.connect(self.on_average_temperature_changed)
@@ -195,15 +214,65 @@ class MainWindow(QMainWindow):
         preset_layout.addLayout(preset_controls_layout)
         self.presets_group.setLayout(preset_layout)
         
-        # Control Rods
-        self.rod_control_group = self.create_info_groupbox("Barres de contrôle", self.info_texts["rod_control"])
-        rod_layout = QHBoxLayout()
-        self.rod_slider = QSlider(Qt.Orientation.Horizontal)
-        self.rod_slider.setRange(0, 100)
-        self.rod_label = QLabel("0 %")
-        rod_layout.addWidget(self.rod_slider)
-        rod_layout.addWidget(self.rod_label)
-        self.rod_control_group.setLayout(rod_layout)
+        # Groupe R (Régulation)
+        self.rod_R_group = self.create_info_groupbox("Groupe R (Régulation)", self.info_texts["rod_control_R"])
+        rod_R_layout = QHBoxLayout()
+        
+        # Contrôles pour groupe R
+        self.rod_R_slider = QSlider(Qt.Orientation.Horizontal)
+        self.rod_R_slider.setRange(0, 228)
+        self.rod_R_slider.setTickPosition(QSlider.TickPosition.TicksBelow)
+        self.rod_R_slider.setTickInterval(50)
+        
+        self.rod_R_spinbox = QDoubleSpinBox()
+        self.rod_R_spinbox.setRange(0, 228)
+        self.rod_R_spinbox.setDecimals(0)
+        self.rod_R_spinbox.setSuffix(" pas")
+        self.rod_R_spinbox.setMinimumWidth(80)
+        
+        # Boutons d'ajustement fin pour groupe R
+        self.rod_R_plus_btn = QPushButton("+1")
+        self.rod_R_plus_btn.setMaximumWidth(30)
+        self.rod_R_plus_btn.setToolTip("Insérer davantage (+1 pas d'insertion)")
+        self.rod_R_minus_btn = QPushButton("-1")
+        self.rod_R_minus_btn.setMaximumWidth(30)
+        self.rod_R_minus_btn.setToolTip("Extraire davantage (-1 pas d'insertion)")
+        
+        rod_R_layout.addWidget(self.rod_R_slider)
+        rod_R_layout.addWidget(self.rod_R_plus_btn)
+        rod_R_layout.addWidget(self.rod_R_minus_btn)
+        rod_R_layout.addWidget(self.rod_R_spinbox)
+        self.rod_R_group.setLayout(rod_R_layout)
+        
+        # Groupe GCP (Compensation de Puissance)
+        self.rod_GCP_group = self.create_info_groupbox("Groupe GCP (Compensation)", self.info_texts["rod_control_GCP"])
+        rod_GCP_layout = QHBoxLayout()
+        
+        # Contrôles pour groupe GCP
+        self.rod_GCP_slider = QSlider(Qt.Orientation.Horizontal)
+        self.rod_GCP_slider.setRange(0, 228)
+        self.rod_GCP_slider.setTickPosition(QSlider.TickPosition.TicksBelow)
+        self.rod_GCP_slider.setTickInterval(50)
+        
+        self.rod_GCP_spinbox = QDoubleSpinBox()
+        self.rod_GCP_spinbox.setRange(0, 228)
+        self.rod_GCP_spinbox.setDecimals(0)
+        self.rod_GCP_spinbox.setSuffix(" pas")
+        self.rod_GCP_spinbox.setMinimumWidth(80)
+        
+        # Boutons d'ajustement pour groupe GCP (pas plus grands)
+        self.rod_GCP_plus_btn = QPushButton("+5")
+        self.rod_GCP_plus_btn.setMaximumWidth(30)
+        self.rod_GCP_plus_btn.setToolTip("Insérer davantage (+5 pas d'insertion)")
+        self.rod_GCP_minus_btn = QPushButton("-5")
+        self.rod_GCP_minus_btn.setMaximumWidth(30)
+        self.rod_GCP_minus_btn.setToolTip("Extraire davantage (-5 pas d'insertion)")
+        
+        rod_GCP_layout.addWidget(self.rod_GCP_slider)
+        rod_GCP_layout.addWidget(self.rod_GCP_plus_btn)
+        rod_GCP_layout.addWidget(self.rod_GCP_minus_btn)
+        rod_GCP_layout.addWidget(self.rod_GCP_spinbox)
+        self.rod_GCP_group.setLayout(rod_GCP_layout)
         
         # Boron Concentration
         self.boron_group = self.create_info_groupbox("Concentration en Bore (ppm)", self.info_texts["boron"])
@@ -252,7 +321,8 @@ class MainWindow(QMainWindow):
         
         # Add all groups to control layout
         control_layout.addWidget(self.presets_group)
-        control_layout.addWidget(self.rod_control_group)
+        control_layout.addWidget(self.rod_R_group)
+        control_layout.addWidget(self.rod_GCP_group)
         control_layout.addWidget(self.boron_group)
         control_layout.addWidget(self.moderator_temp_group)
         control_layout.addWidget(self.fuel_enrichment_group)
@@ -338,17 +408,25 @@ class MainWindow(QMainWindow):
     def update_ui_from_preset(self, config):
         """Update all UI controls from a preset configuration"""
         # Block signals to prevent feedback loops
-        self.rod_slider.blockSignals(True)
+        self.rod_R_slider.blockSignals(True)
+        self.rod_R_spinbox.blockSignals(True)
+        self.rod_GCP_slider.blockSignals(True)
+        self.rod_GCP_spinbox.blockSignals(True)
         self.boron_slider.blockSignals(True)
         self.boron_spinbox.blockSignals(True)
         self.moderator_temp_slider.blockSignals(True)
         self.fuel_enrichment_slider.blockSignals(True)
 
-        # Update sliders and labels
-        # Inverser le slider : 0% (insérées) = slider à gauche (0), 100% (retirées) = slider à droite (100)
-        inverted_slider_value = 100 - int(config["control_rod_position"])
-        self.rod_slider.setValue(inverted_slider_value)
-        self.rod_label.setText(f"{config['control_rod_position']:.0f} %")
+        # Update rod group controls
+        # Inverser les valeurs pour les sliders : 0 pas → slider=228, 228 pas → slider=0
+        inverted_R_slider = 228 - int(config["rod_group_R_position"])
+        inverted_GCP_slider = 228 - int(config["rod_group_GCP_position"])
+        
+        self.rod_R_slider.setValue(inverted_R_slider)
+        self.rod_R_spinbox.setValue(config["rod_group_R_position"])
+        
+        self.rod_GCP_slider.setValue(inverted_GCP_slider)
+        self.rod_GCP_spinbox.setValue(config["rod_group_GCP_position"])
         
         self.boron_slider.setValue(int(config["boron_concentration"]))
         self.boron_spinbox.setValue(config["boron_concentration"])
@@ -360,7 +438,10 @@ class MainWindow(QMainWindow):
         self.fuel_enrichment_label.setText(f"{config['fuel_enrichment']:.1f} %")
 
         # Unblock signals
-        self.rod_slider.blockSignals(False)
+        self.rod_R_slider.blockSignals(False)
+        self.rod_R_spinbox.blockSignals(False)
+        self.rod_GCP_slider.blockSignals(False)
+        self.rod_GCP_spinbox.blockSignals(False)
         self.boron_slider.blockSignals(False)
         self.boron_spinbox.blockSignals(False)
         self.moderator_temp_slider.blockSignals(False)
@@ -400,15 +481,86 @@ class MainWindow(QMainWindow):
         self.update_visualizations()
         self.check_for_custom_preset()
 
-    def on_rod_position_changed(self, value):
-        """Handle control rod position change"""
-        # Inverser la valeur du slider : slider=0 → 100% (retirées), slider=100 → 0% (insérées)
-        inverted_value = 100 - value
-        self._update_parameter_and_ui(
-            self.controller.update_control_rod_position,
-            inverted_value,
-            lambda: self.rod_label.setText(f"{inverted_value} %")
-        )
+    # Nouvelles méthodes pour les groupes de barres
+    def on_rod_R_slider_changed(self, value):
+        """Handle R group slider change"""
+        # Inverser la valeur du slider : slider=0 → 228 pas (extrait), slider=228 → 0 pas (inséré)
+        inverted_value = 228 - value
+        
+        self.rod_R_spinbox.blockSignals(True)
+        self.rod_R_spinbox.setValue(inverted_value)
+        self.rod_R_spinbox.blockSignals(False)
+        
+        # Update the model via the controller
+        params = self.controller.update_rod_group_R_position(inverted_value)
+        
+        # Update the interface
+        self.update_reactor_params(params)
+        self.update_visualizations()
+        self.check_for_custom_preset()
+    
+    def on_rod_R_spinbox_changed(self, value):
+        """Handle R group spinbox change"""
+        # Inverser la valeur pour le slider : 0 pas → slider=228, 228 pas → slider=0
+        inverted_slider_value = 228 - int(value)
+        
+        self.rod_R_slider.blockSignals(True)
+        self.rod_R_slider.setValue(inverted_slider_value)
+        self.rod_R_slider.blockSignals(False)
+        
+        # Update the model via the controller
+        params = self.controller.update_rod_group_R_position(value)
+        
+        # Update the interface
+        self.update_reactor_params(params)
+        self.update_visualizations()
+        self.check_for_custom_preset()
+    
+    def adjust_rod_R(self, step):
+        """Adjust R group position by step amount"""
+        current_value = self.rod_R_spinbox.value()
+        new_value = max(0, min(228, current_value + step))
+        self.rod_R_spinbox.setValue(new_value)
+    
+    def on_rod_GCP_slider_changed(self, value):
+        """Handle GCP group slider change"""
+        # Inverser la valeur du slider : slider=0 → 228 pas (extrait), slider=228 → 0 pas (inséré)
+        inverted_value = 228 - value
+        
+        self.rod_GCP_spinbox.blockSignals(True)
+        self.rod_GCP_spinbox.setValue(inverted_value)
+        self.rod_GCP_spinbox.blockSignals(False)
+        
+        # Update the model via the controller
+        params = self.controller.update_rod_group_GCP_position(inverted_value)
+        
+        # Update the interface
+        self.update_reactor_params(params)
+        self.update_visualizations()
+        self.check_for_custom_preset()
+    
+    def on_rod_GCP_spinbox_changed(self, value):
+        """Handle GCP group spinbox change"""
+        # Inverser la valeur pour le slider : 0 pas → slider=228, 228 pas → slider=0
+        inverted_slider_value = 228 - int(value)
+        
+        self.rod_GCP_slider.blockSignals(True)
+        self.rod_GCP_slider.setValue(inverted_slider_value)
+        self.rod_GCP_slider.blockSignals(False)
+        
+        # Update the model via the controller
+        params = self.controller.update_rod_group_GCP_position(value)
+        
+        # Update the interface
+        self.update_reactor_params(params)
+        self.update_visualizations()
+        self.check_for_custom_preset()
+    
+    def adjust_rod_GCP(self, step):
+        """Adjust GCP group position by step amount"""
+        current_value = self.rod_GCP_spinbox.value()
+        new_value = max(0, min(228, current_value + step))
+        self.rod_GCP_spinbox.setValue(new_value)
 
     def on_boron_slider_changed(self, value):
         """Met à jour le spinbox depuis le slider. Le signal du spinbox déclenchera la mise à jour du modèle."""
@@ -480,11 +632,11 @@ class MainWindow(QMainWindow):
             
     def update_visualizations(self):
         """Update all plots with the latest data from the model"""
-        # Axial Flux
+        # Axial Flux - utiliser la position équivalente calculée par le modèle
         height, flux = self.controller.get_axial_flux_distribution()
-        # Inverser la valeur du slider pour obtenir la position réelle des barres
-        rod_pos = 100 - self.rod_slider.value()
-        self.visualization_panel.update_flux_plot(height, flux, rod_pos)
+        # La position équivalente est déjà calculée par le modèle
+        equivalent_position = self.controller.model._get_equivalent_rod_position_percent()
+        self.visualization_panel.update_flux_plot(height, flux, equivalent_position)
         
         # Four Factors
         factors_data = self.controller.get_four_factors_data()

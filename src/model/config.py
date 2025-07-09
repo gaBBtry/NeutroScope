@@ -94,5 +94,8 @@ XENON_ABSORPTION_CROSS_SECTION = _xenon.get("XENON_ABSORPTION_CROSS_SECTION", 2.
 THERMAL_FLUX_NOMINAL = _xenon.get("THERMAL_FLUX_NOMINAL", 3.0e13)     # n/cm²/s
 FISSION_RATE_COEFF = _xenon.get("FISSION_RATE_COEFF", 1.0e-6)
 
+# Groupes de barres de contrôle
+control_rod_groups = _config.get("control_rod_groups", {})
+
 # Préréglages par défaut
 PRESETS = _config.get("presets", {}) 

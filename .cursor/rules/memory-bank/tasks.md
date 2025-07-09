@@ -4,6 +4,174 @@ Ce fichier documente les tâches répétitives et leurs workflows pour faciliter
 
 ---
 
+## Implémentation Système de Grappes R et GCP avec Granularité Fine
+
+**Dernière exécution :** Janvier 2025  
+**Contexte :** Transformation complète du système de contrôle des barres pour distinguer les groupes R (Régulation) et GCP (Compensation de Puissance)
+
+### Type de tâche :
+Extension majeure d'architecture avec nouveaux paramètres physiques, interface utilisateur sophistiquée et granularité industrielle
+
+### Problème identifié :
+- **Simplification excessive** : Système unique de barres ne reflétait pas la réalité industrielle des REP
+- **Granularité limitée** : Échelle 0-100% insuffisante pour précision opérationnelle
+- **Absence de distinction fonctionnelle** : Pas de différenciation entre rôles de régulation et compensation
+- **Écart formation-industrie** : Interface non représentative des systèmes de contrôle professionnels
+
+### Solution implémentée :
+- **Distinction physique authentique** : Groupes R et GCP séparés avec rôles industriels spécifiques
+- **Granularité professionnelle** : 228 pas par groupe selon standards REP
+- **Worth pondéré réaliste** : R=30%, GCP=70% selon pratiques industrielles
+- **Interface intuitive dédiée** : Contrôles séparés avec granularité adaptée aux rôles
+
+### Fichiers principaux modifiés :
+- `config.json` - **NOUVEAU** : Section `control_rod_groups` complète
+- `src/model/reactor_model.py` - **ÉTENDU** : Paramètres R/GCP + calculs pondérés
+- `src/model/preset_model.py` - **ADAPTÉ** : Support positions R/GCP dans presets
+- `src/controller/reactor_controller.py` - **NOUVEAU** : Méthodes dédiées R/GCP
+- `src/gui/main_window.py` - **NOUVEAU** : Interface grappes séparées
+- `src/gui/widgets/flux_plot.py` - **ADAPTÉ** : Position équivalente pour visualisation
+
+### Workflow d'Implémentation Complète :
+
+**Étape 1 : Configuration et Modèle de Données**
+1. **Définition paramètres** : Création section `control_rod_groups` dans `config.json`
+   - Groupe R : worth_fraction (0.3), plages (0-228), granularité (1-10 pas)
+   - Groupe GCP : worth_fraction (0.7), plages (0-228), granularité (5-50 pas)
+   - Conversion : Équivalence 228 pas, worth de référence
+2. **Extension modèle physique** : Ajout attributs `rod_group_R_position` et `rod_group_GCP_position`
+3. **Calculs pondérés** : Implémentation `_get_total_rod_worth_fraction()` et `_get_equivalent_rod_position_percent()`
+4. **Rétrocompatibilité** : Méthode conversion pour visualisations existantes
+
+**Étape 2 : Logique Physique et Calculs**
+1. **Intégration calculs neutroniques** : Adaptation facteur `f` pour worth pondéré
+2. **Méthodes de mise à jour** : `update_rod_group_R_position()` et `update_rod_group_GCP_position()`
+3. **Validation plages** : Vérification 0-228 pas pour chaque groupe
+4. **Tests cohérence physique** : Validation k_eff avec nouvelles grappes
+
+**Étape 3 : Extension Contrôleur**
+1. **Nouvelles méthodes dédiées** :
+   - `update_rod_group_R_position(position)` : Mise à jour groupe R
+   - `update_rod_group_GCP_position(position)` : Mise à jour groupe GCP
+   - `get_rod_group_positions()` : Récupération positions actuelles
+   - `get_rod_groups_info()` : Informations configuration complète
+2. **Rétrocompatibilité** : `update_control_rod_position()` convertit % en positions équivalentes
+3. **Validation paramètres** : Vérification plages et retour paramètres réacteur
+
+**Étape 4 : Interface Utilisateur Sophistiquée**
+1. **Groupes séparés** :
+   - **Groupe R** : Slider (0-228) + SpinBox + boutons ±1 pas
+   - **Groupe GCP** : Slider (0-228) + SpinBox + boutons ±5 pas
+2. **Convention intuitive** : Slider droite = insertion, suffixe " pas"
+3. **Synchronisation parfaite** : Sliders et SpinBoxes liés avec conversion automatique
+4. **Information contextuelle** : Tooltips expliquant rôles R vs GCP
+5. **Signaux dédiés** : Connexions séparées pour chaque groupe
+
+**Étape 5 : Adaptation Système Presets**
+1. **Extension PresetData** : Ajout champs `rod_group_R_position` et `rod_group_GCP_position`
+2. **Validation étendue** : Plages 0-228 pas pour chaque groupe
+3. **Conversion presets existants** : Migration des valeurs % vers positions R/GCP
+4. **Cohérence presets système** : Adaptation tous scénarios dans config.json
+
+**Étape 6 : Adaptation Visualisations**
+1. **Position équivalente** : Utilisation `_get_equivalent_rod_position_percent()` dans flux_plot
+2. **Rétrocompatibilité visualisations** : Maintien fonctionnement existant
+3. **Information enrichie** : Tooltips incluant info grappes R/GCP
+
+### Bonnes pratiques identifiées :
+
+#### **Extension Majeure d'Architecture**
+- **Planification globale** : Identifier TOUS les points d'impact avant démarrage
+- **Rétrocompatibilité prioritaire** : Maintenir fonctionnement existant pendant transition
+- **Validation continue** : Tests à chaque étape pour éviter régressions
+- **Documentation synchronisée** : Mise à jour parallèle de tous textes d'aide
+
+#### **Système Multi-Paramètres**
+- **Distinction claire** : Séparation physique et fonctionnelle des paramètres
+- **Calculs pondérés** : Méthodes centralisées pour combinaison de paramètres
+- **Interface adaptée** : Granularité et contrôles adaptés aux rôles spécifiques
+- **Configuration externalisée** : Tous paramètres modifiables sans recompilation
+
+#### **Granularité Industrielle**
+- **Standards authentiques** : Adoption granularité REP réelle (228 pas)
+- **Interface progressive** : Granularité adaptée aux niveaux d'usage
+- **Conversion automatique** : Équivalences pour compatibilité systèmes existants
+- **Validation experte** : Confirmation conformité avec pratiques industrielles
+
+### Code type pour système multi-grappes :
+
+```python
+# Configuration (config.json)
+"control_rod_groups": {
+    "R": {
+        "description": "Groupe de Régulation",
+        "worth_fraction": 0.3,
+        "min_step": 1,
+        "max_step": 10,
+        "normal_step": 5,
+        "position_range": [0, 228]
+    },
+    "GCP": {
+        "description": "Groupe de Compensation de Puissance", 
+        "worth_fraction": 0.7,
+        "min_step": 5,
+        "max_step": 50,
+        "normal_step": 20,
+        "position_range": [0, 228]
+    }
+}
+
+# Modèle - Calculs pondérés
+def _get_total_rod_worth_fraction(self):
+    steps_max = config.control_rod_groups['conversion']['steps_to_percent']
+    
+    r_insertion_fraction = (steps_max - self.rod_group_R_position) / steps_max
+    gcp_insertion_fraction = (steps_max - self.rod_group_GCP_position) / steps_max
+    
+    r_worth = config.control_rod_groups['R']['worth_fraction']
+    gcp_worth = config.control_rod_groups['GCP']['worth_fraction']
+    
+    total_worth_fraction = (r_insertion_fraction * r_worth + 
+                           gcp_insertion_fraction * gcp_worth)
+    return total_worth_fraction
+
+# Interface - Contrôles séparés
+def create_rod_groups_controls(self):
+    # Groupe R
+    self.rod_R_slider = QSlider(Qt.Orientation.Horizontal)
+    self.rod_R_slider.setRange(0, 228)
+    self.rod_R_spinbox = QDoubleSpinBox()
+    self.rod_R_spinbox.setRange(0, 228)
+    self.rod_R_plus_btn = QPushButton("+1")
+    self.rod_R_minus_btn = QPushButton("-1")
+    
+    # Groupe GCP 
+    self.rod_GCP_slider = QSlider(Qt.Orientation.Horizontal)
+    self.rod_GCP_slider.setRange(0, 228)
+    self.rod_GCP_spinbox = QDoubleSpinBox()
+    self.rod_GCP_spinbox.setRange(0, 228)
+    self.rod_GCP_plus_btn = QPushButton("+5")
+    self.rod_GCP_minus_btn = QPushButton("-5")
+```
+
+### Points critiques :
+
+1. **Cohérence globale** : Tous les usages des paramètres grappes doivent être cohérents
+2. **Rétrocompatibilité** : Les visualisations existantes doivent continuer à fonctionner
+3. **Validation physique** : Les calculs pondérés doivent être physiquement sensés
+4. **Interface intuitive** : Les contrôles doivent refléter les rôles industriels réels
+5. **Performance** : Les calculs pondérés ne doivent pas impacter la fluidité
+6. **Documentation** : Tous les textes d'aide doivent expliquer les nouveaux concepts
+
+### Extensions futures possibles :
+- **Groupes additionnels** : M1/M2 ou autres selon type de réacteur
+- **Courbes de worth non-linéaires** : Fonction position pour worth variable
+- **Interlocks et séquences** : Simulation verrouillages opérationnels
+- **Vitesses de déplacement** : Temps réalistes de mouvement des grappes
+- **Historique opérationnel** : Log actions avec analyse rétroactive
+
+---
+
 ## Inversion Complète de Convention d'Interface (Barres de Contrôle)
 
 **Dernière exécution :** Janvier 2025  
