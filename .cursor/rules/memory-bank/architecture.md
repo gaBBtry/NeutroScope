@@ -30,7 +30,7 @@ NeutroScope/ (Architecture Finale Complète)
 │       ├── main_window.py          # Fenêtre principale + onglets + presets
 │       ├── visualization.py        # Gestionnaire visualisations étendues
 │       └── widgets/                # Écosystème de widgets complets
-│           ├── preset_manager_dialog.py      # Gestionnaire presets GUI
+│           ├── [preset_manager_dialog.py]    # SUPPRIMÉ - Interface simplifiée
 │           ├── xenon_plot.py                 # Visualisation temporelle Xénon
 │           ├── neutron_cycle_plot.py         # Cycle neutronique interactif
 │           ├── flux_plot.py                  # Distribution axiale du flux
@@ -134,15 +134,15 @@ L'interface et l'expérience utilisateur complète avec tous les outils pédagog
 
 ### **`main_window.py`** - Interface Principale
 -   **Classe principale** : `MainWindow` - Assemblage de l'interface complète
--   **Structure étendue** :
+-   **Structure simplifiée** :
     - Panneau de contrôle avec sliders et spinboxes synchronisés
-    - Système de presets avec QComboBox + bouton "Gérer..."
-    - Connexion complète des signaux avec gestion des presets avancés
+    - Système de presets avec QComboBox + bouton "Reset" uniquement
+    - Interface streamline sans complexité de gestion avancée
 -   **Méthodes clés** :
-    - `open_preset_manager()` : Ouverture gestionnaire presets avancé
-    - `on_preset_applied()` : Gestion application preset depuis gestionnaire
-    - `update_preset_combo()` : Synchronisation liste presets
-    - `connect_signals()` : Connexion complète des signaux UI
+    - `on_preset_changed()` : Gestion sélection preset via dropdown
+    - `reset_to_selected_preset()` : Reset aux paramètres du preset sélectionné
+    - `update_reset_button_state()` : Gestion état bouton Reset
+    - `connect_signals()` : Connexion des signaux UI simplifiés
 -   **Gestion temporelle** : Connexion des contrôles Xénon avec signaux appropriés
 -   **Architecture info** : Intégration système d'information contextuel
 
@@ -182,12 +182,11 @@ L'interface et l'expérience utilisateur complète avec tous les outils pédagog
     - Gestion échelles logarithmiques et mise à jour temps réel
 
 #### **Widgets de Gestion**
--   **`preset_manager_dialog.py`** (**NOUVEAU**) :
-    - Interface complète de gestion de presets avec onglets
-    - Vue hiérarchique par catégories avec filtrage
-    - Formulaires de création/édition avec validation
-    - Fonctions import/export avec gestion d'erreurs
-    - Prévisualisation et comparaison de presets
+-   **`preset_manager_dialog.py`** (**SUPPRIMÉ**) :
+    - Interface complexe de gestion supprimée pour simplification UX
+    - Fonctionnalités backend PresetManager conservées
+    - Focus sur interface streamline pour usage éducatif
+    - Gestion avancée disponible par modification de fichiers de configuration
 
 #### **Système d'Information Unifié**
 -   **`info_manager.py`** : Gestionnaire centralisé des informations contextuelles
@@ -205,10 +204,10 @@ L'interface et l'expérience utilisateur complète avec tous les outils pédagog
 2. Modèle : Résolution équations différentielles + mise à jour état + historique
 3. Modèle → Contrôleur → Interface (mise à jour graphiques temporels)
 
-### **Gestion de Presets** (nouvelle)
-1. Interface → Contrôleur → PresetManager → Validation + Persistance
-2. PresetManager → Contrôleur → Interface (synchronisation listes)
-3. Import/Export : PresetManager ↔ Fichiers JSON ↔ Interface
+### **Gestion de Presets** (simplifiée)
+1. Interface (dropdown) → Contrôleur → PresetManager → Application preset
+2. PresetManager → Contrôleur → Interface (mise à jour paramètres)
+3. Backend complet préservé mais non exposé en GUI pour simplification UX
 
 ### **Système d'Information** (nouveau)
 1. Survol souris → Widget → InfoManager → InfoPanel

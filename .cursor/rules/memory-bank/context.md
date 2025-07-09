@@ -2,16 +2,16 @@
 
 ## Focus Actuel
 - **STATUT FINAL** : NeutroScope est maintenant un simulateur pédagogique complet et professionnel, avec toutes les fonctionnalités majeures implémentées et opérationnelles.
-- **Dernière modification** : Création du fichier `mermaid.md` dans la memory bank contenant 10 diagrammes architecturaux essentiels pour la compréhension visuelle du projet (MVC, flux de données, presets, simulation temporelle, système d'info, visualisations, etc.).
+- **Dernière modification** : Suppression du gestionnaire de presets avancé (preset_manager_dialog.py) pour simplifier l'interface utilisateur tout en conservant les fonctionnalités de base des presets via la dropdown.
 
 ## Accomplissements Majeurs Récents
 
-### 1. Système de Presets Avancé - FINALISÉ ✅
-- **Nouveau modèle de données** : `PresetData` complet avec validation, métadonnées et sérialisation
-- **Gestionnaire sophistiqué** : `PresetManager` avec CRUD complet, import/export, et persistance automatique
-- **Interface GUI professionnelle** : `PresetManagerDialog` avec onglets, hiérarchie, et toutes fonctionnalités
-- **Intégration parfaite** : Bouton "Gérer..." fonctionnel avec synchronisation bidirectionnelle
-- **Rétrocompatibilité totale** : Tous les presets système existants préservés et améliorés
+### 1. Système de Presets Simplifié - MODIFIÉ ✅
+- **Modèle de données** : `PresetData` complet avec validation, métadonnées et sérialisation (conservé)
+- **Gestionnaire backend** : `PresetManager` avec CRUD complet, import/export, et persistance automatique (conservé)
+- **Interface GUI simplifiée** : Suppression du `PresetManagerDialog` complexe pour simplifier l'UX
+- **Interface streamline** : Dropdown de sélection de presets + bouton Reset uniquement
+- **Rétrocompatibilité totale** : Tous les presets système existants préservés et utilisables
 
 ### 2. Simulation Temporelle Complète - OPÉRATIONNELLE ✅
 - **Dynamique Xénon-135** : Implémentation complète des équations de Bateman (I-135 → Xe-135)
@@ -58,7 +58,7 @@ NeutroScope/ (Architecture finale)
 │       ├── main_window.py          # ✅ Interface principale + onglets
 │       ├── visualization.py        # ✅ Gestionnaire visualisations
 │       └── widgets/                # ✅ Widgets complets et robustes
-│           ├── preset_manager_dialog.py      # ✅ Gestionnaire presets GUI
+│           ├── [preset_manager_dialog.py]    # ❌ SUPPRIMÉ - Interface simplifiée
 │           ├── xenon_plot.py                 # ✅ Visualisation temporelle
 │           ├── neutron_cycle_plot.py         # ✅ Cycle neutronique interactif
 │           ├── flux_plot.py                  # ✅ Distribution flux
@@ -88,8 +88,8 @@ NeutroScope/ (Architecture finale)
 - Interface multilingue (français) avec terminologie technique
 
 #### **Gestion des Scenarios** ✅
-- Système de presets professionnel avec hiérarchie
-- Import/Export pour partage éducatif
+- Système de presets avec sélection dropdown simplifiée
+- Backend complet pour import/export (non exposé en GUI)
 - Validation automatique et gestion d'erreurs
 - États temporels complets avec métadonnées
 
@@ -136,10 +136,10 @@ NeutroScope/ (Architecture finale)
 - Progression structurée selon les presets pédagogiques
 
 ### **Pour les Instructeurs**
-- Création de scenarios éducatifs personnalisés
-- Gestion de progressions d'apprentissage
-- Partage de cas d'étude entre institutions
+- Utilisation de presets prédéfinis pour différents scenarios
 - Démonstrations en temps réel pendant les cours
+- Possibilité d'extension par modification des fichiers de configuration
+- Focus sur l'enseignement plutôt que la gestion technique
 
 ### **Pour les Professionnels**
 - Révision de concepts de physique des réacteurs

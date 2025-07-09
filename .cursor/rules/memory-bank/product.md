@@ -12,8 +12,8 @@ Les concepts fondamentaux de la physique des réacteurs—tels que la criticité
 ### Défi Avancé (Entièrement Adressé)
 **Les phénomènes temporels de réacteur**—tels que la dynamique d'empoisonnement au xénon, les effets de contre-réaction de température, et le comportement transitoire—nécessitent la compréhension d'interactions complexes qui se développent dans le temps. Les outils éducatifs traditionnels ne peuvent souvent pas démontrer ces comportements cruciaux de réacteurs réels.
 
-### Défi de Gestion Éducative (Nouvellement Résolu)
-**Gestion de scénarios et continuité éducative**—les instructeurs ont besoin d'outils sophistiqués pour créer, organiser et partager des scénarios de réacteur pour différents niveaux d'apprentissage. Les étudiants doivent progresser à travers des parcours d'apprentissage structurés avec des niveaux de complexité appropriés.
+### Défi de Gestion Éducative (Simplifié)
+**Accessibilité des scénarios éducatifs**—les instructeurs ont besoin d'un accès simple et direct à des scénarios de réacteur prédéfinis pour différents niveaux d'apprentissage. Les étudiants doivent pouvoir se concentrer sur l'apprentissage physique plutôt que sur la gestion technique complexe.
 
 NeutroScope résout maintenant de manière complète tous ces défis en fournissant un "laboratoire de réacteur virtuel" complet où les apprenants peuvent :
 
@@ -21,8 +21,8 @@ NeutroScope résout maintenant de manière complète tous ces défis en fourniss
 -   **Comprendre la dynamique temporelle** : Observer l'accumulation de concentration de xénon, les états d'équilibre, et les transitoires post-arrêt en temps réel avec des graphiques à axes doubles.
 -   **Expérimenter en sécurité** : Manipuler des paramètres clés du réacteur (barres de contrôle, bore, température) et voir les impacts immédiats ET retardés sur la stabilité du réacteur.
 -   **Explorer la physique avancée** : Étudier les contre-effets de température (Doppler combustible + effets modérateur), la dynamique des poisons neutroniques, et les interactions sophistiquées à six facteurs.
--   **Gérer les scénarios d'apprentissage** : Créer, organiser et partager des configurations de presets avancées avec des métadonnées complètes et une catégorisation.
--   **Suivre les états temporels** : Sauvegarder et restaurer des états complexes de réacteur incluant les concentrations de poisons et l'historique de simulation.
+-   **Accéder aux scénarios d'apprentissage** : Utiliser des presets prédéfinis soigneusement conçus pour différents niveaux et situations physiques.
+-   **Se concentrer sur la physique** : Interface simplifiée permettant de se concentrer sur l'apprentissage plutôt que sur la gestion technique.
 
 ## 3. Comment NeutroScope Devrait-il Fonctionner ?
 
@@ -38,11 +38,11 @@ NeutroScope résout maintenant de manière complète tous ces défis en fourniss
 - **Scénarios complexes** : Étudier des situations difficiles comme le temps mort xénon, les effets de pic xénon, et les procédures de redémarrage
 - **Visualisation temporelle** : Graphiques à axes doubles montrant l'évolution de concentration et les effets de réactivité dans le temps
 
-#### **Gestion Professionnelle de Scénarios**
-- **Apprentissage structuré** : Presets organisés par niveaux de complexité (Base, Temporel, Avancé, Personnalisé)
-- **Partage facile** : Fonctionnalité d'import/export pour distribuer des scénarios éducatifs
-- **Création flexible** : Création intuitive de presets à partir de l'état actuel du réacteur avec des métadonnées riches
-- **Contrôle de version** : Suivi des dates de création, auteurs, et historique de modifications pour les scénarios
+#### **Accès Simplifié aux Scénarios**
+- **Sélection directe** : Dropdown simple avec presets prédéfinis soigneusement choisis
+- **Focus éducatif** : Interface épurée concentrée sur l'apprentissage physique
+- **Reset intelligent** : Bouton permettant de revenir facilement aux paramètres d'origine
+- **Extensibilité backend** : Possibilité d'ajouter de nouveaux presets par modification de configuration
 
 ### Piliers de Fonctionnalité Centrale
 
@@ -58,12 +58,12 @@ NeutroScope résout maintenant de manière complète tous ces défis en fourniss
 - **Calculs d'équilibre** : Calcul automatique des états d'équilibre pour tout niveau de puissance
 - **Fonctionnalité de remise à zéro** : Retour instantané aux conditions d'équilibre pour comparaison expérimentale
 
-#### **3. Système Avancé de Gestion de Presets**
-- **Organisation professionnelle** : Vue hiérarchique avec catégories et filtrage
-- **Métadonnées riches** : Descriptions, dates de création, auteurs, tags, et notes personnalisées
-- **Capacités d'import/export** : Partage basé sur JSON pour distribution éducative
-- **Préservation d'état** : État complet du réacteur incluant les paramètres temporels
-- **Système de validation** : Vérification automatique des plages de paramètres et cohérence physique
+#### **3. Système Simplifié de Presets**
+- **Interface épurée** : Dropdown simple avec presets prédéfinis bien choisis
+- **Backend robuste** : Système complet PresetManager conservé en arrière-plan
+- **Focus utilisateur** : Concentration sur l'utilisation plutôt que la gestion
+- **Extensibilité** : Possibilité d'ajouter presets via fichiers de configuration
+- **Validation préservée** : Vérification automatique des plages de paramètres maintenue
 
 #### **4. Support Éducatif Complet**
 - **Info-bulles universelles** : Chaque élément d'interface fournit une éducation physique contextuelle

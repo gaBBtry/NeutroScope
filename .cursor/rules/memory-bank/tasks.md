@@ -4,7 +4,87 @@ Ce fichier documente les tâches répétitives et leurs workflows pour faciliter
 
 ---
 
-## Refactor Complet d'un Système de Gestion (Presets Avancés)
+## Suppression d'Interface Complexe (Simplification UX)
+
+**Dernière exécution :** Janvier 2025  
+**Contexte :** Suppression du gestionnaire de presets avancé pour simplifier l'expérience utilisateur
+
+### Type de tâche :
+Simplification d'interface avec préservation des fonctionnalités backend essentielles
+
+### Fichiers modifiés :
+- `src/gui/main_window.py` - Suppression bouton "Gérer..." et méthodes associées
+- `src/gui/widgets/preset_manager_dialog.py` - **SUPPRIMÉ** complètement
+- Documentation mise à jour (memory bank, tooltips)
+
+### Workflow de Suppression Propre :
+
+**Étapes :**
+1. **Analyse des dépendances** :
+   - Identifier tous les usages du composant à supprimer
+   - Cartographier les imports et références
+   - Vérifier les signals/slots connectés
+
+2. **Suppression progressive** :
+   - Supprimer l'import en premier
+   - Supprimer les références dans l'interface (boutons, connexions)
+   - Supprimer les méthodes appelantes
+   - Supprimer le fichier en dernier
+
+3. **Mise à jour documentation** :
+   - Textes d'aide et tooltips
+   - Documentation memory bank
+   - Tests si nécessaire
+
+### Bonnes pratiques identifiées :
+
+#### **Ordre de suppression critique**
+1. **Imports** - Supprimer en premier pour détecter les erreurs de compilation
+2. **Éléments UI** - Boutons, widgets, connexions
+3. **Méthodes** - Méthodes qui utilisaient le composant supprimé
+4. **Fichier** - Supprimer le fichier source en dernier
+5. **Documentation** - Mise à jour cohérente de tous les textes
+
+#### **Validation post-suppression**
+- Test de compilation Python (`python -m py_compile`)
+- Test d'import du module principal
+- Vérification fonctionnement des fonctionnalités conservées
+- Mise à jour memory bank et documentation
+
+### Points critiques :
+1. **Backend préservé** : Garder les fonctionnalités utiles en arrière-plan
+2. **UX cohérente** : S'assurer que l'interface reste logique après suppression
+3. **Documentation synchronisée** : Mettre à jour tous les textes d'aide
+4. **Tests complets** : Vérifier que l'application reste stable
+
+### Code type pour suppression propre :
+
+```python
+# AVANT - Interface complexe
+def create_control_panel(self):
+    # ...
+    self.manage_presets_button = QPushButton("Gérer...")
+    self.manage_presets_button.clicked.connect(self.open_preset_manager)
+    # ...
+
+def open_preset_manager(self):
+    dialog = PresetManagerDialog(...)
+    dialog.preset_applied.connect(self.on_preset_applied_from_manager)
+    # ...
+
+# APRÈS - Interface simplifiée
+def create_control_panel(self):
+    # Bouton "Gérer..." supprimé
+    # Seuls dropdown + bouton Reset conservés
+    # ...
+
+# Méthodes open_preset_manager(), on_preset_applied_from_manager() 
+# et refresh_preset_combo() complètement supprimées
+```
+
+---
+
+## Refactor Complet d'un Système de Gestion (Presets Avancés) - OBSOLÈTE
 
 **Dernière exécution :** Janvier 2025  
 **Contexte :** Transformation du système de presets simple vers un système professionnel complet
