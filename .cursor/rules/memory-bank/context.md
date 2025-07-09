@@ -2,7 +2,7 @@
 
 ## Focus Actuel
 - **STATUT FINAL** : NeutroScope est maintenant un simulateur pédagogique complet et professionnel, avec toutes les fonctionnalités majeures implémentées et opérationnelles.
-- **Dernière modification** : Ajout d'un bouton Reset dans l'interface des presets qui permet de revenir aux paramètres originaux du preset sélectionné si l'utilisateur a fait des modifications. Le bouton est automatiquement activé/désactivé selon l'état de correspondance entre les paramètres actuels et le preset sélectionné.
+- **Dernière modification** : Création du fichier `mermaid.md` dans la memory bank contenant 10 diagrammes architecturaux essentiels pour la compréhension visuelle du projet (MVC, flux de données, presets, simulation temporelle, système d'info, visualisations, etc.).
 
 ## Accomplissements Majeurs Récents
 
@@ -32,6 +32,12 @@
 - **Validation robuste** : Vérification automatique plages physiques et cohérence
 - **Partage facilité** : Import/Export JSON pour distribution entre utilisateurs
 - **Progressive disclosure** : Interface adaptée aux niveaux débutant → expert
+
+### 5. Interface Utilisateur Optimisée - RÉCEMMENT AMÉLIORÉE ✅
+- **Bouton Reset intelligent** : Permet de revenir aux paramètres du preset sélectionné
+- **Activation contextuelle** : Bouton activé uniquement quand modifications détectées
+- **Retour utilisateur immédiat** : Indication visuelle de l'état de correspondance preset
+- **Documentation de memory bank** : 10 diagrammes Mermaid architecturaux complets
 
 ## État Technique Actuel
 

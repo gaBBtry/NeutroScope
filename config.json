@@ -54,17 +54,31 @@
         "FISSION_RATE_COEFF": 1.0e-6
     },
     "presets": {
-        "Démarrage": {
-            "control_rod_position": 25.0,
-            "boron_concentration": 1200.0,
+        "Démarrage avec Xenon": {
+            "control_rod_position": 80.0,
+            "boron_concentration": 1020.0,
             "moderator_temperature": 280.0,
             "fuel_enrichment": 3.5,
             "power_level": 10.0
         },
-        "Critique à puissance nominale": {
+        "Démarrage sans Xenon": {
             "control_rod_position": 80.0,
-            "boron_concentration": 800.0,
-            "moderator_temperature": 310.0,
+            "boron_concentration": 1020.0,
+            "moderator_temperature": 280.0,
+            "fuel_enrichment": 3.5,
+            "power_level": 10.0
+        },
+        "PMD en début de cycle": {
+            "control_rod_position": 0.0,
+            "boron_concentration": 500.0,
+            "moderator_temperature": 304.6,
+            "fuel_enrichment": 3.5,
+            "power_level": 100.0
+        },
+        "PMD en cours de cycle": {
+            "control_rod_position": 0.0,
+            "boron_concentration": 1000.0,
+            "moderator_temperature": 304.6,
             "fuel_enrichment": 3.5,
             "power_level": 100.0
         },
@@ -74,34 +88,6 @@
             "moderator_temperature": 315.0,
             "fuel_enrichment": 3.5,
             "power_level": 100.0
-        },
-        "Surcritique": {
-            "control_rod_position": 70.0,
-            "boron_concentration": 700.0,
-            "moderator_temperature": 310.0,
-            "fuel_enrichment": 3.5,
-            "power_level": 100.0
-        },
-        "Sous-critique": {
-            "control_rod_position": 90.0,
-            "boron_concentration": 900.0,
-            "moderator_temperature": 310.0,
-            "fuel_enrichment": 3.5,
-            "power_level": 100.0
-        },
-        "Fonctionnement Xénon équilibre": {
-            "control_rod_position": 80.0,
-            "boron_concentration": 800.0,
-            "moderator_temperature": 310.0,
-            "fuel_enrichment": 3.5,
-            "power_level": 100.0
-        },
-        "Post-arrêt pic Xénon": {
-            "control_rod_position": 95.0,
-            "boron_concentration": 1000.0,
-            "moderator_temperature": 290.0,
-            "fuel_enrichment": 3.5,
-            "power_level": 0.0
         }
     }
 }
