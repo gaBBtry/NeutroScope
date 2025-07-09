@@ -323,11 +323,46 @@ class ReactorModel:
         flux = np.cos(np.pi * (height - 0.5))
         
         # Control rod effect (simplified)
-        if self.control_rod_position > 0:
-            rod_depth = self.control_rod_position / 100
-            rod_effect = np.exp(-config.CONTROL_ROD_EFFECT_COEFF * (height - (1 - rod_depth))**2)
-            rod_effect[height < (1 - rod_depth)] = 1
+        if self.control_rod_position > 0 and self.control_rod_position < 100:
+            rod_depth = self.control_rod_position / 100.0
+            rod_insertion_point = 1 - rod_depth  # Position des pointes des barres
+            
+            # Calculer l'effet des barres avec atténuation progressive aux fortes insertions
+            rod_effect = np.ones_like(height)
+            
+            # Zone affectée par les barres (au-dessus de leur position)
+            affected_zone = height > rod_insertion_point
+            
+            if np.any(affected_zone):
+                # Distance normalisée par rapport aux barres
+                distance_from_rods = height - rod_insertion_point
+                distance_from_rods[~affected_zone] = 0
+                
+                # Effet d'écrasement avec atténuation progressive et fluide
+                # Transition fluide commençant vers 85% avec fonction de lissage
+                if rod_depth > 0.85:
+                    # Fonction de transition en S (sigmoïde) pour une fluidité maximale
+                    # Transformation pour avoir une transition de 85% à 100%
+                    relative_depth = (rod_depth - 0.85) / 0.15  # Normalise 0.85-1.0 vers 0-1
+                    
+                    # Fonction sigmoïde inverse pour transition fluide
+                    # À 85% : attenuation_factor ≈ 1.0 (effet complet)
+                    # À 100% : attenuation_factor = 0.0 (aucun effet)
+                    # Transition en forme de S pour fluidité maximale
+                    sigmoid_factor = 1.0 / (1.0 + np.exp(-12 * (relative_depth - 0.5)))
+                    attenuation_factor = 1.0 - sigmoid_factor
+                    
+                    effect_coeff = config.CONTROL_ROD_EFFECT_COEFF * attenuation_factor
+                else:
+                    effect_coeff = config.CONTROL_ROD_EFFECT_COEFF
+                
+                # Application de l'effet gaussien atténué
+                if effect_coeff > 0:
+                    rod_effect[affected_zone] = np.exp(-effect_coeff * distance_from_rods[affected_zone]**2)
+            
             flux = flux * rod_effect
+        
+        # À 100% d'insertion ou 0%, le flux reste parfaitement symétrique (cosinus pur)
         
         # Normalize
         flux = flux / np.max(flux)

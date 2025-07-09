@@ -4,6 +4,107 @@ Ce fichier documente les tâches répétitives et leurs workflows pour faciliter
 
 ---
 
+## Correction de Comportement Physique avec Fonction de Transition Fluide
+
+**Dernière exécution :** Janvier 2025  
+**Contexte :** Correction du flux axial pour un comportement physiquement correct aux fortes insertions de barres de contrôle
+
+### Type de tâche :
+Correction physique majeure avec optimisation de fluidité utilisant fonctions mathématiques avancées
+
+### Fichiers modifiés :
+- `src/model/reactor_model.py` - Méthode `get_axial_flux_distribution()` complètement refactorisée
+
+### Problème identifié :
+- **Incohérence physique** : Le flux s'écrasait correctement mais ne se restabilisait pas aux fortes insertions
+- **Transition brusque** : Passage direct de l'écrasement à la symétrie sans progression naturelle
+- **Point critique** : À 100% d'insertion, le flux doit être parfaitement symétrique (cosinus pur)
+
+### Workflow de Correction Physique :
+
+**Étapes :**
+1. **Analyse du comportement requis** :
+   - 0% insertion : Flux symétrique (cosinus pur)
+   - 1-85% insertion : Écrasement gaussien normal
+   - 85-99% insertion : Atténuation progressive et fluide
+   - 100% insertion : Flux parfaitement symétrique (identique à 0%)
+
+2. **Implémentation de la logique conditionnelle** :
+   - Exclusion explicite de la position 100% du calcul d'effet
+   - Zone de transition définie entre 85% et 100%
+   - Application conditionnelle des coefficients d'atténuation
+
+3. **Implémentation fonction sigmoïde** :
+   - Choix de la fonction `1/(1 + e^(-12(x-0.5)))` pour courbe en S naturelle
+   - Normalisation de la plage 85-100% vers 0-1 pour la fonction
+   - Inversion pour obtenir atténuation (1 - sigmoid_factor)
+
+4. **Optimisation des paramètres** :
+   - Coefficient de raideur : 12 pour équilibre fluidité/réactivité
+   - Point central : 0.5 pour symétrie parfaite de la transition
+   - Validation du comportement aux points critiques
+
+### Bonnes pratiques identifiées :
+
+#### **Fonctions de Transition Fluides**
+- **Sigmoïdes** : Excellentes pour transitions naturelles en forme de S
+- **Paramètres critiques** : Coefficient de raideur détermine la douceur de transition
+- **Normalisation** : Toujours mapper la plage d'entrée vers [0,1] pour la fonction mathématique
+- **Points de contrôle** : Valider le comportement aux extremes (0%, 50%, 100%)
+
+#### **Validation Physique**
+- **Conditions limites** : Vérifier comportement aux cas extrêmes
+- **Continuité** : Assurer absence de discontinuités dans les dérivées
+- **Cohérence** : Le modèle doit refléter la physique réelle observée
+- **Symétrie** : À insertion complète, les effets asymétriques doivent disparaître
+
+#### **Performance et Fluidité**
+- **Éviter les branches conditionnelles** excessives dans les calculs temps réel
+- **Fonctions mathématiques optimisées** : NumPy pour vectorisation
+- **Mise en cache** : Éviter recalculs de constantes à chaque appel
+- **Tests de régression** : S'assurer que les corrections n'affectent pas les autres comportements
+
+### Code type pour correction avec fonction sigmoïde :
+
+```python
+# AVANT - Transition brusque
+if rod_depth > 0.8:
+    attenuation_factor = 1.0 - 5.0 * ((rod_depth - 0.8) / 0.2)
+    attenuation_factor = max(0.0, attenuation_factor)
+    effect_coeff = config.CONTROL_ROD_EFFECT_COEFF * attenuation_factor
+
+# APRÈS - Transition fluide avec sigmoïde
+if rod_depth > 0.85:
+    # Normalisation de la plage vers [0,1]
+    relative_depth = (rod_depth - 0.85) / 0.15  # 0.85-1.0 → 0-1
+    
+    # Fonction sigmoïde pour transition en S
+    sigmoid_factor = 1.0 / (1.0 + np.exp(-12 * (relative_depth - 0.5)))
+    attenuation_factor = 1.0 - sigmoid_factor  # Inversion pour atténuation
+    
+    effect_coeff = config.CONTROL_ROD_EFFECT_COEFF * attenuation_factor
+
+# Condition d'exclusion pour 100%
+if self.control_rod_position > 0 and self.control_rod_position < 100:
+    # Application de l'effet uniquement entre 0-99%
+```
+
+### Points critiques :
+
+1. **Exclusion explicite des cas limites** : Éviter les calculs inutiles aux positions spéciales
+2. **Choix de la fonction de transition** : Sigmoïde optimale pour fluidité naturelle
+3. **Paramètres de transition** : Balance entre réactivité et douceur du comportement
+4. **Validation continue** : Tests avec différentes valeurs d'insertion
+5. **Performance** : Éviter overhead calculatoire pour gains de fluidité
+
+### Extensions futures possibles :
+- Application similaire à d'autres phénomènes physiques (température, concentration bore)
+- Paramètres de transition configurables dans `config.json`
+- Fonctions de transition alternatives (cosinus, polynomiales)
+- Optimisation pour autres comportements asymptotiques
+
+---
+
 ## Suppression d'Interface Complexe (Simplification UX)
 
 **Dernière exécution :** Janvier 2025  
