@@ -147,6 +147,8 @@ class MainWindow(QMainWindow):
     def connect_signals(self):
         """Connecte tous les signaux des éléments UI aux méthodes du contrôleur"""
         self.rod_slider.valueChanged.connect(self.on_rod_position_changed)
+        # La modification du slider met à jour le spinbox.
+        # La modification du spinbox met à jour le modèle et le slider.
         self.boron_slider.valueChanged.connect(self.on_boron_slider_changed)
         self.boron_spinbox.valueChanged.connect(self.on_boron_spinbox_changed)
         self.moderator_temp_slider.valueChanged.connect(self.on_average_temperature_changed)
@@ -405,16 +407,17 @@ class MainWindow(QMainWindow):
         )
 
     def on_boron_slider_changed(self, value):
-        """Sync spinbox with slider"""
-        self.boron_spinbox.blockSignals(True)
+        """Met à jour le spinbox depuis le slider. Le signal du spinbox déclenchera la mise à jour du modèle."""
         self.boron_spinbox.setValue(float(value))
-        self.boron_spinbox.blockSignals(False)
         
     def on_boron_spinbox_changed(self, value):
-        """Sync slider with spinbox and update model"""
+        """Met à jour le slider pour correspondre au spinbox et met à jour le modèle."""
+        # Met à jour le slider, en bloquant ses signaux pour éviter une boucle.
         self.boron_slider.blockSignals(True)
         self.boron_slider.setValue(int(value))
         self.boron_slider.blockSignals(False)
+
+        # Met à jour le modèle via le contrôleur, car le spinbox est la source de vérité.
         self._update_parameter_and_ui(
             self.controller.update_boron_concentration,
             value
