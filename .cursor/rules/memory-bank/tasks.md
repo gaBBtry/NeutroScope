@@ -4,6 +4,121 @@ Ce fichier documente les tâches répétitives et leurs workflows pour faciliter
 
 ---
 
+## Inversion Complète de Convention d'Interface (Barres de Contrôle)
+
+**Dernière exécution :** Janvier 2025  
+**Contexte :** Inversion de la convention des barres de contrôle pour adopter un standard industriel plus intuitif
+
+### Type de tâche :
+Changement majeur d'interface et de logique nécessitant une modification cohérente dans toutes les couches de l'architecture
+
+### Problème identifié :
+- **Convention non-standard** : L'ancienne convention (0% = retirées, 100% = insérées) était contraire aux standards industriels
+- **Confusion pédagogique** : Interface non cohérente avec les outils professionnels utilisés dans l'industrie
+- **Besoin de standardisation** : Faciliter la transition des étudiants vers les environnements professionnels
+
+### Nouvelle convention adoptée :
+- **0%** = Barres complètement insérées (maximum d'absorption neutronique)
+- **100%** = Barres extraites (minimum d'absorption neutronique)
+- **Slider à gauche** = Barres insérées (réacteur sous-critique)
+- **Slider à droite** = Barres retirées (réacteur critique/surcritique)
+
+### Fichiers modifiés :
+- `src/model/reactor_model.py` - Logique physique d'absorption
+- `src/gui/main_window.py` - Interface slider et gestion des événements
+- `src/gui/widgets/flux_plot.py` - Visualisation et calculs de position
+- `src/model/preset_model.py` - Descriptions des presets
+- `config.json` - Valeurs de tous les presets système
+
+### Workflow d'Inversion Complète :
+
+**Étape 1 : Analyse d'impact**
+1. **Identification des usages** : Recherche exhaustive (`grep_search`) de tous les endroits utilisant le paramètre
+2. **Cartographie des dépendances** : Identifier les couches affectées (physique, contrôleur, interface, presets, tests)
+3. **Planification séquentielle** : Ordre optimal des modifications pour éviter les incohérences temporaires
+
+**Étape 2 : Modifications de la logique physique**
+1. **Calculs d'absorption** : Inverser la formule `rod_abs_ratio = config.F_CONTROL_ROD_WORTH * (self.control_rod_position / 100.0)`
+   - Nouvelle logique : `rod_insertion_fraction = (100.0 - self.control_rod_position) / 100.0`
+2. **Distribution de flux** : Adapter les calculs de position et d'effet des barres
+   - Adapter `rod_depth` → `rod_insertion_depth` avec nouvelle correspondance
+3. **Validation physique** : Tests pour s'assurer de la cohérence (0% → k_eff faible, 100% → k_eff élevé)
+
+**Étape 3 : Modifications de l'interface utilisateur**
+1. **Slider inversé** : Modifier la correspondance valeur slider ↔ valeur physique
+   - `update_ui_from_preset()` : `inverted_slider_value = 100 - int(config["control_rod_position"])`
+   - `on_rod_position_changed()` : `inverted_value = 100 - value`
+2. **Cohérence des visualisations** : Adapter `update_visualizations()` pour utiliser la valeur correcte
+3. **Textes d'aide** : Mettre à jour toutes les descriptions et tooltips
+
+**Étape 4 : Adaptation des données de configuration**
+1. **Presets système** : Inverser toutes les valeurs dans `config.json`
+   - Exemple : 0.0 → 100.0, 80.0 → 20.0, 95.0 → 5.0
+2. **Descriptions presets** : Adapter les textes descriptifs dans `preset_model.py`
+3. **Validation cohérence** : Vérifier que tous les presets restent physiquement sensés
+
+**Étape 5 : Validation et tests**
+1. **Tests unitaires physiques** : Vérifier que la logique d'absorption est correcte
+2. **Tests d'interface** : Vérifier que le slider se comporte comme attendu
+3. **Tests d'intégration** : Vérifier que les presets chargent correctement
+4. **Validation experte** : Confirmer que la convention adoptée est bien la norme industrielle
+
+### Bonnes pratiques identifiées :
+
+#### **Changements de Convention Majeurs**
+- **Planification exhaustive** : Identifier TOUS les points d'impact avant de commencer
+- **Ordre séquentiel optimal** : Physique → Interface → Configuration → Tests
+- **Documentation temps réel** : Commenter CHAQUE changement avec la nouvelle convention
+- **Validation continue** : Tester à chaque étape pour éviter les erreurs cumulatives
+
+#### **Gestion des Données Inversées**
+- **Variables explicites** : Utiliser des noms clairs (`rod_insertion_fraction` vs `rod_position`)
+- **Commentaires détaillés** : Documenter la nouvelle convention à chaque utilisation
+- **Validation aux extremes** : Tester les valeurs 0% et 100% pour confirmer le comportement
+- **Cohérence visuelle** : S'assurer que l'interface reflète intuitivement la physique
+
+#### **Tests de Régression**
+- **Avant/après comparaison** : Documenter les valeurs de k_eff pour validation
+- **Presets critiques** : Tester chaque preset pour cohérence physique
+- **Interface utilisateur** : Vérifier que le comportement du slider est intuitif
+- **Documentation** : Mettre à jour tous les textes d'aide et descriptions
+
+### Code type pour inversion de convention :
+
+```python
+# AVANT - Convention originale
+rod_abs_ratio = config.F_CONTROL_ROD_WORTH * (self.control_rod_position / 100.0)
+
+# APRÈS - Convention inversée avec documentation
+# Nouvelle convention: 0% = insérées, 100% = retirées
+rod_insertion_fraction = (100.0 - self.control_rod_position) / 100.0
+rod_abs_ratio = config.F_CONTROL_ROD_WORTH * rod_insertion_fraction
+```
+
+```python
+# Interface - Slider inversé
+def on_rod_position_changed(self, value):
+    # Inverser la valeur du slider : slider=0 → 100% (retirées), slider=100 → 0% (insérées)
+    inverted_value = 100 - value
+    # Continuer avec inverted_value...
+```
+
+### Points critiques :
+
+1. **Cohérence globale** : TOUS les usages du paramètre doivent être modifiés simultanément
+2. **Validation physique** : La nouvelle convention doit être physiquement sensée
+3. **Tests exhaustifs** : Validation à tous les niveaux (unitaire, intégration, interface)
+4. **Documentation synchronisée** : Mettre à jour TOUS les textes explicatifs
+5. **Standards industriels** : Vérifier que la nouvelle convention est bien la norme acceptée
+
+### Extensions futures possibles :
+- Application de la même méthodologie à d'autres paramètres (bore, température)
+- Outils automatisés pour faciliter les inversions de convention
+- Templates documentés pour autres types de changements majeurs
+- Processus de validation standardisé pour changements d'interface
+
+---
+
 ## Correction de Comportement Physique avec Fonction de Transition Fluide
 
 **Dernière exécution :** Janvier 2025  

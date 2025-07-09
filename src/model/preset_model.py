@@ -218,7 +218,7 @@ class PresetManager:
     def _get_preset_description(self, name: str) -> str:
         """Génère une description basée sur le nom du preset"""
         descriptions = {
-            "Démarrage": "Configuration typique pour le démarrage d'un réacteur avec barres partiellement insérées",
+            "Démarrage": "Configuration typique pour le démarrage d'un réacteur avec barres partiellement retirées",
             "Critique à puissance nominale": "État d'équilibre critique à puissance nominale de fonctionnement",
             "Fin de cycle": "Configuration en fin de cycle avec combustible appauvri et faible bore",
             "Surcritique": "État surcritique démontrant une augmentation de puissance",

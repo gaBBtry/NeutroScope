@@ -45,8 +45,10 @@ class FluxDistributionPlot(FigureCanvasQTAgg):
         self.line.set_data(flux, height)
         
         # Update rod position line - rod comes from the top
-        rod_height = 1.0 - (rod_position / 100.0)
-        self.rod_line.set_ydata([rod_height, rod_height])
+        # Nouvelle convention: rod_position est le % de retrait (0% = insérées, 100% = retirées)
+        rod_insertion_fraction = (100.0 - rod_position) / 100.0  # Fraction d'insertion réelle
+        rod_tip_height = 1.0 - rod_insertion_fraction  # Position des pointes des barres
+        self.rod_line.set_ydata([rod_tip_height, rod_tip_height])
         
         self.draw()
     
@@ -59,7 +61,9 @@ class FluxDistributionPlot(FigureCanvasQTAgg):
         if 0 <= event.ydata <= 1 and 0 <= event.xdata <= 1.1:
             height = event.ydata
             flux = event.xdata
-            rod_position = 1.0 - self.rod_line.get_ydata()[0]  # 0-1 scale
+            rod_tip_height = self.rod_line.get_ydata()[0]  # Position des pointes (0-1 scale)
+            rod_insertion_fraction = 1.0 - rod_tip_height  # Fraction d'insertion réelle
+            rod_position = 100.0 - (rod_insertion_fraction * 100.0)  # % de retrait pour affichage
             
             # Position dans le cœur (convertir en description qualitative)
             position_description = ""
@@ -76,12 +80,12 @@ class FluxDistributionPlot(FigureCanvasQTAgg):
             
             # Analyser la position par rapport aux barres de contrôle
             barres_description = ""
-            if rod_position > 0:  # Si les barres sont insérées
-                rod_height = 1.0 - rod_position  # Position des barres (0-1)
-                if height > rod_height:
-                    barres_description = f" Cette région est affectée par les barres de contrôle (insérées à {rod_position*100:.0f}%)."
+            if rod_insertion_fraction > 0:  # Si les barres sont partiellement insérées
+                if height > rod_tip_height:
+                    insertion_percentage = rod_insertion_fraction * 100.0
+                    barres_description = f" Cette région est affectée par les barres de contrôle (insérées à {insertion_percentage:.0f}%)."
                 else:
-                    distance_to_rods = rod_height - height
+                    distance_to_rods = rod_tip_height - height
                     if distance_to_rods < 0.2:
                         barres_description = f" Cette région est légèrement influencée par la proximité des barres de contrôle."
             
@@ -117,16 +121,17 @@ class FluxDistributionPlot(FigureCanvasQTAgg):
             
             # Impact des barres de contrôle
             impact_barres = ""
-            if rod_position > 0:
+            if rod_insertion_fraction > 0:
+                insertion_percentage = rod_insertion_fraction * 100.0
                 impact_barres = (
-                    f"\n\nImpact des barres de contrôle : Les barres sont actuellement insérées à {rod_position*100:.0f}% depuis le haut du cœur. "
+                    f"\n\nImpact des barres de contrôle : Les barres sont actuellement insérées à {insertion_percentage:.0f}% depuis le haut du cœur. "
                     f"Elles créent une dépression du flux dans la partie supérieure, ce qui modifie la distribution de puissance "
                     f"et peut affecter les marges thermiques."
                 )
             
             # Recommandations éventuelles
             recommandations = ""
-            if rod_position > 0.5 and flux < 0.5 and height > 0.8:
+            if rod_insertion_fraction > 0.5 and flux < 0.5 and height > 0.8:
                 recommandations = "\n\nDans un réacteur réel, une insertion aussi importante des barres de contrôle sur une longue période " \
                                   "pourrait créer un déséquilibre axial de puissance. Une combinaison de barres partiellement " \
                                   "insérées et d'ajustement de la concentration en bore serait généralement préférée pour le contrôle à long terme."

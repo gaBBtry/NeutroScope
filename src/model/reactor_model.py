@@ -101,7 +101,9 @@ class ReactorModel:
         base_abs_ratio = config.F_BASE_ABS_RATIO * (1 + mod_temp_effect)
         
         # 2. Rapport d'absorption des barres de contrôle
-        rod_abs_ratio = config.F_CONTROL_ROD_WORTH * (self.control_rod_position / 100.0)
+        # Nouvelle convention: 0% = insérées, 100% = retirées
+        rod_insertion_fraction = (100.0 - self.control_rod_position) / 100.0
+        rod_abs_ratio = config.F_CONTROL_ROD_WORTH * rod_insertion_fraction
         
         # 3. Rapport d'absorption du bore
         boron_abs_ratio = config.F_BORON_WORTH_PER_PPM * self.boron_concentration
@@ -323,9 +325,11 @@ class ReactorModel:
         flux = np.cos(np.pi * (height - 0.5))
         
         # Control rod effect (simplified)
+        # Nouvelle convention: 0% = insérées, 100% = retirées
         if self.control_rod_position > 0 and self.control_rod_position < 100:
-            rod_depth = self.control_rod_position / 100.0
-            rod_insertion_point = 1 - rod_depth  # Position des pointes des barres
+            rod_withdrawal_fraction = self.control_rod_position / 100.0  # Fraction de retrait
+            rod_insertion_depth = 1.0 - rod_withdrawal_fraction  # Profondeur d'insertion réelle
+            rod_insertion_point = 1 - rod_insertion_depth  # Position des pointes des barres
             
             # Calculer l'effet des barres avec atténuation progressive aux fortes insertions
             rod_effect = np.ones_like(height)
@@ -339,15 +343,15 @@ class ReactorModel:
                 distance_from_rods[~affected_zone] = 0
                 
                 # Effet d'écrasement avec atténuation progressive et fluide
-                # Transition fluide commençant vers 85% avec fonction de lissage
-                if rod_depth > 0.85:
+                # Transition fluide commençant vers 85% d'insertion (donc 15% de retrait)
+                if rod_insertion_depth > 0.85:
                     # Fonction de transition en S (sigmoïde) pour une fluidité maximale
-                    # Transformation pour avoir une transition de 85% à 100%
-                    relative_depth = (rod_depth - 0.85) / 0.15  # Normalise 0.85-1.0 vers 0-1
+                    # Transformation pour avoir une transition de 85% à 100% d'insertion
+                    relative_depth = (rod_insertion_depth - 0.85) / 0.15  # Normalise 0.85-1.0 vers 0-1
                     
                     # Fonction sigmoïde inverse pour transition fluide
-                    # À 85% : attenuation_factor ≈ 1.0 (effet complet)
-                    # À 100% : attenuation_factor = 0.0 (aucun effet)
+                    # À 85% d'insertion : attenuation_factor ≈ 1.0 (effet complet)
+                    # À 100% d'insertion : attenuation_factor = 0.0 (aucun effet)
                     # Transition en forme de S pour fluidité maximale
                     sigmoid_factor = 1.0 / (1.0 + np.exp(-12 * (relative_depth - 0.5)))
                     attenuation_factor = 1.0 - sigmoid_factor
@@ -362,7 +366,7 @@ class ReactorModel:
             
             flux = flux * rod_effect
         
-        # À 100% d'insertion ou 0%, le flux reste parfaitement symétrique (cosinus pur)
+        # À 0% (100% insertion) ou 100% (0% insertion), le flux reste parfaitement symétrique (cosinus pur)
         
         # Normalize
         flux = flux / np.max(flux)

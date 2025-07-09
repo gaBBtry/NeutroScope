@@ -55,35 +55,35 @@
     },
     "presets": {
         "PMD en début de cycle": {
-            "control_rod_position": 0.0,
+            "control_rod_position": 100.0,
             "boron_concentration": 500.0,
             "average_temperature": 304.6,
             "fuel_enrichment": 3.5,
             "power_level": 100.0
         },
         "PMD en cours de cycle": {
-            "control_rod_position": 0.0,
+            "control_rod_position": 100.0,
             "boron_concentration": 1000.0,
             "average_temperature": 304.6,
             "fuel_enrichment": 3.5,
             "power_level": 100.0
         },
         "Démarrage avec Xenon": {
-            "control_rod_position": 80.0,
+            "control_rod_position": 20.0,
             "boron_concentration": 1020.0,
             "average_temperature": 280.0,
             "fuel_enrichment": 3.5,
             "power_level": 10.0
         },
         "Démarrage sans Xenon": {
-            "control_rod_position": 80.0,
+            "control_rod_position": 20.0,
             "boron_concentration": 1020.0,
             "average_temperature": 280.0,
             "fuel_enrichment": 3.5,
             "power_level": 10.0
         },
         "Fin de cycle": {
-            "control_rod_position": 95.0,
+            "control_rod_position": 5.0,
             "boron_concentration": 50.0,
             "average_temperature": 315.0,
             "fuel_enrichment": 3.5,

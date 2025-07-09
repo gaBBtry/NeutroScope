@@ -38,7 +38,7 @@ class MainWindow(QMainWindow):
                 "Les barres de contrôle sont des éléments absorbants de neutrons qui permettent "
                 "de contrôler rapidement la réactivité du cœur. Leur insertion dans le cœur "
                 "réduit le facteur de multiplication k et donc la puissance du réacteur.\n\n"
-                "Plage: 0% (barres extraites) à 100% (barres complètement insérées)"
+                "Plage: 0% (barres complètement insérées) à 100% (barres extraites)"
             ),
             "boron": (
                 "Concentration en bore\n\n"
@@ -345,7 +345,9 @@ class MainWindow(QMainWindow):
         self.fuel_enrichment_slider.blockSignals(True)
 
         # Update sliders and labels
-        self.rod_slider.setValue(int(config["control_rod_position"]))
+        # Inverser le slider : 0% (insérées) = slider à gauche (0), 100% (retirées) = slider à droite (100)
+        inverted_slider_value = 100 - int(config["control_rod_position"])
+        self.rod_slider.setValue(inverted_slider_value)
         self.rod_label.setText(f"{config['control_rod_position']:.0f} %")
         
         self.boron_slider.setValue(int(config["boron_concentration"]))
@@ -400,10 +402,12 @@ class MainWindow(QMainWindow):
 
     def on_rod_position_changed(self, value):
         """Handle control rod position change"""
+        # Inverser la valeur du slider : slider=0 → 100% (retirées), slider=100 → 0% (insérées)
+        inverted_value = 100 - value
         self._update_parameter_and_ui(
             self.controller.update_control_rod_position,
-            value,
-            lambda: self.rod_label.setText(f"{value} %")
+            inverted_value,
+            lambda: self.rod_label.setText(f"{inverted_value} %")
         )
 
     def on_boron_slider_changed(self, value):
@@ -478,7 +482,8 @@ class MainWindow(QMainWindow):
         """Update all plots with the latest data from the model"""
         # Axial Flux
         height, flux = self.controller.get_axial_flux_distribution()
-        rod_pos = self.rod_slider.value()
+        # Inverser la valeur du slider pour obtenir la position réelle des barres
+        rod_pos = 100 - self.rod_slider.value()
         self.visualization_panel.update_flux_plot(height, flux, rod_pos)
         
         # Four Factors
