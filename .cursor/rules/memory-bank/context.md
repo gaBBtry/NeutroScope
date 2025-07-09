@@ -6,7 +6,22 @@
 
 ## Accomplissements Majeurs Récents
 
-### 1. Implémentation Système Grappes R et GCP - NOUVELLE ✅
+### 1. Suppression des Arrondis dans les Calculs - NOUVELLE ✅
+- **Problème identifié** : Des arrondis inappropriés dans les calculs internes du modèle réduisaient la précision
+- **Zones corrigées** :
+  - `get_four_factors_data()` : Suppression de `round(self.k_infinite, 2)` et `round(self.k_effective, 2)`
+  - `get_neutron_cycle_data()` : Suppression de `round(self.k_effective, 2)` 
+  - `update_rod_group_R_position()` : Suppression de `int(position)` pour conserver précision
+  - `update_rod_group_GCP_position()` : Suppression de `int(position)` pour conserver précision
+  - `update_control_rod_position()` : Suppression de `int()` dans le calcul equivalent_steps
+- **Arrondis d'affichage améliorés** :
+  - `main_window.py` : Formatage amélioré de `.2f` à `.4f` pour k_eff dans l'interface
+  - `four_factors_plot.py` : Formatage amélioré de `.2f` à `.4f` pour k∞ et keff dans annotations et tooltips
+  - `neutron_cycle_plot.py` : Formatage amélioré de `.2f` à `.4f` pour k_eff dans le diagramme central
+- **Résultat** : Précision complète dans les calculs (ex: 0.8407881285478107) avec affichage haute précision (0.8408)
+- **Validation** : Tests confirmant que les calculs utilisent la précision complète et l'affichage montre 4 décimales
+
+### 2. Implémentation Système Grappes R et GCP - CONSERVÉE ✅
 - **Innovation majeure** : Transformation complète du système de contrôle des barres pour distinguer les groupes R (Régulation) et GCP (Compensation de Puissance)
 - **Granularité professionnelle** : Passage de 100% à 228 pas pour chaque groupe, reflétant les standards industriels réels
 - **Architecture sophistiquée** :
@@ -19,7 +34,7 @@
   - **Tooltips enrichis** : Explications détaillées des rôles spécifiques de chaque groupe
 - **Rétrocompatibilité** : Méthodes de conversion pour maintenir compatibilité avec visualisations existantes
 
-### 2. Architecture de Données Étendue - NOUVELLE ✅
+### 3. Architecture de Données Étendue - NOUVELLE ✅
 - **Configuration centralisée** : Section `control_rod_groups` dans `config.json` avec paramètres complets
 - **Modèle physique sophistiqué** :
   - Calculs de worth pondérés dans `_get_total_rod_worth_fraction()`
@@ -28,7 +43,7 @@
 - **Système de presets adapté** : Tous les presets système convertis aux nouvelles positions R/GCP
 - **Validation robuste** : Plages 0-228 pas pour chaque groupe avec vérification automatique
 
-### 3. Interface Utilisateur Perfectionnée - NOUVELLE ✅
+### 4. Interface Utilisateur Perfectionnée - NOUVELLE ✅
 - **Contrôles séparés** : Groupes distincts "Groupe R (Régulation)" et "Groupe GCP (Compensation)"
 - **Granularité adaptée** :
   - **Groupe R** : Boutons ±1 pas pour ajustements ultra-fins
@@ -37,7 +52,7 @@
 - **Information contextuelle** : Tooltips expliquant les rôles et recommandations d'usage
 - **Visual feedback** : Ticks sur sliders et suffixe " pas" pour clarté
 
-### 4. Correction de Cohérence Physique et Affichage - CONSERVÉE ✅
+### 5. Correction de Cohérence Physique et Affichage - CONSERVÉE ✅
 - **Problème résolu** : Le simulateur affichait un `k_eff` incorrect pour les états critiques (ex: PMD), qui doit être de 1.00.
 - **Cause Racine** : Une formule dimensionnellement incohérente dans le calcul de l'absorption du xénon dans `reactor_model.py`.
 - **Solution Physique** : Remplacement de la formule erronée par un calcul physiquement juste du rapport `Σa_xenon / Σa_fuel`, rétablissant la précision du modèle.
@@ -45,7 +60,7 @@
   - Uniformisation de l'affichage de `k_eff` et `k_inf` à **deux décimales fixes** (ex: "1.00") dans tous les widgets (`main_window`, `four_factors_plot`, `neutron_cycle_plot`) pour une meilleure clarté.
 - **Refactoring** : Centralisation du calcul de `k_infinite` dans le modèle pour éviter la redondance et améliorer la maintenabilité (principe DRY).
 
-### 5. Convention Barres Industrielle - CONSERVÉE ✅
+### 6. Convention Barres Industrielle - CONSERVÉE ✅
 - **Convention standardisée** :
   - **0 pas** = Barres complètement extraites (minimum d'absorption neutronique)
   - **228 pas** = Barres complètement insérées (maximum d'absorption neutronique)
@@ -54,7 +69,7 @@
 - **Logique d'inversion** : Interface utilisateur inversée pour intuitivité (droite = insertion)
 - **Physique adaptée** : Calculs d'absorption ajustés pour nouvelle convention dans toute l'architecture
 
-### 6. Unification Interface Utilisateur - NOUVELLE ✅
+### 7. Unification Interface Utilisateur - NOUVELLE ✅
 - **Pattern unifié pour TOUS les contrôles** : Curseur + boutons d'incrémentation + saisie numérique synchronisés
 - **Cohérence totale** : Bore, température et enrichissement suivent maintenant le même pattern que les grappes R/GCP
 - **Granularité adaptée** :
@@ -65,7 +80,7 @@
 - **Tooltips informatifs** : Explications détaillées pour chaque type d'ajustement
 - **Validation automatique** : Respect des plages physiques avec limitation min/max
 
-### 7. Optimisations Techniques Avancées - CONSERVÉES ✅
+### 8. Optimisations Techniques Avancées - CONSERVÉES ✅
 - **Flux axial sophistiqué** : Comportement physiquement correct avec fonction sigmoïde aux fortes insertions
 - **Système temporel Xénon** : Dynamique complète I-135/Xe-135 avec historique et contrôles
 - **Presets professionnels** : Backend sophistiqué avec interface simplifiée pour usage éducatif

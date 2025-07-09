@@ -762,7 +762,7 @@ class MainWindow(QMainWindow):
         reactivity_pcm = params["reactivity"] * 100000
         doubling_time = params["doubling_time"]
         
-        self.k_effective_label.setText(f"k-eff: {k_eff:.2f}")
+        self.k_effective_label.setText(f"k-eff: {k_eff:.4f}")
         self.reactivity_label.setText(f"Réactivité (pcm): {reactivity_pcm:.1f}")
         
         if doubling_time == float('inf'):

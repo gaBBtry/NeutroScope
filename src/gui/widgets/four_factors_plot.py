@@ -90,7 +90,7 @@ class FourFactorsPlot(FigureCanvasQTAgg):
         # Add annotations for important values
         for i, bar in enumerate(self.bars):
             if labels[i] in ['k∞', 'keff']:
-                annotation = self.axes.text(i, values[i] + 0.02, f'{values[i]:.2f}', 
+                annotation = self.axes.text(i, values[i] + 0.02, f'{values[i]:.4f}', 
                                            ha='center', va='bottom', fontsize=9, 
                                            bbox=dict(boxstyle='round,pad=0.3', fc='yellow', alpha=0.5))
                 self.value_annotations.append(annotation)
@@ -145,7 +145,7 @@ class FourFactorsPlot(FigureCanvasQTAgg):
 
             # Formatage conditionnel pour la valeur
             if symbol in ['k∞', 'keff']:
-                val_str = f"{value:.2f}"
+                val_str = f"{value:.4f}"
             else:
                 val_str = f"{value:.4f}"
 

@@ -311,17 +311,17 @@ class ReactorModel:
 
     def update_rod_group_R_position(self, position):
         """Update R group position and recalculate"""
-        self._update_parameter('rod_group_R_position', int(position))
+        self._update_parameter('rod_group_R_position', position)
     
     def update_rod_group_GCP_position(self, position):
         """Update GCP group position and recalculate"""
-        self._update_parameter('rod_group_GCP_position', int(position))
+        self._update_parameter('rod_group_GCP_position', position)
     
     def update_control_rod_position(self, position):
         """Méthode de rétrocompatibilité - convertit % en positions équivalentes R et GCP"""
         # Conversion approximative pour maintenir la rétrocompatibilité
         steps_max = config.control_rod_groups['conversion']['steps_to_percent']
-        equivalent_steps = int((100.0 - position) * steps_max / 100.0)
+        equivalent_steps = (100.0 - position) * steps_max / 100.0
         self.rod_group_R_position = equivalent_steps
         self.rod_group_GCP_position = equivalent_steps
         self.calculate_all()
@@ -410,10 +410,10 @@ class ReactorModel:
             "epsilon": self.epsilon,
             "p": self.p,
             "f": self.f,
-            "k_infinite": round(self.k_infinite, 2),
+            "k_infinite": self.k_infinite,
             "thermal_non_leakage_prob": self.thermal_non_leakage_prob,
             "fast_non_leakage_prob": self.fast_non_leakage_prob,
-            "k_effective": round(self.k_effective, 2)
+            "k_effective": self.k_effective
         }
         
     def get_neutron_balance_data(self):
@@ -526,7 +526,7 @@ class ReactorModel:
                 "f": self.f,
                 "P_AFR": self.fast_non_leakage_prob,
                 "P_AFT": self.thermal_non_leakage_prob,
-                "k_eff": round(self.k_effective, 2),
+                "k_eff": self.k_effective,
             },
             "populations": {
                 "start": n_start,

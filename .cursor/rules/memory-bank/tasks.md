@@ -893,3 +893,217 @@ Investigation et correction de bugs dans le modèle physique fondamental.
 4. **Enrichir les informations** avec du contexte éducatif
 5. **Tester la lisibilité** sur différentes tailles d'écran
 6. **Ajuster l'espacement** pour éviter les chevauchements 
+
+---
+
+## Suppression des Arrondis dans les Calculs tout en Conservant l'Affichage
+
+**Dernière exécution :** Janvier 2025  
+**Contexte :** Élimination des arrondis inappropriés dans la logique de calcul interne tout en préservant les arrondis d'affichage pour l'interface utilisateur
+
+### Type de tâche :
+Optimisation de précision avec distinction calculs internes / affichage utilisateur
+
+### Problème identifié :
+- **Perte de précision** : Des fonctions `round()` et `int()` dans les calculs internes réduisaient la précision des résultats
+- **Impact sur simulation** : Les arrondis prématurés affectaient les calculs successifs et la précision globale
+- **Mélange responsabilités** : Les arrondis étaient présents à la fois dans la logique métier et l'affichage
+
+### Solution implémentée :
+- **Suppression sélective** : Élimination des arrondis dans les calculs internes uniquement
+- **Conservation affichage** : Maintien des formatages appropriés dans l'interface utilisateur
+- **Distinction claire** : Séparation entre précision interne (complète) et affichage (arrondi)
+
+### Fichiers principaux modifiés :
+- `src/model/reactor_model.py` - **CORRIGÉ** : Suppression arrondis dans méthodes de données
+- `src/gui/main_window.py` - **VÉRIFIÉ** : Formatage d'affichage conservé
+- `src/gui/widgets/four_factors_plot.py` - **VÉRIFIÉ** : Formatage tooltips conservé  
+- `src/gui/widgets/neutron_cycle_plot.py` - **VÉRIFIÉ** : Formatage diagramme conservé
+
+### Workflow de Correction Précision :
+
+**Étape 1 : Identification des Arrondis**
+1. **Recherche exhaustive** : `grep_search` pour tous les usages de `round()`, `int()`, `np.round()`, etc.
+2. **Classification** : Distinguer arrondis de calcul vs arrondis d'affichage
+3. **Analyse d'impact** : Identifier quels arrondis affectent la précision des calculs
+
+**Étape 2 : Suppression Arrondis de Calcul**
+1. **Méthodes de données** : 
+   - `get_four_factors_data()` : `round(self.k_infinite, 2)` → `self.k_infinite`
+   - `get_four_factors_data()` : `round(self.k_effective, 2)` → `self.k_effective`
+   - `get_neutron_cycle_data()` : `round(self.k_effective, 2)` → `self.k_effective`
+2. **Méthodes de mise à jour** :
+   - `update_rod_group_R_position()` : `int(position)` → `position`
+   - `update_rod_group_GCP_position()` : `int(position)` → `position`
+   - `update_control_rod_position()` : `int((100.0 - position) * steps_max / 100.0)` → `(100.0 - position) * steps_max / 100.0`
+
+**Étape 3 : Vérification Arrondis d'Affichage**
+1. **Interface principale** : Vérifier formatage `.2f` pour k_eff conservé
+2. **Widgets de visualisation** : Confirmer formatages tooltips et affichages appropriés
+3. **Cohérence visuelle** : S'assurer que l'expérience utilisateur reste identique
+
+**Étape 4 : Validation et Tests**
+1. **Test précision** : Vérifier que les valeurs internes ont précision complète
+2. **Test affichage** : Confirmer que l'interface affiche avec arrondis appropriés
+3. **Test fonctionnel** : S'assurer que l'application fonctionne normalement
+
+### Bonnes pratiques identifiées :
+
+#### **Séparation Calcul/Affichage**
+- **Principe fondamental** : Les calculs internes doivent conserver précision maximale
+- **Arrondis uniquement dans l'affichage** : Formatage au moment de présenter à l'utilisateur
+- **Documentation claire** : Marquer explicitement les formatages d'affichage vs calculs
+
+#### **Identification Systématique**
+- **Recherche exhaustive** : Utiliser grep pour identifier TOUS les arrondis
+- **Classification rigoureuse** : Distinguer usage pour calcul vs usage pour affichage
+- **Impact assessment** : Évaluer l'effet de chaque arrondi sur la précision globale
+
+#### **Validation Multi-Niveau**
+- **Tests de précision** : Vérifier valeurs brutes avec précision complète
+- **Tests d'affichage** : Confirmer formatage approprié dans interface
+- **Tests de régression** : S'assurer qu'aucune fonctionnalité n'est cassée
+
+### Code type pour élimination arrondis :
+
+```python
+# AVANT - Arrondi inapproprié dans calcul
+def get_four_factors_data(self):
+    return {
+        "k_infinite": round(self.k_infinite, 2),  # ❌ Perte de précision
+        "k_effective": round(self.k_effective, 2)  # ❌ Perte de précision
+    }
+
+# APRÈS - Précision conservée dans calcul
+def get_four_factors_data(self):
+    return {
+        "k_infinite": self.k_infinite,  # ✅ Précision complète
+        "k_effective": self.k_effective  # ✅ Précision complète
+    }
+
+# AFFICHAGE - Formatage approprié conservé
+def update_reactor_params(self, params):
+    k_eff = params["k_effective"]
+    self.k_effective_label.setText(f"k-eff: {k_eff:.2f}")  # ✅ Arrondi d'affichage approprié
+```
+
+### Points critiques :
+
+1. **Ne pas confondre** : Précision interne vs présentation utilisateur
+2. **Conservation cohérence** : L'interface doit rester lisible et cohérente
+3. **Tests exhaustifs** : Valider à la fois précision et affichage
+4. **Documentation** : Marquer clairement les formatages d'affichage
+5. **Performance** : S'assurer que la précision accrue n'impacte pas les performances
+
+### Bénéfices obtenus :
+
+#### **Précision Améliorée**
+- **Calculs plus précis** : Valeurs comme 0.8407881285478107 au lieu de 0.84
+- **Propagation d'erreurs réduite** : Moins d'accumulation d'erreurs d'arrondi
+- **Fidélité physique** : Modélisation plus précise des phénomènes neutroniques
+
+#### **Architecture Clarifiée**
+- **Responsabilités distinctes** : Calculs (précision) vs Interface (présentation)
+- **Maintenance facilitée** : Plus facile d'identifier où modifier précision vs affichage
+- **Évolutivité** : Base solide pour futures améliorations de précision
+
+### Extensions futures possibles :
+- **Précision configurable** : Paramétrer précision d'affichage dans config.json
+- **Modes de précision** : Mode "haute précision" pour utilisateurs avancés
+- **Validation automatique** : Tests automatiques pour détecter arrondis inappropriés
+- **Analyse d'erreurs** : Outils pour analyser propagation d'erreurs d'arrondi 
+
+---
+
+## Amélioration de la Précision d'Affichage pour k_eff
+
+**Dernière exécution :** Janvier 2025  
+**Contexte :** Amélioration du formatage d'affichage de k_eff de .2f à .4f dans tous les widgets pour une meilleure précision visuelle
+
+### Type de tâche :
+Amélioration de l'expérience utilisateur avec précision d'affichage accrue
+
+### Problème identifié :
+- **Précision d'affichage limitée** : Le formatage `.2f` (2 décimales) pour k_eff était insuffisant pour apprécier les variations fines
+- **Cohérence entre calculs et affichage** : Avec la précision complète dans les calculs, l'affichage devait suivre
+- **Besoin pédagogique** : Les utilisateurs avancés ont besoin de voir plus de précision pour comprendre les effets subtils
+
+### Solution implémentée :
+- **Formatage uniforme** : Passage de `.2f` à `.4f` pour k_eff dans tous les widgets
+- **Cohérence visuelle** : Même niveau de précision dans toute l'interface
+- **Préservation de la lisibilité** : 4 décimales restent lisibles tout en donnant plus d'information
+
+### Fichiers modifiés :
+- `src/gui/main_window.py` - **AMÉLIORÉ** : k_eff affiché avec `.4f` dans l'interface principale
+- `src/gui/widgets/four_factors_plot.py` - **AMÉLIORÉ** : k∞ et keff avec `.4f` dans annotations et tooltips
+- `src/gui/widgets/neutron_cycle_plot.py` - **AMÉLIORÉ** : k_eff avec `.4f` dans le diagramme central
+
+### Workflow d'Amélioration Précision Affichage :
+
+**Étape 1 : Identification des Formatages**
+1. **Recherche ciblée** : `grep_search` pour les formatages `.2f` de k_eff spécifiquement
+2. **Cartographie complète** : Identifier tous les endroits où k_eff est affiché
+3. **Vérification cohérence** : S'assurer qu'aucun formatage n'est oublié
+
+**Étape 2 : Modifications Systématiques**
+1. **Interface principale** : `main_window.py` - `f"k-eff: {k_eff:.2f}"` → `f"k-eff: {k_eff:.4f}"`
+2. **Widget four factors** : 
+   - Annotations graphique : `f'{values[i]:.2f}'` → `f'{values[i]:.4f}'`
+   - Tooltips : `f"{value:.2f}"` → `f"{value:.4f}"` pour k∞ et keff
+3. **Widget neutron cycle** : Diagramme central : `f"k_eff = {k_eff:.2f}"` → `f"k_eff = {k_eff:.4f}"`
+
+**Étape 3 : Tests et Validation**
+1. **Test formatage** : Vérifier que les nouvelles valeurs s'affichent correctement
+2. **Test lisibilité** : S'assurer que l'interface reste claire et lisible
+3. **Test cohérence** : Confirmer que tous les widgets utilisent le même formatage
+
+### Bonnes pratiques identifiées :
+
+#### **Formatage Uniforme**
+- **Cohérence globale** : Même formatage pour le même paramètre dans toute l'application
+- **Recherche exhaustive** : Utiliser grep pour s'assurer qu'aucun endroit n'est oublié
+- **Validation visuelle** : Tester l'application pour vérifier le rendu
+
+#### **Équilibre Précision/Lisibilité**
+- **4 décimales optimales** : Assez de précision sans encombrer l'interface
+- **Paramètres différenciés** : k_eff plus précis (.4f) que d'autres paramètres (.2f ou .3f)
+- **Contexte d'usage** : Précision adaptée à l'importance du paramètre
+
+### Code type pour amélioration formatage :
+
+```python
+# AVANT - Précision limitée
+self.k_effective_label.setText(f"k-eff: {k_eff:.2f}")  # Affiche 0.84
+painter.drawText(rect, f"k_eff = {k_eff:.2f}")         # Affiche 0.84
+annotation = self.axes.text(i, y, f'{value:.2f}')      # Affiche 0.84
+
+# APRÈS - Précision améliorée  
+self.k_effective_label.setText(f"k-eff: {k_eff:.4f}")  # Affiche 0.8408
+painter.drawText(rect, f"k_eff = {k_eff:.4f}")         # Affiche 0.8408
+annotation = self.axes.text(i, y, f'{value:.4f}')      # Affiche 0.8408
+```
+
+### Points critiques :
+
+1. **Cohérence complète** : Tous les widgets doivent utiliser le même formatage pour k_eff
+2. **Test visuel** : Vérifier que l'affichage reste clair et professionnel
+3. **Recherche exhaustive** : S'assurer qu'aucun formatage n'est oublié
+4. **Documentation** : Mettre à jour les exemples dans la documentation si nécessaire
+
+### Bénéfices obtenus :
+
+#### **Expérience Utilisateur Améliorée**
+- **Précision visible** : Les utilisateurs peuvent voir les variations fines de k_eff (0.8408 vs 0.84)
+- **Cohérence renforcée** : Même niveau de détail dans toute l'interface
+- **Information enrichie** : Meilleure appréciation des effets des paramètres
+
+#### **Valeur Pédagogique**
+- **Sensibilité accrue** : Meilleure compréhension de l'impact des changements de paramètres
+- **Précision professionnelle** : Niveau de détail proche des outils industriels
+- **Apprentissage approfondi** : Possibilité d'observer des effets subtils
+
+### Extensions futures possibles :
+- **Précision configurable** : Permettre à l'utilisateur de choisir le nombre de décimales
+- **Formatage adaptatif** : Précision automatique selon la magnitude de la valeur
+- **Modes d'affichage** : Mode "débutant" (.2f) et mode "expert" (.4f)
+- **Autres paramètres** : Appliquer la même logique à d'autres paramètres critiques 

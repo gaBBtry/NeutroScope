@@ -165,7 +165,7 @@ class NeutronCyclePlot(QWidget):
         
         # Main k_eff value
         main_text_rect = QRectF(center_x - 150, center_y - 50, 300, 40)
-        painter.drawText(main_text_rect, Qt.AlignmentFlag.AlignCenter, f"k_eff = {k_eff:.2f}")
+        painter.drawText(main_text_rect, Qt.AlignmentFlag.AlignCenter, f"k_eff = {k_eff:.4f}")
         
         # Status indicator
         painter.setFont(QFont("Arial", 16, QFont.Weight.Bold))  # Larger status text
