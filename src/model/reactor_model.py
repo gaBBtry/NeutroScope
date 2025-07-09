@@ -421,28 +421,7 @@ class ReactorModel:
             "neutrons_produced_new": neutrons_start_generation * self.k_effective
         }
     
-    def get_axial_offset_data(self):
-        """
-        Calculate axial offset and reactor power data for the pilotage diagram
-        
-        Axial Offset (AO) = (Flux_haut - Flux_bas) / (Flux_haut + Flux_bas)
-        Where:
-        - Flux_haut is the average flux in the upper half of the core
-        - Flux_bas is the average flux in the lower half of the core
-        
-        Returns: A dict with axial_offset and power_percentage
-        """
-        # Get current flux distribution
-        height, flux = self.get_axial_flux_distribution()
-        
-        # Calculate axial offset
-        upper_flux = np.mean(flux[height > 0.5])
-        lower_flux = np.mean(flux[height <= 0.5])
-        axial_offset = 100 * (upper_flux - lower_flux) / (upper_flux + lower_flux)
-        
-        power_percentage = self.power_level
 
-        return {"axial_offset": axial_offset, "power_percentage": power_percentage}
     
     def get_neutron_cycle_data(self):
         """

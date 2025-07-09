@@ -54,9 +54,7 @@ class ReactorController:
         """Get the neutron balance data from the model"""
         return self.model.get_neutron_balance_data()
     
-    def get_axial_offset_data(self):
-        """Get the axial offset and power data for the pilotage diagram"""
-        return self.model.get_axial_offset_data()
+
     
     def get_neutron_cycle_data(self):
         """Get the neutron cycle data from the model"""

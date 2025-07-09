@@ -486,10 +486,6 @@ class MainWindow(QMainWindow):
         balance_data = self.controller.get_neutron_balance_data()
         self.visualization_panel.update_neutron_balance_plot(balance_data)
         
-        # Pilotage Diagram
-        ao_data = self.controller.get_axial_offset_data()
-        self.visualization_panel.update_pilotage_diagram_plot(ao_data)
-
         # Neutron Cycle
         cycle_data = self.controller.get_neutron_cycle_data()
         self.visualization_panel.update_neutron_cycle_plot(cycle_data)
