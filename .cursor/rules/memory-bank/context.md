@@ -2,7 +2,7 @@
 
 ## Focus Actuel
 - **STATUT FINAL** : NeutroScope est maintenant un simulateur pédagogique complet et professionnel, avec toutes les fonctionnalités majeures implémentées et parfaitement opérationnelles.
-- **Dernière modification majeure** : Implémentation complète du système de contrôle des grappes R et GCP avec granularité fine de 228 pas.
+- **Dernière modification majeure** : Amélioration de l'interface utilisateur - Unification des contrôles avec pattern curseur + incrémenteurs + saisie numérique pour TOUS les paramètres (grappes R/GCP, bore, température, enrichissement).
 
 ## Accomplissements Majeurs Récents
 
@@ -54,7 +54,18 @@
 - **Logique d'inversion** : Interface utilisateur inversée pour intuitivité (droite = insertion)
 - **Physique adaptée** : Calculs d'absorption ajustés pour nouvelle convention dans toute l'architecture
 
-### 6. Optimisations Techniques Avancées - CONSERVÉES ✅
+### 6. Unification Interface Utilisateur - NOUVELLE ✅
+- **Pattern unifié pour TOUS les contrôles** : Curseur + boutons d'incrémentation + saisie numérique synchronisés
+- **Cohérence totale** : Bore, température et enrichissement suivent maintenant le même pattern que les grappes R/GCP
+- **Granularité adaptée** :
+  - **Bore** : Pas de ±10 ppm pour ajustements significatifs (plage 0-2000 ppm)
+  - **Température** : Pas de ±1°C pour contrôle fin (plage 280-350°C) 
+  - **Enrichissement** : Pas de ±0.1% pour précision industrielle (plage 1.0-5.0%)
+- **Synchronisation parfaite** : Sliders et SpinBoxes liés bidirectionnellement avec blocage de signaux
+- **Tooltips informatifs** : Explications détaillées pour chaque type d'ajustement
+- **Validation automatique** : Respect des plages physiques avec limitation min/max
+
+### 7. Optimisations Techniques Avancées - CONSERVÉES ✅
 - **Flux axial sophistiqué** : Comportement physiquement correct avec fonction sigmoïde aux fortes insertions
 - **Système temporel Xénon** : Dynamique complète I-135/Xe-135 avec historique et contrôles
 - **Presets professionnels** : Backend sophistiqué avec interface simplifiée pour usage éducatif

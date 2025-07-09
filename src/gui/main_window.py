@@ -170,8 +170,19 @@ class MainWindow(QMainWindow):
         # Other controls
         self.boron_slider.valueChanged.connect(self.on_boron_slider_changed)
         self.boron_spinbox.valueChanged.connect(self.on_boron_spinbox_changed)
-        self.moderator_temp_slider.valueChanged.connect(self.on_average_temperature_changed)
-        self.fuel_enrichment_slider.valueChanged.connect(self.on_fuel_enrichment_changed)
+        self.boron_plus_btn.clicked.connect(lambda: self.adjust_boron(10))
+        self.boron_minus_btn.clicked.connect(lambda: self.adjust_boron(-10))
+        
+        self.moderator_temp_slider.valueChanged.connect(self.on_moderator_temp_slider_changed)
+        self.moderator_temp_spinbox.valueChanged.connect(self.on_moderator_temp_spinbox_changed)
+        self.moderator_temp_plus_btn.clicked.connect(lambda: self.adjust_moderator_temp(1))
+        self.moderator_temp_minus_btn.clicked.connect(lambda: self.adjust_moderator_temp(-1))
+        
+        self.fuel_enrichment_slider.valueChanged.connect(self.on_fuel_enrichment_slider_changed)
+        self.fuel_enrichment_spinbox.valueChanged.connect(self.on_fuel_enrichment_spinbox_changed)
+        self.fuel_enrichment_plus_btn.clicked.connect(lambda: self.adjust_fuel_enrichment(0.1))
+        self.fuel_enrichment_minus_btn.clicked.connect(lambda: self.adjust_fuel_enrichment(-0.1))
+        
         self.preset_combo.currentTextChanged.connect(self.on_preset_changed)
         
         # Info connections are now handled automatically by the InfoManager
@@ -277,33 +288,89 @@ class MainWindow(QMainWindow):
         # Boron Concentration
         self.boron_group = self.create_info_groupbox("Concentration en Bore (ppm)", self.info_texts["boron"])
         boron_layout = QHBoxLayout()
+        
         self.boron_slider = QSlider(Qt.Orientation.Horizontal)
         self.boron_slider.setRange(0, 2000)
+        self.boron_slider.setTickPosition(QSlider.TickPosition.TicksBelow)
+        self.boron_slider.setTickInterval(250)
+        
         self.boron_spinbox = QDoubleSpinBox()
         self.boron_spinbox.setRange(0, 2000)
+        self.boron_spinbox.setDecimals(0)
         self.boron_spinbox.setSuffix(" ppm")
+        self.boron_spinbox.setMinimumWidth(80)
+        
+        # Boutons d'ajustement pour bore (pas de 10 ppm)
+        self.boron_plus_btn = QPushButton("+10")
+        self.boron_plus_btn.setMaximumWidth(35)
+        self.boron_plus_btn.setToolTip("Augmenter concentration bore (+10 ppm)")
+        self.boron_minus_btn = QPushButton("-10")
+        self.boron_minus_btn.setMaximumWidth(35)
+        self.boron_minus_btn.setToolTip("Diminuer concentration bore (-10 ppm)")
+        
         boron_layout.addWidget(self.boron_slider)
+        boron_layout.addWidget(self.boron_minus_btn)
+        boron_layout.addWidget(self.boron_plus_btn)
         boron_layout.addWidget(self.boron_spinbox)
         self.boron_group.setLayout(boron_layout)
         
         # Moderator Temperature
         self.moderator_temp_group = self.create_info_groupbox("Température Moyenne (°C)", self.info_texts["moderator_temp"])
         mod_temp_layout = QHBoxLayout()
+        
         self.moderator_temp_slider = QSlider(Qt.Orientation.Horizontal)
         self.moderator_temp_slider.setRange(280, 350)
-        self.moderator_temp_label = QLabel("280 °C")
+        self.moderator_temp_slider.setTickPosition(QSlider.TickPosition.TicksBelow)
+        self.moderator_temp_slider.setTickInterval(10)
+        
+        self.moderator_temp_spinbox = QDoubleSpinBox()
+        self.moderator_temp_spinbox.setRange(280, 350)
+        self.moderator_temp_spinbox.setDecimals(1)
+        self.moderator_temp_spinbox.setSuffix(" °C")
+        self.moderator_temp_spinbox.setMinimumWidth(80)
+        
+        # Boutons d'ajustement pour température (pas de 1°C)
+        self.moderator_temp_plus_btn = QPushButton("+1")
+        self.moderator_temp_plus_btn.setMaximumWidth(30)
+        self.moderator_temp_plus_btn.setToolTip("Augmenter température (+1°C)")
+        self.moderator_temp_minus_btn = QPushButton("-1")
+        self.moderator_temp_minus_btn.setMaximumWidth(30)
+        self.moderator_temp_minus_btn.setToolTip("Diminuer température (-1°C)")
+        
         mod_temp_layout.addWidget(self.moderator_temp_slider)
-        mod_temp_layout.addWidget(self.moderator_temp_label)
+        mod_temp_layout.addWidget(self.moderator_temp_minus_btn)
+        mod_temp_layout.addWidget(self.moderator_temp_plus_btn)
+        mod_temp_layout.addWidget(self.moderator_temp_spinbox)
         self.moderator_temp_group.setLayout(mod_temp_layout)
         
         # Fuel Enrichment
         self.fuel_enrichment_group = self.create_info_groupbox("Enrichissement Combustible (%)", self.info_texts["fuel_enrichment"])
         fuel_enrich_layout = QHBoxLayout()
+        
         self.fuel_enrichment_slider = QSlider(Qt.Orientation.Horizontal)
-        self.fuel_enrichment_slider.setRange(10, 50) # Using 10-50 for 1.0-5.0
-        self.fuel_enrichment_label = QLabel("1.0 %")
+        self.fuel_enrichment_slider.setRange(10, 50)  # Using 10-50 for 1.0-5.0
+        self.fuel_enrichment_slider.setTickPosition(QSlider.TickPosition.TicksBelow)
+        self.fuel_enrichment_slider.setTickInterval(5)
+        
+        self.fuel_enrichment_spinbox = QDoubleSpinBox()
+        self.fuel_enrichment_spinbox.setRange(1.0, 5.0)
+        self.fuel_enrichment_spinbox.setDecimals(1)
+        self.fuel_enrichment_spinbox.setSingleStep(0.1)
+        self.fuel_enrichment_spinbox.setSuffix(" %")
+        self.fuel_enrichment_spinbox.setMinimumWidth(80)
+        
+        # Boutons d'ajustement pour enrichissement (pas de 0.1%)
+        self.fuel_enrichment_plus_btn = QPushButton("+0.1")
+        self.fuel_enrichment_plus_btn.setMaximumWidth(40)
+        self.fuel_enrichment_plus_btn.setToolTip("Augmenter enrichissement (+0.1%)")
+        self.fuel_enrichment_minus_btn = QPushButton("-0.1")
+        self.fuel_enrichment_minus_btn.setMaximumWidth(40)
+        self.fuel_enrichment_minus_btn.setToolTip("Diminuer enrichissement (-0.1%)")
+        
         fuel_enrich_layout.addWidget(self.fuel_enrichment_slider)
-        fuel_enrich_layout.addWidget(self.fuel_enrichment_label)
+        fuel_enrich_layout.addWidget(self.fuel_enrichment_minus_btn)
+        fuel_enrich_layout.addWidget(self.fuel_enrichment_plus_btn)
+        fuel_enrich_layout.addWidget(self.fuel_enrichment_spinbox)
         self.fuel_enrichment_group.setLayout(fuel_enrich_layout)
         
         # Reactor Parameters Display
@@ -415,7 +482,9 @@ class MainWindow(QMainWindow):
         self.boron_slider.blockSignals(True)
         self.boron_spinbox.blockSignals(True)
         self.moderator_temp_slider.blockSignals(True)
+        self.moderator_temp_spinbox.blockSignals(True)
         self.fuel_enrichment_slider.blockSignals(True)
+        self.fuel_enrichment_spinbox.blockSignals(True)
 
         # Update rod group controls
         # Inverser les valeurs pour les sliders : 0 pas → slider=228, 228 pas → slider=0
@@ -432,10 +501,10 @@ class MainWindow(QMainWindow):
         self.boron_spinbox.setValue(config["boron_concentration"])
         
         self.moderator_temp_slider.setValue(int(config["average_temperature"]))
-        self.moderator_temp_label.setText(f"{config['average_temperature']:.0f} °C")
+        self.moderator_temp_spinbox.setValue(config["average_temperature"])
         
         self.fuel_enrichment_slider.setValue(int(config["fuel_enrichment"] * 10))
-        self.fuel_enrichment_label.setText(f"{config['fuel_enrichment']:.1f} %")
+        self.fuel_enrichment_spinbox.setValue(config["fuel_enrichment"])
 
         # Unblock signals
         self.rod_R_slider.blockSignals(False)
@@ -445,7 +514,9 @@ class MainWindow(QMainWindow):
         self.boron_slider.blockSignals(False)
         self.boron_spinbox.blockSignals(False)
         self.moderator_temp_slider.blockSignals(False)
+        self.moderator_temp_spinbox.blockSignals(False)
         self.fuel_enrichment_slider.blockSignals(False)
+        self.fuel_enrichment_spinbox.blockSignals(False)
         
         # Update reactor parameters and visualizations
         self.update_reactor_params(config["reactor_params"])
@@ -563,40 +634,109 @@ class MainWindow(QMainWindow):
         self.rod_GCP_spinbox.setValue(new_value)
 
     def on_boron_slider_changed(self, value):
-        """Met à jour le spinbox depuis le slider. Le signal du spinbox déclenchera la mise à jour du modèle."""
+        """Met à jour le spinbox depuis le slider."""
+        self.boron_spinbox.blockSignals(True)
         self.boron_spinbox.setValue(float(value))
+        self.boron_spinbox.blockSignals(False)
+        
+        # Update the model via the controller
+        params = self.controller.update_boron_concentration(float(value))
+        
+        # Update the interface
+        self.update_reactor_params(params)
+        self.update_visualizations()
+        self.check_for_custom_preset()
         
     def on_boron_spinbox_changed(self, value):
-        """Met à jour le slider pour correspondre au spinbox et met à jour le modèle."""
-        # Met à jour le slider, en bloquant ses signaux pour éviter une boucle.
+        """Met à jour le slider depuis le spinbox."""
         self.boron_slider.blockSignals(True)
         self.boron_slider.setValue(int(value))
         self.boron_slider.blockSignals(False)
 
-        # Met à jour le modèle via le contrôleur, car le spinbox est la source de vérité.
-        self._update_parameter_and_ui(
-            self.controller.update_boron_concentration,
-            value
-        )
+        # Update the model via the controller
+        params = self.controller.update_boron_concentration(float(value))
+        
+        # Update the interface
+        self.update_reactor_params(params)
+        self.update_visualizations()
+        self.check_for_custom_preset()
+
+    def adjust_boron(self, step):
+        """Adjust boron concentration by step amount"""
+        current_value = self.boron_spinbox.value()
+        new_value = max(0, min(2000, current_value + step))
+        self.boron_spinbox.setValue(new_value)
 
 
+    def on_moderator_temp_slider_changed(self, value):
+        """Handle moderator temperature slider change"""
+        self.moderator_temp_spinbox.blockSignals(True)
+        self.moderator_temp_spinbox.setValue(float(value))
+        self.moderator_temp_spinbox.blockSignals(False)
+        
+        # Update the model via the controller
+        params = self.controller.update_average_temperature(float(value))
+        
+        # Update the interface
+        self.update_reactor_params(params)
+        self.update_visualizations()
+        self.check_for_custom_preset()
+        
+    def on_moderator_temp_spinbox_changed(self, value):
+        """Handle moderator temperature spinbox change"""
+        self.moderator_temp_slider.blockSignals(True)
+        self.moderator_temp_slider.setValue(int(value))
+        self.moderator_temp_slider.blockSignals(False)
+        
+        # Update the model via the controller
+        params = self.controller.update_average_temperature(float(value))
+        
+        # Update the interface
+        self.update_reactor_params(params)
+        self.update_visualizations()
+        self.check_for_custom_preset()
 
-    def on_average_temperature_changed(self, value):
-        """Handle moderator temperature change"""
-        self._update_parameter_and_ui(
-            self.controller.update_average_temperature,
-            value,
-            lambda: self.moderator_temp_label.setText(f"{value} °C")
-        )
+    def adjust_moderator_temp(self, step):
+        """Adjust moderator temperature by step amount"""
+        current_value = self.moderator_temp_spinbox.value()
+        new_value = max(280, min(350, current_value + step))
+        self.moderator_temp_spinbox.setValue(new_value)
 
-    def on_fuel_enrichment_changed(self, value):
-        """Handle fuel enrichment change"""
+    def on_fuel_enrichment_slider_changed(self, value):
+        """Handle fuel enrichment slider change"""
         enrichment = value / 10.0
-        self._update_parameter_and_ui(
-            self.controller.update_fuel_enrichment,
-            enrichment,
-            lambda: self.fuel_enrichment_label.setText(f"{enrichment:.1f} %")
-        )
+        self.fuel_enrichment_spinbox.blockSignals(True)
+        self.fuel_enrichment_spinbox.setValue(enrichment)
+        self.fuel_enrichment_spinbox.blockSignals(False)
+        
+        # Update the model via the controller
+        params = self.controller.update_fuel_enrichment(enrichment)
+        
+        # Update the interface
+        self.update_reactor_params(params)
+        self.update_visualizations()
+        self.check_for_custom_preset()
+        
+    def on_fuel_enrichment_spinbox_changed(self, value):
+        """Handle fuel enrichment spinbox change"""
+        slider_value = int(value * 10)
+        self.fuel_enrichment_slider.blockSignals(True)
+        self.fuel_enrichment_slider.setValue(slider_value)
+        self.fuel_enrichment_slider.blockSignals(False)
+        
+        # Update the model via the controller
+        params = self.controller.update_fuel_enrichment(value)
+        
+        # Update the interface
+        self.update_reactor_params(params)
+        self.update_visualizations()
+        self.check_for_custom_preset()
+
+    def adjust_fuel_enrichment(self, step):
+        """Adjust fuel enrichment by step amount"""
+        current_value = self.fuel_enrichment_spinbox.value()
+        new_value = max(1.0, min(5.0, current_value + step))
+        self.fuel_enrichment_spinbox.setValue(new_value)
 
     def on_time_advance(self, hours):
         """Handle time advancement for xenon dynamics"""
