@@ -51,18 +51,22 @@ graph TB
             NC[neutron_cycle_plot.py]
             FF[four_factors_plot.py]
             FP[flux_plot.py]
-            PMD[preset_manager_dialog.py]
+            NB[neutron_balance_plot.py]
+            ID[info_dialog.py]
+            CB[credits_button.py]
         end
         
         MW --> VZ
-        MW --> PMD
         VZ --> XP
         VZ --> NC
         VZ --> FF
         VZ --> FP
+        VZ --> NB
         MW --> IP
         MW --> IM
         MW --> EW
+        MW --> ID
+        MW --> CB
     end
     
     subgraph "src/controller/"
@@ -268,7 +272,6 @@ graph TB
         FF[Quatre Facteurs<br/>four_factors_plot.py]
         FP[Flux Axial<br/>flux_plot.py]
         NB[Bilan Neutronique<br/>neutron_balance_plot.py]
-        PD[Pilotage<br/>pilotage_diagram_plot.py]
     end
     
     subgraph "Onglet Temporel"
@@ -288,7 +291,6 @@ graph TB
     TABS --> FF
     TABS --> FP
     TABS --> NB
-    TABS --> PD
     TABS --> XV
     
     XV --> XC

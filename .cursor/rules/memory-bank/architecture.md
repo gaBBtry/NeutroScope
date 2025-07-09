@@ -36,7 +36,6 @@ NeutroScope/ (Architecture Finale Complète)
 │           ├── flux_plot.py                  # Distribution axiale du flux
 │           ├── four_factors_plot.py          # Facteurs neutroniques
 │           ├── neutron_balance_plot.py       # Bilan neutronique
-│           ├── pilotage_diagram_plot.py      # Diagramme de pilotage
 │           ├── enhanced_widgets.py           # Widgets avec info contextuelle
 │           ├── info_manager.py               # Système d'information unifié
 │           ├── info_panel.py                 # Panneau d'affichage info
@@ -150,7 +149,6 @@ L'interface et l'expérience utilisateur complète avec tous les outils pédagog
 -   **Organisation en onglets** : QTabWidget avec tous les graphiques
 -   **Onglets disponibles** :
     - "Neutronique" : Cycle neutronique, facteurs, flux, bilan
-    - "Pilotage" : Diagramme de pilotage et contrôles
     - "Dynamique Xénon" : Visualisations temporelles et contrôles temps
 -   **Méthode d'update** : `update_all_plots(data)` pour synchronisation générale
 -   **Gestion info** : Distribution du `InfoManager` vers tous les widgets
@@ -171,7 +169,6 @@ L'interface et l'expérience utilisateur complète avec tous les outils pédagog
     - Interaction souris avec informations contextuelles
     - Visualisation impact géométrique
 -   **`neutron_balance_plot.py`** : Bilan neutronique en secteurs
--   **`pilotage_diagram_plot.py`** : Diagramme de pilotage professionnel
 
 #### **Widgets Temporels**
 -   **`xenon_plot.py`** (**NOUVEAU**) :

@@ -13,6 +13,11 @@
 - **Interface streamline** : Dropdown de sélection de presets + bouton Reset uniquement
 - **Rétrocompatibilité totale** : Tous les presets système existants préservés et utilisables
 
+### 3. Suppression du Diagramme de Pilotage - NOUVEAU ✅
+- **Composant UI supprimé** : Fichier `pilotage_diagram_plot.py` et toutes ses références retirées
+- **Nettoyage complet** : Le code a été nettoyé de la Vue jusqu'au Modèle
+- **Interface simplifiée** : L'onglet "Diagramme de Pilotage" n'existe plus
+
 ### 2. Simulation Temporelle Complète - OPÉRATIONNELLE ✅
 - **Dynamique Xénon-135** : Implémentation complète des équations de Bateman (I-135 → Xe-135)
 - **Widget de visualisation** : `XenonVisualizationWidget` avec graphiques temps réel et contrôles
@@ -63,8 +68,12 @@ NeutroScope/ (Architecture finale)
 │           ├── neutron_cycle_plot.py         # ✅ Cycle neutronique interactif
 │           ├── flux_plot.py                  # ✅ Distribution flux
 │           ├── four_factors_plot.py          # ✅ Facteurs neutroniques
+│           ├── neutron_balance_plot.py       # ✅ Bilan neutronique
 │           ├── enhanced_widgets.py           # ✅ Widgets informatifs
-│           └── [autres widgets]              # ✅ Écosystème complet
+│           ├── info_manager.py               # ✅ Gestionnaire d'information
+│           ├── info_panel.py                 # ✅ Panneau d'information
+│           ├── info_dialog.py                # ✅ Dialogue d'information
+│           └── credits_button.py             # ✅ Bouton crédits
 │
 ├── tests/                          # ✅ Tests complets et validés
 ├── docs/                           # ✅ Documentation complète
