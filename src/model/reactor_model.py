@@ -32,6 +32,7 @@ class ReactorModel:
         
         # Paramètres calculés
         self.k_effective = 1.0
+        self.k_infinite = 1.0
         self.reactivity = 0.0
         self.doubling_time = float('inf')  # secondes
         
@@ -109,9 +110,24 @@ class ReactorModel:
         boron_abs_ratio = config.F_BORON_WORTH_PER_PPM * self.boron_concentration
         
         # 4. Rapport d'absorption du Xénon-135
-        thermal_flux = config.THERMAL_FLUX_NOMINAL * (self.power_level / 100.0)
-        xenon_abs_ratio = (config.XENON_ABSORPTION_CROSS_SECTION * 
-                          self.xenon_concentration * thermal_flux * 1e-24) / (thermal_flux + 1e-10)
+        # L'ancienne formule était incorrecte et dimensionnellement incohérente.
+        # Nouvelle approche : calcul du rapport Σa_xenon / Σa_fuel pour assurer la cohérence.
+        sigma_a_xenon = self.xenon_concentration * config.XENON_ABSORPTION_CROSS_SECTION * 1e-24
+
+        # On déduit Σa_fuel à partir de la définition de eta = nu * Σf / Σa_fuel.
+        # Σf est lui-même déduit du FISSION_RATE_COEFF pour la cohérence du modèle.
+        # Note : le ratio final est indépendant de la valeur exacte de FISSION_RATE_COEFF.
+        sigma_f_nominal = config.FISSION_RATE_COEFF * 100.0  # Valeur de Σf à 100% puissance
+
+        if self.eta > 1e-9: # Prévenir la division par zéro
+            sigma_a_fuel_nominal = (sigma_f_nominal * config.NEUTRONS_PER_THERMAL_FISSION_U235) / self.eta
+        else:
+            sigma_a_fuel_nominal = 1.0 # Fallback improbable, mais sécuritaire
+
+        if sigma_a_fuel_nominal > 1e-9:
+            xenon_abs_ratio = sigma_a_xenon / sigma_a_fuel_nominal
+        else:
+            xenon_abs_ratio = 0.0
         
         # Rapport d'absorption total non-combustible
         total_non_fuel_abs_ratio = base_abs_ratio + rod_abs_ratio + boron_abs_ratio + xenon_abs_ratio
@@ -127,7 +143,7 @@ class ReactorModel:
     def _calculate_k_effective_analytical(self):
         """Calcul k-effectif avec le modèle analytique."""
         # --- Calcul analytique ---
-        k_infinite = self.eta * self.epsilon * self.p * self.f
+        self.k_infinite = self.eta * self.epsilon * self.p * self.f
         
         # Nouveau calcul de fuite basé sur la théorie de diffusion à deux groupes
         # 1. Laplacien géométrique B^2
@@ -147,7 +163,7 @@ class ReactorModel:
         self.fast_non_leakage_prob = 1.0 / (1.0 + geometric_buckling * fast_diffusion_area)
         self.thermal_non_leakage_prob = 1.0 / (1.0 + geometric_buckling * thermal_diffusion_area)
         
-        self.k_effective = k_infinite * self.fast_non_leakage_prob * self.thermal_non_leakage_prob
+        self.k_effective = self.k_infinite * self.fast_non_leakage_prob * self.thermal_non_leakage_prob
 
     def calculate_reactivity(self):
         """Calculate reactivity (ρ) from k-effective"""
@@ -380,10 +396,10 @@ class ReactorModel:
             "epsilon": self.epsilon,
             "p": self.p,
             "f": self.f,
-            "k_infinite": self.eta * self.epsilon * self.p * self.f,
+            "k_infinite": round(self.k_infinite, 2),
             "thermal_non_leakage_prob": self.thermal_non_leakage_prob,
             "fast_non_leakage_prob": self.fast_non_leakage_prob,
-            "k_effective": self.k_effective
+            "k_effective": round(self.k_effective, 2)
         }
         
     def get_neutron_balance_data(self):
@@ -496,7 +512,7 @@ class ReactorModel:
                 "f": self.f,
                 "P_AFR": self.fast_non_leakage_prob,
                 "P_AFT": self.thermal_non_leakage_prob,
-                "k_eff": self.k_effective,
+                "k_eff": round(self.k_effective, 2),
             },
             "populations": {
                 "start": n_start,

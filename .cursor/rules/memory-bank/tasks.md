@@ -646,6 +646,48 @@ def mouseMoveEvent(self, event):
 
 ---
 
+## Diagnostiquer et Corriger une Incohérence Physique
+
+**Dernière exécution :** Juillet 2025
+**Contexte :** Correction d'une incohérence fondamentale où `k_eff` n'était pas égal à 1.00 dans des conditions critiques stables.
+
+### Type de tâche :
+Investigation et correction de bugs dans le modèle physique fondamental.
+
+### Workflow de Diagnostic et Correction :
+
+**Étape 1 : Identification du Symptôme**
+1.  **Observation** : Identifier un comportement du simulateur qui contredit directement les principes physiques attendus.
+    - *Exemple* : Pour un preset de fonctionnement à puissance stabilisée (PMD), le `k_eff` est significativement différent de 1.00 et la réactivité n'est pas nulle.
+2.  **Hypothèse Fondamentale** : Si les paramètres d'entrée (`config.json`) sont considérés comme corrects, l'erreur se situe dans les formules de calcul du modèle (`src/model/reactor_model.py`).
+
+**Étape 2 : Analyse du Modèle Physique**
+1.  **Traçage Inversé** : Partir de la valeur erronée (`k_eff`) et remonter la chaîne de dépendances de calcul.
+    - `k_eff` dépend de `k_inf` et des probabilités de non-fuite.
+    - `k_inf` dépend des quatre facteurs : `η`, `ε`, `p`, `f`.
+2.  **Revue des Formules** : Examiner chaque formule de calcul des facteurs.
+    - Se concentrer sur les changements récents ou les formules complexes.
+    - **Vérifier la cohérence dimensionnelle** : S'assurer que les unités des termes additionnés ou comparés sont cohérentes. C'était la clé de la résolution du bug de `k_eff`.
+
+**Étape 3 : Implémentation de la Correction**
+1.  **Remplacement Ciblé** : Remplacer uniquement la ligne ou la section de code incorrecte par une formule physiquement juste.
+2.  **Cohérence du Modèle** : S'assurer que la nouvelle formule utilise des constantes et des variables déjà définies dans le modèle pour maintenir une cohérence interne. Éviter d'introduire de nouvelles "valeurs magiques".
+3.  **Documentation du Changement** : Ajouter des commentaires expliquant pourquoi l'ancienne formule était incorrecte et ce que la nouvelle accomplit.
+
+**Étape 4 : Validation Post-Correction**
+1.  **Test du Cas Problématique** : Recharger le preset ou recréer les conditions qui ont révélé le bug.
+    - Vérifier que le `k_eff` est maintenant correct (≈ 1.00).
+2.  **Tests de non-régression** :
+    - Tester d'autres presets (démarrage, fin de cycle, etc.) pour s'assurer qu'ils se comportent toujours de manière logique.
+    - Vérifier que la correction n'a pas introduit d'effets de bord inattendus.
+3.  **Validation de l'Affichage** : S'assurer que l'interface utilisateur reflète correctement les nouvelles valeurs calculées avec le formatage attendu.
+
+### Bonnes pratiques identifiées :
+- **La cohérence dimensionnelle est un outil de débogage puissant** pour les modèles physiques. Une incohérence (ex: additionner des termes sans unité avec des termes en cm⁻¹) est un signal d'alarme.
+- **Le traçage inversé** depuis le symptôme jusqu'à la cause racine est une méthode efficace.
+- **La centralisation des calculs** (refactoring pour `k_infinite`) réduit la surface d'attaque des bugs et simplifie la maintenance.
+---
+
 ## Améliorer la Lisibilité d'un Widget de Visualisation
 
 **Dernière exécution :** Décembre 2024  

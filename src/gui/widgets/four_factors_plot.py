@@ -90,7 +90,7 @@ class FourFactorsPlot(FigureCanvasQTAgg):
         # Add annotations for important values
         for i, bar in enumerate(self.bars):
             if labels[i] in ['k∞', 'keff']:
-                annotation = self.axes.text(i, values[i] + 0.02, f'{values[i]:.3f}', 
+                annotation = self.axes.text(i, values[i] + 0.02, f'{values[i]:.2f}', 
                                            ha='center', va='bottom', fontsize=9, 
                                            bbox=dict(boxstyle='round,pad=0.3', fc='yellow', alpha=0.5))
                 self.value_annotations.append(annotation)
@@ -143,9 +143,16 @@ class FourFactorsPlot(FigureCanvasQTAgg):
                           "keff = 1 : critique (puissance stable)\n" \
                           "keff < 1 : sous-critique (puissance diminue)"
 
+            # Formatage conditionnel pour la valeur
+            if symbol in ['k∞', 'keff']:
+                val_str = f"{value:.2f}"
+            else:
+                val_str = f"{value:.4f}"
+
+
             info_text = (
                 f"{name} ({symbol})\n\n"
-                f"Valeur : {value:.4f}\n\n"
+                f"Valeur : {val_str}\n\n"
                 f"Description : {description}\n\n"
                 f"Contexte : {context}"
             )

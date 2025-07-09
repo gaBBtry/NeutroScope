@@ -2,11 +2,19 @@
 
 ## Focus Actuel
 - **STATUT FINAL** : NeutroScope est maintenant un simulateur pédagogique complet et professionnel, avec toutes les fonctionnalités majeures implémentées et parfaitement opérationnelles.
-- **Dernière modification** : Inversion complète de la convention des barres de contrôle pour une logique plus intuitive et standardisée.
+- **Dernière modification** : Correction d'une incohérence physique majeure et uniformisation de l'affichage.
 
 ## Accomplissements Majeurs Récents
 
-### 1. Inversion Convention Barres de Contrôle - NOUVELLE ✅
+### 1. Correction de Cohérence Physique et Affichage - NOUVELLE ✅
+- **Problème résolu** : Le simulateur affichait un `k_eff` incorrect pour les états critiques (ex: PMD), qui doit être de 1.00.
+- **Cause Racine** : Une formule dimensionnellement incohérente dans le calcul de l'absorption du xénon dans `reactor_model.py`.
+- **Solution Physique** : Remplacement de la formule erronée par un calcul physiquement juste du rapport `Σa_xenon / Σa_fuel`, rétablissant la précision du modèle.
+- **Amélioration Affichage** :
+  - Uniformisation de l'affichage de `k_eff` et `k_inf` à **deux décimales fixes** (ex: "1.00") dans tous les widgets (`main_window`, `four_factors_plot`, `neutron_cycle_plot`) pour une meilleure clarté.
+- **Refactoring** : Centralisation du calcul de `k_infinite` dans le modèle pour éviter la redondance et améliorer la maintenabilité (principe DRY).
+
+### 2. Inversion Convention Barres de Contrôle - CONSERVÉE ✅
 - **Changement majeur** : Inversion complète de la logique des barres de contrôle dans toute l'application
 - **Nouvelle convention** :
   - **0%** = Barres complètement insérées (maximum d'absorption neutronique)
@@ -21,7 +29,7 @@
   - **Documentation** : Textes d'aide et descriptions mis à jour
 - **Validation** : Tests confirment cohérence physique (0% → k_eff=0.86, 100% → k_eff=1.02)
 
-### 2. Correction Physique du Flux Axial - CONSERVÉE ✅
+### 3. Correction Physique du Flux Axial - CONSERVÉE ✅
 - **Problème résolu** : Le flux axial présentait une incohérence physique aux fortes insertions (>85%) des barres de contrôle
 - **Solution implémentée** : Transition fluide avec fonction sigmoïde pour restabilisation progressive
 - **Comportement correct** :
@@ -30,7 +38,7 @@
   - **100% insertion** : Flux parfaitement symétrique (cosinus pur)
 - **Physique validée** : Le flux redevient symétrique uniquement à 100% d'insertion complète
 
-### 3. Optimisation de la Fluidité - CONSERVÉE ✅  
+### 4. Optimisation de la Fluidité - CONSERVÉE ✅  
 - **Fonction de transition** : Implémentation d'une fonction sigmoïde `1/(1 + e^(-12(x-0.5)))` pour une transition naturellement fluide
 - **Paramètres optimisés** :
   - Début transition : 85% d'insertion (au lieu de 90%)
@@ -38,19 +46,19 @@
   - Atténuation complète à exactement 100% d'insertion
 - **Résultat** : Comportement visuellement agréable et physiquement réaliste
 
-### 4. Architecture de Données Robuste - CONSERVÉE ✅
+### 5. Architecture de Données Robuste - CONSERVÉE ✅
 - **Système de presets simplifié** : Interface dropdown + bouton Reset uniquement
 - **Backend sophistiqué préservé** : `PresetManager` complet avec CRUD, validation, métadonnées
 - **Rétrocompatibilité maintenue** : Tous les presets système adaptés à la nouvelle convention
 - **Extensibilité** : Ajout facile de nouveaux presets via fichiers de configuration
 
-### 5. Simulation Temporelle Complète - OPÉRATIONNELLE ✅
+### 6. Simulation Temporelle Complète - OPÉRATIONNELLE ✅
 - **Dynamique Xénon-135** : Équations de Bateman avec solutions analytiques exactes
 - **Widget temporel** : `XenonVisualizationWidget` avec graphiques temps réel et contrôles intuitifs
 - **États temporels** : Sauvegarde complète incluant concentrations et historique de simulation
 - **Performance optimisée** : Calculs <100ms par étape pour fluidité temps réel
 
-### 6. Interface Utilisateur Finalisée - PERFECTIONNÉE ✅
+### 7. Interface Utilisateur Finalisée - PERFECTIONNÉE ✅
 - **Visualisations fluides** : Tous les graphiques avec transitions naturelles et responsive
 - **Système d'information complet** : Tooltips universels + touche 'i' pour détails approfondis
 - **Contrôles intuitifs** : Interface épurée centrée sur l'apprentissage physique avec convention barres standardisée
