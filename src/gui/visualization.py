@@ -43,11 +43,16 @@ class VisualizationPanel(QWidget):
         self.neutron_balance_plot = NeutronBalancePlot(info_manager=self.info_manager)
         self.xenon_widget = XenonVisualizationWidget(info_manager=self.info_manager)
         
+        # Create a container widget for factors and balance plots
+        analysis_tab = QWidget()
+        analysis_layout = QHBoxLayout(analysis_tab)
+        analysis_layout.addWidget(self.factors_plot)
+        analysis_layout.addWidget(self.neutron_balance_plot)
+
         # Add plots to tabs
         self.tabs.addTab(self.neutron_cycle_plot, "Cycle Neutronique")
         self.tabs.addTab(self.flux_plot, "Flux Axial")
-        self.tabs.addTab(self.factors_plot, "Quatre Facteurs")
-        self.tabs.addTab(self.neutron_balance_plot, "Bilan Neutronique")
+        self.tabs.addTab(analysis_tab, "Analyse Neutronique")
         self.tabs.addTab(self.xenon_widget, "Dynamique Xénon")
         
         layout.addWidget(self.tabs)
