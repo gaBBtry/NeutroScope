@@ -153,7 +153,7 @@ class NeutronCyclePlot(QWidget):
         self._draw_arrow_and_factor(painter, self._box_positions['start'], self._box_positions['after_P_AFR'], f"ε × P_AFR ≈ {factor_mult:.3f}", "epsilon_P_AFR", factor_descriptions["epsilon_P_AFR"])
         self._draw_arrow_and_factor(painter, self._box_positions['after_P_AFR'], self._box_positions['after_p'], f"p ≈ {factors.get('p', 0):.3f}", "p", factor_descriptions["p"])
         self._draw_arrow_and_factor(painter, self._box_positions['after_p'], self._box_positions['after_P_AFT'], f"P_AFT ≈ {factors.get('P_AFT', 0):.3f}", "P_AFT", factor_descriptions["P_AFT"])
-        self._draw_arrow_and_factor(painter, self._box_positions['after_f'], self._box_positions['after_f'], f"f ≈ {factors.get('f', 0):.3f}", "f", factor_descriptions["f"])
+        self._draw_arrow_and_factor(painter, self._box_positions['after_P_AFT'], self._box_positions['after_f'], f"f ≈ {factors.get('f', 0):.3f}", "f", factor_descriptions["f"])
         self._draw_arrow_and_factor(painter, self._box_positions['after_f'], self._box_positions['final'], f"η ≈ {factors.get('eta', 0):.3f}", "eta", factor_descriptions["eta"])
         self._draw_arrow_and_factor(painter, self._box_positions['final'], self._box_positions['start'], "", "feedback", factor_descriptions["feedback"], is_feedback=True)
 
