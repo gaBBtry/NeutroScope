@@ -41,7 +41,7 @@ class PresetData:
     # Paramètres de base du réacteur
     control_rod_position: float = 0.0  # 0-100%
     boron_concentration: float = 500.0  # ppm
-    moderator_temperature: float = 310.0  # °C
+    average_temperature: float = 310.0  # °C
     fuel_enrichment: float = 3.5  # %
     power_level: float = 100.0  # %
     
@@ -94,8 +94,8 @@ class PresetData:
         if not (0 <= self.boron_concentration <= 5000):
             errors.append("Concentration bore doit être entre 0 et 5000 ppm")
         
-        if not (200 <= self.moderator_temperature <= 400):
-            errors.append("Température modérateur doit être entre 200 et 400°C")
+        if not (200 <= self.average_temperature <= 400):
+            errors.append("Température moyenne doit être entre 200 et 400°C")
         
         if not (0.5 <= self.fuel_enrichment <= 20):
             errors.append("Enrichissement combustible doit être entre 0.5 et 20%")
@@ -128,7 +128,7 @@ class PresetData:
         return {
             "control_rod_position": self.control_rod_position,
             "boron_concentration": self.boron_concentration,
-            "moderator_temperature": self.moderator_temperature,
+            "average_temperature": self.average_temperature,
             "fuel_enrichment": self.fuel_enrichment,
             "power_level": self.power_level
         }

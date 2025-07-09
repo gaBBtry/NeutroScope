@@ -14,7 +14,7 @@ class ReactorModel:
         # Paramètres par défaut
         self.control_rod_position = 0.0  # 0-100%
         self.boron_concentration = 500.0  # ppm
-        self.moderator_temperature = 310.0  # °C
+        self.average_temperature = 310.0  # °C
         self.power_level = 100.0 # %
         self.fuel_enrichment = 3.5  # %
         
@@ -55,7 +55,7 @@ class ReactorModel:
     
     def _update_temperatures(self):
         """Calcule la température du combustible en fonction du niveau de puissance et de la température du modérateur."""
-        self.fuel_temperature = self.moderator_temperature + (self.power_level * config.POWER_TO_FUEL_TEMP_COEFF)
+        self.fuel_temperature = self.average_temperature + (self.power_level * config.POWER_TO_FUEL_TEMP_COEFF)
 
     def calculate_all(self):
         """Calcule tous les paramètres du réacteur en fonction des entrées actuelles"""
@@ -85,7 +85,7 @@ class ReactorModel:
         doppler_effect = np.exp(-config.P_DOPPLER_COEFF * sqrt_T_diff)
         
         # 2. Effet température du modérateur (densité et efficacité de ralentissement)
-        mod_temp_deviation = self.moderator_temperature - config.P_REF_MOD_TEMP_C
+        mod_temp_deviation = self.average_temperature - config.P_REF_MOD_TEMP_C
         moderator_effect = 1.0 - config.P_MOD_TEMP_COEFF * mod_temp_deviation
         
         # 3. Combinaison des deux effets
@@ -96,7 +96,7 @@ class ReactorModel:
         # A_non_fuel est le rapport d'absorption dans les matériaux non-combustibles par rapport au combustible
         
         # 1. Rapport d'absorption de base, ajusté pour la température du modérateur
-        temp_deviation = self.moderator_temperature - config.F_REF_MOD_TEMP_C
+        temp_deviation = self.average_temperature - config.F_REF_MOD_TEMP_C
         mod_temp_effect = config.F_MOD_TEMP_ABS_COEFF * temp_deviation
         base_abs_ratio = config.F_BASE_ABS_RATIO * (1 + mod_temp_effect)
         
@@ -135,7 +135,7 @@ class ReactorModel:
         
         # 2. Effet de la température sur la densité du modérateur et les aires de diffusion
         # L^2 et L_s^2 sont proportionnels à (rho_ref/rho_T)^2
-        temp_deviation = self.moderator_temperature - config.F_REF_MOD_TEMP_C
+        temp_deviation = self.average_temperature - config.F_REF_MOD_TEMP_C
         density_ratio = 1.0 / (1.0 - config.MODERATOR_DENSITY_COEFF * temp_deviation)
         
         thermal_diffusion_area = config.THERMAL_DIFFUSION_AREA_M2 * (density_ratio**2)
@@ -298,9 +298,9 @@ class ReactorModel:
         """Update boron concentration and recalculate"""
         self._update_parameter('boron_concentration', concentration)
     
-    def update_moderator_temperature(self, temperature):
+    def average_temperature(self, temperature):
         """Update moderator temperature and recalculate"""
-        self._update_parameter('moderator_temperature', temperature, update_temperatures=True)
+        self._update_parameter('average_temperature', temperature, update_temperatures=True)
     
     def update_power_level(self, power_level):
         """Update power level and recalculate"""
@@ -513,7 +513,7 @@ class ReactorModel:
         # Appliquer les paramètres de base
         self.control_rod_position = preset.control_rod_position
         self.boron_concentration = preset.boron_concentration
-        self.moderator_temperature = preset.moderator_temperature
+        self.average_temperature = preset.average_temperature
         self.fuel_enrichment = preset.fuel_enrichment
         self.power_level = preset.power_level
         
@@ -548,7 +548,7 @@ class ReactorModel:
             # Comparer les paramètres de base
             if (np.isclose(self.control_rod_position, preset.control_rod_position, atol=0.1) and
                 np.isclose(self.boron_concentration, preset.boron_concentration, atol=1.0) and
-                np.isclose(self.moderator_temperature, preset.moderator_temperature, atol=0.5) and
+                np.isclose(self.average_temperature, preset.average_temperature, atol=0.5) and
                 np.isclose(self.fuel_enrichment, preset.fuel_enrichment, atol=0.01) and
                 np.isclose(self.power_level, preset.power_level, atol=0.1)):
                 
@@ -572,7 +572,7 @@ class ReactorModel:
             current_params = {
                 "control_rod_position": self.control_rod_position,
                 "boron_concentration": self.boron_concentration,
-                "moderator_temperature": self.moderator_temperature,
+                "average_temperature": self.average_temperature,
                 "fuel_enrichment": self.fuel_enrichment,
                 "power_level": self.power_level,
                 "iodine_concentration": self.iodine_concentration,
@@ -640,7 +640,7 @@ class ReactorModel:
             modified_date=datetime.now(),
             control_rod_position=self.control_rod_position,
             boron_concentration=self.boron_concentration,
-            moderator_temperature=self.moderator_temperature,
+            average_temperature=self.average_temperature,
             fuel_enrichment=self.fuel_enrichment,
             power_level=self.power_level,
             iodine_concentration=self.iodine_concentration,

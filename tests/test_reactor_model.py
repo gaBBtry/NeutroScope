@@ -41,7 +41,7 @@ def test_initialization(reactor):
     """Test that the reactor model initializes with default values."""
     assert reactor.control_rod_position == 0.0
     assert reactor.boron_concentration == 500.0
-    assert reactor.moderator_temperature == 310.0
+    assert reactor.average_temperature == 310.0
     assert reactor.power_level == 100.0
     assert reactor.fuel_enrichment == 3.5
     assert reactor.k_effective is not None
@@ -57,10 +57,10 @@ def test_update_boron_concentration(reactor):
     reactor.update_boron_concentration(1000)
     assert reactor.boron_concentration == 1000
 
-def test_update_moderator_temperature(reactor):
+def test_update_average_temperature(reactor):
     """Test updating the moderator temperature."""
-    reactor.update_moderator_temperature(320)
-    assert reactor.moderator_temperature == 320
+    reactor.update_average_temperature(320)
+    assert reactor.average_temperature == 320
 
 def test_update_power_level(reactor):
     """Test updating the power level."""
@@ -75,7 +75,7 @@ def test_update_fuel_enrichment(reactor):
 def test_fuel_temperature_calculation(reactor):
     """Test the calculation of fuel temperature."""
     from src.model import config
-    reactor.update_moderator_temperature(300)
+    reactor.update_average_temperature(300)
     reactor.update_power_level(50)
     expected_temp = 300 + (50 * config.POWER_TO_FUEL_TEMP_COEFF)
     assert reactor.fuel_temperature == pytest.approx(expected_temp)

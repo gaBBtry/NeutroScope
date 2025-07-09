@@ -120,7 +120,7 @@ def test_controller_applies_preset_to_model(controller):
     
     assert controller.model.control_rod_position == preset_values["control_rod_position"]
     assert controller.model.boron_concentration == preset_values["boron_concentration"]
-    assert controller.model.moderator_temperature == preset_values["moderator_temperature"]
+    assert controller.model.average_temperature == preset_values["average_temperature"]
     assert controller.model.fuel_enrichment == preset_values["fuel_enrichment"]
 
 def test_controller_returns_correct_k_eff_after_update(controller):
@@ -197,7 +197,7 @@ def test_gui_preset_updates_inputs(app, qtbot):
     preset_values = app.controller.get_current_configuration()
     assert app.rod_slider.value() == int(preset_values["control_rod_position"])
     assert app.boron_spinbox.value() == preset_values["boron_concentration"]
-    assert app.moderator_temp_slider.value() == int(preset_values["moderator_temperature"])
+    assert app.moderator_temp_slider.value() == int(preset_values["average_temperature"])
     assert app.fuel_enrichment_slider.value() == int(preset_values["fuel_enrichment"] * 10)
 
 def test_gui_control_rod_slider_coherence(app, qtbot):
@@ -253,10 +253,10 @@ def test_gui_temperature_slider_coherence(app, qtbot):
     new_temp = 325.0
 
     # Simulate user changing the value of the temperature slider
-    app.on_moderator_temperature_changed(int(new_temp))
+    app.on_average_temperature_changed(int(new_temp))
 
     # Assert that the model was updated
-    assert app.controller.model.moderator_temperature == new_temp
+    assert app.controller.model.average_temperature == new_temp
 
     # Assert that the GUI labels were updated
     final_params = app.controller.get_reactor_parameters()
@@ -317,7 +317,7 @@ def test_preset_application_updates_ui(app):
     # Verify that the UI widgets were updated with the correct values from the preset
     assert app.rod_slider.value() == int(preset_config["control_rod_position"])
     assert app.boron_spinbox.value() == preset_config["boron_concentration"]
-    assert app.moderator_temp_slider.value() == int(preset_config["moderator_temperature"])
+    assert app.moderator_temp_slider.value() == int(preset_config["average_temperature"])
     assert app.fuel_enrichment_slider.value() == int(preset_config["fuel_enrichment"] * 10)
 
 def test_control_change_updates_displays(app):

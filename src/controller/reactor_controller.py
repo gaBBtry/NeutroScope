@@ -23,9 +23,9 @@ class ReactorController:
         self.model.update_boron_concentration(concentration)
         return self.get_reactor_parameters()
     
-    def update_moderator_temperature(self, temperature):
+    def update_average_temperature(self, temperature):
         """Update moderator temperature in the model"""
-        self.model.update_moderator_temperature(temperature)
+        self.model.update_average_temperature(temperature)
         return self.get_reactor_parameters()
     
     def update_fuel_enrichment(self, enrichment):
@@ -87,7 +87,7 @@ class ReactorController:
             return {
                 "control_rod_position": self.model.control_rod_position,
                 "boron_concentration": self.model.boron_concentration,
-                "moderator_temperature": self.model.moderator_temperature,
+                "average_temperature": self.model.average_temperature,
                 "fuel_enrichment": self.model.fuel_enrichment,
                 "power_level": self.model.power_level,
                 "reactor_params": self.get_reactor_parameters()
@@ -107,7 +107,7 @@ class ReactorController:
         return {
             "control_rod_position": self.model.control_rod_position,
             "boron_concentration": self.model.boron_concentration,
-            "moderator_temperature": self.model.moderator_temperature,
+            "average_temperature": self.model.average_temperature,
             "fuel_enrichment": self.model.fuel_enrichment,
             "power_level": self.model.power_level
         }
@@ -135,7 +135,7 @@ class ReactorController:
         current_params = {
             "control_rod_position": self.model.control_rod_position,
             "boron_concentration": self.model.boron_concentration,
-            "moderator_temperature": self.model.moderator_temperature,
+            "average_temperature": self.model.average_temperature,
             "fuel_enrichment": self.model.fuel_enrichment,
             "power_level": self.model.power_level,
             "iodine_concentration": self.model.iodine_concentration,

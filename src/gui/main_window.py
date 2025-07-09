@@ -149,7 +149,7 @@ class MainWindow(QMainWindow):
         self.rod_slider.valueChanged.connect(self.on_rod_position_changed)
         self.boron_slider.valueChanged.connect(self.on_boron_slider_changed)
         self.boron_spinbox.valueChanged.connect(self.on_boron_spinbox_changed)
-        self.moderator_temp_slider.valueChanged.connect(self.on_moderator_temperature_changed)
+        self.moderator_temp_slider.valueChanged.connect(self.on_average_temperature_changed)
         self.fuel_enrichment_slider.valueChanged.connect(self.on_fuel_enrichment_changed)
         self.preset_combo.currentTextChanged.connect(self.on_preset_changed)
         
@@ -216,7 +216,7 @@ class MainWindow(QMainWindow):
         self.boron_group.setLayout(boron_layout)
         
         # Moderator Temperature
-        self.moderator_temp_group = self.create_info_groupbox("Température Modérateur (°C)", self.info_texts["moderator_temp"])
+        self.moderator_temp_group = self.create_info_groupbox("Température Moyenne (°C)", self.info_texts["moderator_temp"])
         mod_temp_layout = QHBoxLayout()
         self.moderator_temp_slider = QSlider(Qt.Orientation.Horizontal)
         self.moderator_temp_slider.setRange(280, 350)
@@ -349,8 +349,8 @@ class MainWindow(QMainWindow):
         self.boron_slider.setValue(int(config["boron_concentration"]))
         self.boron_spinbox.setValue(config["boron_concentration"])
         
-        self.moderator_temp_slider.setValue(int(config["moderator_temperature"]))
-        self.moderator_temp_label.setText(f"{config['moderator_temperature']:.0f} °C")
+        self.moderator_temp_slider.setValue(int(config["average_temperature"]))
+        self.moderator_temp_label.setText(f"{config['average_temperature']:.0f} °C")
         
         self.fuel_enrichment_slider.setValue(int(config["fuel_enrichment"] * 10))
         self.fuel_enrichment_label.setText(f"{config['fuel_enrichment']:.1f} %")
@@ -422,10 +422,10 @@ class MainWindow(QMainWindow):
 
 
 
-    def on_moderator_temperature_changed(self, value):
+    def on_average_temperature_changed(self, value):
         """Handle moderator temperature change"""
         self._update_parameter_and_ui(
-            self.controller.update_moderator_temperature,
+            self.controller.update_average_temperature,
             value,
             lambda: self.moderator_temp_label.setText(f"{value} °C")
         )

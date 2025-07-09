@@ -34,11 +34,11 @@ def test_update_boron_concentration(controller):
     ctr.update_boron_concentration(1000)
     ctr.model.update_boron_concentration.assert_called_once_with(1000)
 
-def test_update_moderator_temperature(controller):
+def test_update_average_temperature(controller):
     """Test updating moderator temperature calls the model."""
     ctr, _ = controller
-    ctr.update_moderator_temperature(320)
-    ctr.model.update_moderator_temperature.assert_called_once_with(320)
+    ctr.update_average_temperature(320)
+    ctr.model.update_average_temperature.assert_called_once_with(320)
 
 def test_update_fuel_enrichment(controller):
     """Test updating fuel enrichment calls the model."""
@@ -103,7 +103,7 @@ def test_apply_preset(controller):
     # Mock model attributes that will be accessed
     ctr.model.control_rod_position = 10
     ctr.model.boron_concentration = 20
-    ctr.model.moderator_temperature = 30
+    ctr.model.average_temperature = 30
     ctr.model.fuel_enrichment = 4.0
     
     result = ctr.apply_preset(preset_name)
@@ -141,7 +141,7 @@ def test_get_current_configuration(controller):
     # Configure mock attributes
     ctr.model.control_rod_position = 10
     ctr.model.boron_concentration = 20
-    ctr.model.moderator_temperature = 30
+    ctr.model.average_temperature = 30
     ctr.model.fuel_enrichment = 4.0
 
     config = ctr.get_current_configuration()
@@ -149,7 +149,7 @@ def test_get_current_configuration(controller):
     expected_config = {
         "control_rod_position": 10,
         "boron_concentration": 20,
-        "moderator_temperature": 30,
+        "average_temperature": 30,
         "fuel_enrichment": 4.0
     }
     assert config == expected_config 
