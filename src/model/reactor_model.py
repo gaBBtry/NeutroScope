@@ -298,7 +298,7 @@ class ReactorModel:
         """Update boron concentration and recalculate"""
         self._update_parameter('boron_concentration', concentration)
     
-    def average_temperature(self, temperature):
+    def update_average_temperature(self, temperature):
         """Update moderator temperature and recalculate"""
         self._update_parameter('average_temperature', temperature, update_temperatures=True)
     
