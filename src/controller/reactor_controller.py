@@ -13,17 +13,25 @@ class ReactorController:
     def __init__(self):
         self.model = ReactorModel()
     
-    # Nouvelles méthodes pour les groupes de barres
-    def update_rod_group_R_position(self, position):
-        """Update R group position (0-228 steps)"""
-        self.model.update_rod_group_R_position(position)
-        return self.get_reactor_parameters()
+    # --- MÉTHODES DE CONTRÔLE CIBLÉ ---
+    def set_target_rod_group_R_position(self, position):
+        """Définit la position CIBLE pour le groupe R (0-228 pas)"""
+        self.model.set_target_rod_group_R_position(position)
     
-    def update_rod_group_GCP_position(self, position):
-        """Update GCP group position (0-228 steps)"""
-        self.model.update_rod_group_GCP_position(position)
-        return self.get_reactor_parameters()
+    def set_target_rod_group_GCP_position(self, position):
+        """Définit la position CIBLE pour le groupe GCP (0-228 pas)"""
+        self.model.set_target_rod_group_GCP_position(position)
     
+    def set_target_boron_concentration(self, concentration):
+        """Définit la concentration CIBLE pour le bore"""
+        self.model.set_target_boron_concentration(concentration)
+
+    def update_fuel_enrichment(self, enrichment):
+        """Met à jour l'enrichissement du combustible. L'effet est instantané."""
+        self.model.update_fuel_enrichment(enrichment)
+        # Ne retourne rien, la mise à jour se voit au prochain tick
+
+    # --- MÉTHODES DE RÉCUPÉRATION DE DONNÉES ---
     def get_rod_group_positions(self):
         """Get current positions of both rod groups"""
         return {
@@ -36,48 +44,32 @@ class ReactorController:
         return {
             "R": {
                 "position": self.model.rod_group_R_position,
+                "target_position": self.model.target_rod_group_R_position,
                 "description": config.control_rod_groups['R']['description'],
                 "worth_fraction": config.control_rod_groups['R']['worth_fraction'],
                 "min_step": config.control_rod_groups['R']['min_step'],
                 "max_step": config.control_rod_groups['R']['max_step'],
                 "normal_step": config.control_rod_groups['R']['normal_step'],
+                "speed_steps_per_sec": config.control_rod_groups['R']['speed_steps_per_sec'],
                 "position_range": config.control_rod_groups['R']['position_range']
             },
             "GCP": {
                 "position": self.model.rod_group_GCP_position,
+                "target_position": self.model.target_rod_group_GCP_position,
                 "description": config.control_rod_groups['GCP']['description'],
                 "worth_fraction": config.control_rod_groups['GCP']['worth_fraction'],
                 "min_step": config.control_rod_groups['GCP']['min_step'],
                 "max_step": config.control_rod_groups['GCP']['max_step'],
                 "normal_step": config.control_rod_groups['GCP']['normal_step'],
+                "speed_steps_per_sec": config.control_rod_groups['GCP']['speed_steps_per_sec'],
                 "position_range": config.control_rod_groups['GCP']['position_range']
             },
             "conversion": config.control_rod_groups['conversion']
         }
 
     def update_control_rod_position(self, position):
-        """Méthode de rétrocompatibilité pour les anciens contrôles"""
-        return self.model.update_control_rod_position(position)
-    
-    def update_boron_concentration(self, concentration):
-        """Update boron concentration"""
-        params = self.model.update_boron_concentration(concentration)
-        return self.get_reactor_parameters()
-    
-    def update_average_temperature(self, temperature):
-        """Update average temperature"""
-        params = self.model.update_average_temperature(temperature)
-        return self.get_reactor_parameters()
-    
-    def update_power_level(self, power_level):
-        """Update power level"""
-        params = self.model.update_power_level(power_level)
-        return self.get_reactor_parameters()
-    
-    def update_fuel_enrichment(self, enrichment):
-        """Update fuel enrichment"""
-        params = self.model.update_fuel_enrichment(enrichment)
-        return self.get_reactor_parameters()
+        """Méthode de rétrocompatibilité. Définit les cibles des deux groupes."""
+        self.model.update_control_rod_position(position)
     
     def get_reactor_parameters(self):
         """Récupérer tous les paramètres calculés du réacteur"""
@@ -92,7 +84,11 @@ class ReactorController:
             "p": self.model.p,
             "f": self.model.f,
             "thermal_non_leakage_prob": self.model.thermal_non_leakage_prob,
-            "fast_non_leakage_prob": self.model.fast_non_leakage_prob
+            "fast_non_leakage_prob": self.model.fast_non_leakage_prob,
+            "fuel_temperature": self.model.fuel_temperature,
+            "moderator_temperature": self.model.moderator_temperature,
+            "power_level": self.model.power_level,
+            "neutron_flux": self.model.neutron_flux
         }
     
     def get_axial_flux_distribution(self):
@@ -116,8 +112,12 @@ class ReactorController:
         return {
             "rod_group_R_position": self.model.rod_group_R_position,
             "rod_group_GCP_position": self.model.rod_group_GCP_position,
+            "target_rod_group_R_position": self.model.target_rod_group_R_position,
+            "target_rod_group_GCP_position": self.model.target_rod_group_GCP_position,
             "boron_concentration": self.model.boron_concentration,
-            "average_temperature": self.model.average_temperature,
+            "target_boron_concentration": self.model.target_boron_concentration,
+            "moderator_temperature": self.model.moderator_temperature,
+            "fuel_temperature": self.model.fuel_temperature,
             "fuel_enrichment": self.model.fuel_enrichment,
             "power_level": self.model.power_level
         }
@@ -127,13 +127,17 @@ class ReactorController:
         return self.model.get_xenon_dynamics_data()
     
     def advance_time(self, hours=1.0):
-        """Advance simulation time and update xenon dynamics"""
+        """Fait avancer la simulation temporelle."""
         self.model.advance_time(hours)
         return self.get_reactor_parameters()
     
     def reset_xenon_to_equilibrium(self):
-        """Reset xenon concentrations to equilibrium for current power level"""
+        """Réinitialise les concentrations de xénon à l'équilibre et l'état temporel."""
+        self.model.simulation_time = 0.0
         self.model.calculate_xenon_equilibrium()
+        # Il faut aussi réinitialiser les températures à l'équilibre
+        self.model._calculate_equilibrium_temperatures()
+        self.model.calculate_all()
         return self.get_reactor_parameters()
     
     def get_preset_names(self):
@@ -148,7 +152,8 @@ class ReactorController:
                 "rod_group_R_position": self.model.rod_group_R_position,
                 "rod_group_GCP_position": self.model.rod_group_GCP_position,
                 "boron_concentration": self.model.boron_concentration,
-                "average_temperature": self.model.average_temperature,
+                "moderator_temperature": self.model.moderator_temperature,
+                "fuel_temperature": self.model.fuel_temperature,
                 "fuel_enrichment": self.model.fuel_enrichment,
                 "power_level": self.model.power_level,
                 "reactor_params": self.get_reactor_parameters()
@@ -183,29 +188,30 @@ class ReactorController:
     
     def create_preset_from_current_state(self, name, description="", category=None):
         """Crée un nouveau preset basé sur l'état actuel"""
-        current_params = {
-            "control_rod_position": self.model.control_rod_position,
-            "boron_concentration": self.model.boron_concentration,
-            "average_temperature": self.model.average_temperature,
-            "fuel_enrichment": self.model.fuel_enrichment,
-            "power_level": self.model.power_level,
-            "iodine_concentration": self.model.iodine_concentration,
-            "xenon_concentration": self.model.xenon_concentration,
-            "simulation_time": self.model.simulation_time
-        }
+        current_state_data = self.model.get_current_state_as_preset_data()
         
+        # Le PresetManager s'attend à un dictionnaire de paramètres
+        parameters = {
+            "rod_group_R_position": current_state_data.rod_group_R_position,
+            "rod_group_GCP_position": current_state_data.rod_group_GCP_position,
+            "boron_concentration": current_state_data.boron_concentration,
+            "average_temperature": current_state_data.average_temperature,
+            "fuel_enrichment": current_state_data.fuel_enrichment,
+            "power_level": current_state_data.power_level,
+            "iodine_concentration": current_state_data.iodine_concentration,
+            "xenon_concentration": current_state_data.xenon_concentration,
+            "simulation_time": current_state_data.simulation_time
+        }
+
         # Déterminer automatiquement la catégorie si non spécifiée
         if category is None:
-            if self.model.simulation_time > 0 or self.model.xenon_concentration > 0:
-                category = PresetCategory.TEMPOREL
-            else:
-                category = PresetCategory.PERSONNALISE
+            category = current_state_data.category
         
         try:
             preset = self.model.preset_manager.create_preset(
                 name=name,
                 description=description or f"Preset créé: {name}",
-                parameters=current_params,
+                parameters=parameters,
                 category=category
             )
             return preset is not None
@@ -218,12 +224,4 @@ class ReactorController:
     
     def import_presets(self, file_path, overwrite=False):
         """Importe des presets depuis un fichier"""
-        return self.model.preset_manager.import_presets(file_path, overwrite)
-    
-    def validate_preset_data(self, preset_data):
-        """Valide les données d'un preset"""
-        try:
-            errors = preset_data.validate()
-            return len(errors) == 0, errors
-        except Exception as e:
-            return False, [str(e)] 
+        return self.model.preset_manager.import_presets(file_path, overwrite) 

@@ -109,6 +109,12 @@ class RealtimeSimulationEngine(QObject):
         # Émettre le signal pour mise à jour UI
         self.time_advanced.emit(hours_to_advance)
 
+    def create_control_widget(self, info_manager: Optional[InfoManager] = None, parent=None) -> 'RealtimeControlWidget':
+        """
+        Crée et retourne le widget de contrôle associé à ce moteur.
+        """
+        return RealtimeControlWidget(self, info_manager, parent)
+
 
 class RealtimeControlWidget(QWidget):
     """

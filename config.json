@@ -38,8 +38,19 @@
         "MODERATOR_DENSITY_COEFF": 8e-4,
         "CONTROL_ROD_EFFECT_COEFF": 10.0
     },
-    "thermal_hydraulics": {
-        "POWER_TO_FUEL_TEMP_COEFF": 3.0
+    "control_kinetics": {
+        "boron": {
+            "max_change_rate_ppm_per_sec": 0.1
+        }
+    },
+    "thermal_kinetics": {
+        "nominal_power_MW": 2775.0,
+        "nominal_flux": 3e13,
+        "coolant_inlet_temperature_C": 286.0,
+        "fuel_heat_capacity_MJ_per_C": 5.0,
+        "moderator_heat_capacity_MJ_per_C": 75.0,
+        "heat_transfer_coeff_fuel_to_moderator_MW_per_C": 15.0,
+        "heat_transfer_coeff_moderator_to_coolant_MW_per_C": 95.0
     },
     "doubling_time": {
         "DOUBLING_TIME_COEFF": 80.0
@@ -50,7 +61,6 @@
         "IODINE_DECAY_CONSTANT": 2.87e-5,
         "XENON_DECAY_CONSTANT": 2.11e-5,
         "XENON_ABSORPTION_CROSS_SECTION": 2.65e6,
-        "THERMAL_FLUX_NOMINAL": 3.0e13,
         "FISSION_RATE_COEFF": 1.0e-6
     },
     "control_rod_groups": {
@@ -60,6 +70,7 @@
             "min_step": 1,
             "max_step": 10,
             "normal_step": 5,
+            "speed_steps_per_sec": 2,
             "position_range": [
                 0,
                 228
@@ -71,6 +82,7 @@
             "min_step": 5,
             "max_step": 50,
             "normal_step": 20,
+            "speed_steps_per_sec": 1,
             "position_range": [
                 0,
                 228

@@ -76,9 +76,11 @@ FAST_DIFFUSION_AREA_M2 = _leakage.get("FAST_DIFFUSION_AREA_M2", 0.0097)
 MODERATOR_DENSITY_COEFF = _leakage.get("MODERATOR_DENSITY_COEFF", 8.0e-4)
 CONTROL_ROD_EFFECT_COEFF = _leakage.get("CONTROL_ROD_EFFECT_COEFF", 10.0)
 
-# Thermo-hydraulique
-_thermo = _config.get("thermal_hydraulics", {})
-POWER_TO_FUEL_TEMP_COEFF = _thermo.get("POWER_TO_FUEL_TEMP_COEFF", 3.0)
+# Cinétique des contrôles
+control_kinetics = _config.get("control_kinetics", {})
+
+# Cinétique thermique
+thermal_kinetics = _config.get("thermal_kinetics", {})
 
 # Calcul du temps de doublement
 _doubling = _config.get("doubling_time", {})
