@@ -106,20 +106,14 @@ class MainWindow(QMainWindow):
         # Groupe R signals
         self.rod_R_slider.valueChanged.connect(self.on_rod_R_slider_changed)
         self.rod_R_spinbox.valueChanged.connect(self.on_rod_R_spinbox_changed)
-        self.rod_R_plus_btn.clicked.connect(lambda: self.adjust_rod_R(config_r.get('step', 1)))
-        self.rod_R_minus_btn.clicked.connect(lambda: self.adjust_rod_R(-config_r.get('step', 1)))
 
         # Groupe GCP signals
         self.rod_GCP_slider.valueChanged.connect(self.on_rod_GCP_slider_changed)
         self.rod_GCP_spinbox.valueChanged.connect(self.on_rod_GCP_spinbox_changed)
-        self.rod_GCP_plus_btn.clicked.connect(lambda: self.adjust_rod_GCP(config_gcp.get('step', 5)))
-        self.rod_GCP_minus_btn.clicked.connect(lambda: self.adjust_rod_GCP(-config_gcp.get('step', 5)))
 
         # Other controls
         self.boron_slider.valueChanged.connect(self.on_boron_slider_changed)
         self.boron_spinbox.valueChanged.connect(self.on_boron_spinbox_changed)
-        self.boron_plus_btn.clicked.connect(lambda: self.adjust_boron(config_boron.get('step', 10)))
-        self.boron_minus_btn.clicked.connect(lambda: self.adjust_boron(-config_boron.get('step', 10)))
 
         self.preset_combo.currentTextChanged.connect(self.on_preset_changed)
 
@@ -158,9 +152,9 @@ class MainWindow(QMainWindow):
         self.presets_group.setLayout(preset_layout)
 
         # Parameter controls
-        self.rod_R_group, self.rod_R_slider, self.rod_R_spinbox, self.rod_R_plus_btn, self.rod_R_minus_btn = self._create_parameter_control('rod_group_R')
-        self.rod_GCP_group, self.rod_GCP_slider, self.rod_GCP_spinbox, self.rod_GCP_plus_btn, self.rod_GCP_minus_btn = self._create_parameter_control('rod_group_GCP')
-        self.boron_group, self.boron_slider, self.boron_spinbox, self.boron_plus_btn, self.boron_minus_btn = self._create_parameter_control('boron')
+        self.rod_R_group, self.rod_R_slider, self.rod_R_spinbox, _, _ = self._create_parameter_control('rod_group_R')
+        self.rod_GCP_group, self.rod_GCP_slider, self.rod_GCP_spinbox, _, _ = self._create_parameter_control('rod_group_GCP')
+        self.boron_group, self.boron_slider, self.boron_spinbox, _, _ = self._create_parameter_control('boron')
 
         # Reactor Parameters Display
         params_info_config = self.controller.get_parameter_config('reactor_params_info')
@@ -209,28 +203,14 @@ class MainWindow(QMainWindow):
         spinbox.setDecimals(config.get('decimals', 0))
         spinbox.setSuffix(config.get('suffix', ''))
         spinbox.setMinimumWidth(widths.get(f"{param_name.split('_')[0]}_spinbox", 80))
-        spinbox.setSingleStep(config.get('step', 1))
+        spinbox.setSingleStep(1)
         
-        step = config.get('step', 1)
-        plus_btn = QPushButton(f"+{step}")
-        plus_btn.setMaximumWidth(widths.get(f"{param_name.split('_')[0]}_plus_minus_button", 40))
-        plus_btn.setToolTip(f"Augmenter (+{step}{config.get('suffix', '')})")
-        minus_btn = QPushButton(f"-{step}")
-        minus_btn.setMaximumWidth(widths.get(f"{param_name.split('_')[0]}_plus_minus_button", 40))
-        minus_btn.setToolTip(f"Diminuer (-{step}{config.get('suffix', '')})")
-
-        # Ajout des widgets dans l'ordre adapté
+        # Ajout des widgets dans l'ordre adapté (sans boutons + et -)
         layout.addWidget(slider)
-        if param_name in ('rod_group_R', 'rod_group_GCP'):
-            layout.addWidget(plus_btn)
-            layout.addWidget(minus_btn)
-        else:
-            layout.addWidget(minus_btn)
-            layout.addWidget(plus_btn)
         layout.addWidget(spinbox)
         group.setLayout(layout)
 
-        return group, slider, spinbox, plus_btn, minus_btn
+        return group, slider, spinbox, None, None
 
     def create_info_groupbox(self, title, info_text):
         """Aide pour créer une boîte de groupe avec capacités d'information"""
@@ -360,14 +340,6 @@ class MainWindow(QMainWindow):
         
         self._update_parameter_and_ui(self.controller.update_rod_group_R_position, value)
     
-    def adjust_rod_R(self, step):
-        """Adjust R group position by step amount"""
-        config = self.controller.get_parameter_config('rod_group_R')
-        min_val, max_val = config.get('range', [0, 228])
-        current_value = self.rod_R_spinbox.value()
-        new_value = max(min_val, min(max_val, current_value + step))
-        self.rod_R_spinbox.setValue(new_value)
-    
     def on_rod_GCP_slider_changed(self, value):
         """Handle GCP group slider change"""
         rod_config = self.controller.get_parameter_config('rod_group_GCP')
@@ -391,14 +363,6 @@ class MainWindow(QMainWindow):
         self.rod_GCP_slider.blockSignals(False)
         
         self._update_parameter_and_ui(self.controller.update_rod_group_GCP_position, value)
-    
-    def adjust_rod_GCP(self, step):
-        """Adjust GCP group position by step amount"""
-        config = self.controller.get_parameter_config('rod_group_GCP')
-        min_val, max_val = config.get('range', [0, 228])
-        current_value = self.rod_GCP_spinbox.value()
-        new_value = max(min_val, min(max_val, current_value + step))
-        self.rod_GCP_spinbox.setValue(new_value)
 
     def on_boron_slider_changed(self, value):
         """Met à jour le spinbox depuis le slider."""
@@ -413,18 +377,6 @@ class MainWindow(QMainWindow):
         self.boron_slider.setValue(int(value))
         self.boron_slider.blockSignals(False)
         self._update_parameter_and_ui(self.controller.update_boron_concentration, value)
-
-    def adjust_boron(self, step):
-        """Adjust boron concentration by step amount"""
-        config = self.controller.get_parameter_config('boron')
-        min_val, max_val = config.get('range', [0, 2000])
-        current_value = self.boron_spinbox.value()
-        new_value = max(min_val, min(max_val, current_value + step))
-        self.boron_spinbox.setValue(new_value)
-
-
-
-
 
     def on_time_advance(self, hours):
         """Handle time advancement for xenon dynamics"""
