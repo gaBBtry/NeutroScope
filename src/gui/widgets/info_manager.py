@@ -97,6 +97,11 @@ class InfoManager(QObject):
         Returns:
             bool: False to allow normal event processing
         """
+        # Defensive check - ensure _registered_widgets exists
+        if not hasattr(self, '_registered_widgets'):
+            self._registered_widgets = {}
+            self._current_info_widget = None
+            
         if not isinstance(obj, QWidget) or obj not in self._registered_widgets:
             return False
             

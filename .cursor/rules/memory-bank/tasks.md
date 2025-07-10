@@ -1,5 +1,8 @@
 # Documented Tasks and Workflows
 
+> **NOTE IMPORTANTE (juillet 2025) :**
+> Tous les workflows et exemples liés aux tests automatisés (unitaires, d'intégration, de validation physique, mocks, etc.) sont désormais **obsolètes** suite à la suppression de tous les fichiers de tests du projet. Toute validation doit être réalisée manuellement. Les sections historiques sont conservées à titre documentaire, mais ne reflètent plus l'état actuel du projet.
+
 Ce fichier documente les tâches répétitives et leurs workflows pour faciliter les futures implémentations.
 
 ---

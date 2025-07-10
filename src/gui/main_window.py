@@ -87,8 +87,8 @@ class MainWindow(QMainWindow):
         self.connect_xenon_signals()
 
         # Initialize UI with a preset
-        self.on_preset_changed("Démarrage")
-
+        self.on_preset_changed("PMD en début de cycle")
+        
         # Initialize reset button state
         self.update_reset_button_state()
 

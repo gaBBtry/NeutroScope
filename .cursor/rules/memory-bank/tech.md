@@ -52,8 +52,8 @@ L'application est entièrement pilotée par un fichier de configuration central.
 
 ## Outils de Développement et Qualité
 
--   **Framework de Test** : `pytest` avec `pytest-qt`.
 -   **Build et Déploiement** : **PyInstaller** avec des scripts de build automatisés.
+-   **Note** : Il n'existe plus de validation automatique par tests (unitaires, d'intégration ou de validation physique) dans le projet. Toute vérification doit être réalisée manuellement.
 
 ## Optimisations et Améliorations Récentes
 
@@ -61,18 +61,6 @@ L'application est entièrement pilotée par un fichier de configuration central.
 -   **Algorithme Runge-Kutta 4** : Remplacement de l'intégration d'Euler pour la simulation temporelle des isotopes Xénon-135
 -   **Précision améliorée** : Réduction significative des erreurs numériques pour les pas de temps longs (>1 heure)
 -   **Stabilité temporelle** : Conservation des équations de Bateman sur de longues périodes de simulation
-
-### **Stratégie de Tests Multicouches**
--   **Tests de Validation Physique** : `tests/test_physics_validation.py` avec cas de référence industriels
-    - Validation k_eff pour états critiques connus
-    - Vérification équilibres Xénon production/disparition  
-    - Tests coefficients de température (signes et magnitudes)
-    - Validation plages physiques des quatre facteurs
--   **Tests avec Mocks** : `tests/test_mock_config.py` utilisant `pytest-mock`
-    - Isolation complète des dépendances externes
-    - Tests reproductibles avec configurations contrôlées
-    - Validation de la logique métier pure
--   **Tests d'Intégration** : Validation des interactions entre composants
 
 ### **Architecture de Code Optimisée**
 -   **Refactorisation Modulaire** : Décomposition des méthodes monolithiques
@@ -90,9 +78,6 @@ PyQt6
 numpy
 matplotlib
 scipy
-pytest
-pytest-qt
-pytest-mock
 pyinstaller
 ```
 
@@ -102,8 +87,7 @@ pyinstaller
 2.  **Configuration over Code**: L'apparence et les limites de l'interface sont définies par des données, non par du code.
 3.  **Séparation Stricte des Responsabilités**: Le Modèle calcule, le Contrôleur orchestre et configure, la Vue affiche.
 4.  **Don't Repeat Yourself (DRY)**: La création des widgets de l'interface est factorisée dans une méthode unique qui lit la configuration.
-5.  **Test-Driven Quality**: Validation automatique de l'exactitude physique en plus des tests fonctionnels.
-6.  **Numerical Accuracy**: Utilisation d'algorithmes numériquement stables pour les simulations temporelles.
+5.  **Numerical Accuracy**: Utilisation d'algorithmes numériquement stables pour les simulations temporelles.
 
 ## Conclusion Technique
 
