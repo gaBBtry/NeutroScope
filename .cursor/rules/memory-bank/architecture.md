@@ -53,6 +53,7 @@ Le cœur de la simulation, dont l'état initial est entièrement défini par `co
 ### **`config.py`**
 - **Rôle central**: Charge le fichier `config.json` au démarrage.
 - **Accès structuré**: Expose les différentes sections de la configuration (`gui_settings`, `parameters_config`, etc.) au reste de l'application.
+- **Chargement Strict**: Le chargement est conçu pour être strict. Si une clé de configuration essentielle est manquante dans `config.json`, l'application s'arrête immédiatement avec une erreur claire (`KeyError`). Cela garantit que `config.json` est la seule et unique source de vérité, évitant les erreurs silencieuses dues à des configurations incomplètes.
 
 ## 2. Le Contrôleur (`src/controller/`) - Pont de Configuration
 
@@ -91,7 +92,7 @@ L'interface utilisateur, qui est maintenant un simple "moteur de rendu" des info
 
 ## Principes de Conception Finaux
 
-1.  **Source Unique de Vérité (`Single Source of Truth`)**: `config.json` est le seul endroit où la configuration est définie. Toute modification de paramètre se fait dans ce fichier, sans toucher au code.
+1.  **Source Unique de Vérité (`Single Source of Truth`)**: `config.json` est le seul endroit où la configuration est définie. Toute modification de paramètre se fait dans ce fichier, sans toucher au code. Ce principe est renforcé par un mécanisme de chargement strict qui empêche l'application de démarrer si la configuration est incomplète.
 2.  **Configuration over Code**: La structure et le comportement de l'application sont définis par des données de configuration, pas par du code impératif.
 3.  **Découplage Poussé**:
     - Le Modèle ne connaît rien de la Vue.
