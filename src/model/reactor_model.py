@@ -19,7 +19,7 @@ class ReactorModel:
         self.average_temperature = defaults.get("average_temperature", 310.0)
         self.power_level = defaults.get("power_level", 100.0)
         self.fuel_enrichment = defaults.get("fuel_enrichment", 3.5)
-        self.time_step = defaults.get("time_step", 3600.0)
+        self.time_step = defaults.get("time_step", config.HOURS_TO_SECONDS)
 
         # Ceci est maintenant une valeur calculée, pas une entrée directe
         self.fuel_temperature = 0.0  # °C, sera calculée
@@ -67,21 +67,30 @@ class ReactorModel:
         self.calculate_reactivity()
         self.calculate_doubling_time()
     
-    def calculate_four_factors(self):
-        """Calcule les quatre facteurs du cycle neutronique"""
-        # Calcul simplifié à des fins pédagogiques
-        
-        # Eta (nombre moyen de neutrons par fission)
-        # Dépend principalement de l'enrichissement du combustible
-        self.eta = config.ETA_BASE + config.ETA_ENRICHMENT_COEFF * (self.fuel_enrichment - config.ETA_ENRICHMENT_REF) / config.ETA_ENRICHMENT_SCALE
-        
-        # Epsilon (facteur de fission rapide)
-        # Typiquement constant pour une conception de réacteur donnée
+    def _calculate_eta(self):
+        """
+        Calcule le facteur de reproduction (η) - nombre moyen de neutrons par fission.
+        Dépend principalement de l'enrichissement du combustible.
+        """
+        self.eta = (config.ETA_BASE + 
+                   config.ETA_ENRICHMENT_COEFF * 
+                   (self.fuel_enrichment - config.ETA_ENRICHMENT_REF) / 
+                   config.ETA_ENRICHMENT_SCALE)
+    
+    def _calculate_epsilon(self):
+        """
+        Calcule le facteur de fission rapide (ε) - rapport entre neutrons produits 
+        par toutes les fissions et ceux produits par fissions thermiques uniquement.
+        Typiquement constant pour une conception de réacteur donnée.
+        """
         self.epsilon = config.EPSILON
-        
-        # Probabilité d'échapper aux résonances
-        # Affectée par la température du combustible (élargissement Doppler) et la température du modérateur
-        
+    
+    def _calculate_p(self):
+        """
+        Calcule la probabilité d'échapper aux résonances (p).
+        Affectée par la température du combustible (effet Doppler) et 
+        la température du modérateur (densité et efficacité de ralentissement).
+        """
         # 1. Effet Doppler (température du combustible)
         fuel_temp_K = self.fuel_temperature + config.CELSIUS_TO_KELVIN
         sqrt_T_diff = np.sqrt(fuel_temp_K) - np.sqrt(config.P_REF_TEMP_K)
@@ -93,48 +102,80 @@ class ReactorModel:
         
         # 3. Combinaison des deux effets
         self.p = config.P_BASE * doppler_effect * moderator_effect
-        
-        # Facteur d'utilisation thermique (f)
-        # Nouveau modèle basé sur les rapports d'absorption : f = 1 / (1 + A_non_fuel)
-        # A_non_fuel est le rapport d'absorption dans les matériaux non-combustibles par rapport au combustible
-        
-        # 1. Rapport d'absorption de base, ajusté pour la température du modérateur
+    
+    def _calculate_f_base_absorption(self):
+        """
+        Calcule le rapport d'absorption de base (structures, modérateur, etc.)
+        ajusté pour la température du modérateur.
+        """
         temp_deviation = self.average_temperature - config.F_REF_MOD_TEMP_C
         mod_temp_effect = config.F_MOD_TEMP_ABS_COEFF * temp_deviation
-        base_abs_ratio = config.F_BASE_ABS_RATIO * (1 + mod_temp_effect)
-        
-        # 2. Rapport d'absorption des barres de contrôle
-        # Nouvelle convention: 0% = insérées, 100% = retirées
-        rod_insertion_fraction = (100.0 - self._get_equivalent_rod_position_percent()) / 100.0
-        rod_abs_ratio = config.F_CONTROL_ROD_WORTH * rod_insertion_fraction
-        
-        # 3. Rapport d'absorption du bore
-        boron_abs_ratio = config.F_BORON_WORTH_PER_PPM * self.boron_concentration
-        
-        # 4. Rapport d'absorption du Xénon-135
-        # L'ancienne formule était incorrecte et dimensionnellement incohérente.
-        # Nouvelle approche : calcul du rapport Σa_xenon / Σa_fuel pour assurer la cohérence.
-        sigma_a_xenon = self.xenon_concentration * config.XENON_ABSORPTION_CROSS_SECTION * 1e-24
+        return config.F_BASE_ABS_RATIO * (1 + mod_temp_effect)
+    
+    def _calculate_f_control_rods_absorption(self):
+        """
+        Calcule le rapport d'absorption des barres de contrôle.
+        Convention: 0% = insérées, 100% = retirées.
+        """
+        rod_insertion_fraction = (config.PERCENT_TO_FRACTION - self._get_equivalent_rod_position_percent()) / config.PERCENT_TO_FRACTION
+        return config.F_CONTROL_ROD_WORTH * rod_insertion_fraction
+    
+    def _calculate_f_boron_absorption(self):
+        """
+        Calcule le rapport d'absorption du bore soluble.
+        """
+        return config.F_BORON_WORTH_PER_PPM * self.boron_concentration
+    
+    def _calculate_f_xenon_absorption(self):
+        """
+        Calcule le rapport d'absorption du Xénon-135.
+        Utilise le rapport Σa_xenon / Σa_fuel pour assurer la cohérence dimensionnelle.
+        """
+        # Section efficace d'absorption du Xénon
+        sigma_a_xenon = self.xenon_concentration * config.XENON_ABSORPTION_CROSS_SECTION * config.BARNS_TO_CM2
 
-        # On déduit Σa_fuel à partir de la définition de eta = nu * Σf / Σa_fuel.
-        # Σf est lui-même déduit du FISSION_RATE_COEFF pour la cohérence du modèle.
-        # Note : le ratio final est indépendant de la valeur exacte de FISSION_RATE_COEFF.
+        # Calcul de Σa_fuel à partir de la définition de eta = nu * Σf / Σa_fuel
         sigma_f_nominal = config.FISSION_RATE_COEFF * 100.0  # Valeur de Σf à 100% puissance
 
-        if self.eta > 1e-9: # Prévenir la division par zéro
+        if self.eta > 1e-9:  # Prévenir la division par zéro
             sigma_a_fuel_nominal = (sigma_f_nominal * config.NEUTRONS_PER_THERMAL_FISSION_U235) / self.eta
         else:
-            sigma_a_fuel_nominal = 1.0 # Fallback improbable, mais sécuritaire
+            sigma_a_fuel_nominal = 1.0  # Fallback sécuritaire
 
         if sigma_a_fuel_nominal > 1e-9:
-            xenon_abs_ratio = sigma_a_xenon / sigma_a_fuel_nominal
+            return sigma_a_xenon / sigma_a_fuel_nominal
         else:
-            xenon_abs_ratio = 0.0
+            return 0.0
+    
+    def _calculate_f(self):
+        """
+        Calcule le facteur d'utilisation thermique (f).
+        Modèle basé sur les rapports d'absorption : f = 1 / (1 + A_non_fuel)
+        où A_non_fuel est le rapport d'absorption totale dans les matériaux non-combustibles.
+        """
+        # Calcul des différentes contributions à l'absorption non-combustible
+        base_abs_ratio = self._calculate_f_base_absorption()
+        rod_abs_ratio = self._calculate_f_control_rods_absorption()
+        boron_abs_ratio = self._calculate_f_boron_absorption()
+        xenon_abs_ratio = self._calculate_f_xenon_absorption()
         
         # Rapport d'absorption total non-combustible
-        total_non_fuel_abs_ratio = base_abs_ratio + rod_abs_ratio + boron_abs_ratio + xenon_abs_ratio
+        total_non_fuel_abs_ratio = (base_abs_ratio + rod_abs_ratio + 
+                                   boron_abs_ratio + xenon_abs_ratio)
         
         self.f = 1.0 / (1.0 + total_non_fuel_abs_ratio)
+    
+    def calculate_four_factors(self):
+        """
+        Calcule les quatre facteurs du cycle neutronique en utilisant 
+        des méthodes dédiées pour chaque facteur.
+        
+        Ordre de calcul important : eta avant f pour les calculs de Xénon.
+        """
+        self._calculate_eta()      # η - facteur de reproduction
+        self._calculate_epsilon()  # ε - facteur de fission rapide  
+        self._calculate_p()        # p - probabilité d'échapper aux résonances
+        self._calculate_f()        # f - facteur d'utilisation thermique
     
     def calculate_k_effective(self):
         """
@@ -226,17 +267,50 @@ class ReactorModel:
         self.iodine_concentration = (config.IODINE_YIELD * fission_rate) / config.IODINE_DECAY_CONSTANT
         
         # Xénon: λX * [Xe] + σXe * Φ * [Xe] = γXe * Σf * Φ + λI * [I]
-        thermal_flux = config.THERMAL_FLUX_NOMINAL * (self.power_level / 100.0)
-        xenon_removal_rate = config.XENON_DECAY_CONSTANT + config.XENON_ABSORPTION_CROSS_SECTION * thermal_flux * 1e-24
+        thermal_flux = config.THERMAL_FLUX_NOMINAL * (self.power_level / config.PERCENT_TO_FRACTION)
+        xenon_removal_rate = config.XENON_DECAY_CONSTANT + config.XENON_ABSORPTION_CROSS_SECTION * thermal_flux * config.BARNS_TO_CM2
         xenon_production_rate = (config.XENON_YIELD_DIRECT * fission_rate + 
                                config.IODINE_DECAY_CONSTANT * self.iodine_concentration)
         
         self.xenon_concentration = xenon_production_rate / xenon_removal_rate
 
+    def _xenon_derivatives(self, concentrations, power_level):
+        """
+        Calcule les dérivées temporelles des concentrations I-135 et Xe-135.
+        
+        Args:
+            concentrations: [iodine_concentration, xenon_concentration]
+            power_level: niveau de puissance (%)
+            
+        Returns:
+            [d_iodine_dt, d_xenon_dt]: dérivées temporelles
+        """
+        iodine_conc, xenon_conc = concentrations
+        
+        # Taux de fission pour ce niveau de puissance
+        fission_rate = power_level * config.FISSION_RATE_COEFF * config.THERMAL_FLUX_NOMINAL
+        thermal_flux = config.THERMAL_FLUX_NOMINAL * (power_level / config.PERCENT_TO_FRACTION)
+        
+        # Équation pour l'Iode-135: d[I]/dt = γI * Σf * Φ - λI * [I]
+        iodine_production = config.IODINE_YIELD * fission_rate
+        iodine_decay = config.IODINE_DECAY_CONSTANT * iodine_conc
+        d_iodine_dt = iodine_production - iodine_decay
+        
+        # Équation pour le Xénon-135: d[Xe]/dt = γXe * Σf * Φ + λI * [I] - λXe * [Xe] - σXe * Φ * [Xe]
+        xenon_production_direct = config.XENON_YIELD_DIRECT * fission_rate
+        xenon_production_from_iodine = config.IODINE_DECAY_CONSTANT * iodine_conc
+        xenon_decay = config.XENON_DECAY_CONSTANT * xenon_conc
+        xenon_burnup = config.XENON_ABSORPTION_CROSS_SECTION * thermal_flux * xenon_conc * config.BARNS_TO_CM2
+        
+        d_xenon_dt = xenon_production_direct + xenon_production_from_iodine - xenon_decay - xenon_burnup
+        
+        return np.array([d_iodine_dt, d_xenon_dt])
+
     def update_xenon_dynamics(self, dt=None):
         """
         Met à jour les concentrations d'Iode-135 et de Xénon-135 
-        selon les équations différentielles de Bateman.
+        selon les équations différentielles de Bateman en utilisant 
+        l'intégration Runge-Kutta 4 pour une meilleure précision.
         
         Args:
             dt: pas de temps en secondes (utilise self.time_step par défaut)
@@ -244,26 +318,20 @@ class ReactorModel:
         if dt is None:
             dt = self.time_step
             
-        # Taux de fission actuel
-        fission_rate = self.power_level * config.FISSION_RATE_COEFF * config.THERMAL_FLUX_NOMINAL
-        thermal_flux = config.THERMAL_FLUX_NOMINAL * (self.power_level / 100.0)
+        # Concentrations actuelles
+        y0 = np.array([self.iodine_concentration, self.xenon_concentration])
         
-        # Équation pour l'Iode-135: d[I]/dt = γI * Σf * Φ - λI * [I]
-        iodine_production = config.IODINE_YIELD * fission_rate
-        iodine_decay = config.IODINE_DECAY_CONSTANT * self.iodine_concentration
-        d_iodine_dt = iodine_production - iodine_decay
+        # Méthode Runge-Kutta 4
+        k1 = self._xenon_derivatives(y0, self.power_level)
+        k2 = self._xenon_derivatives(y0 + 0.5 * dt * k1, self.power_level)
+        k3 = self._xenon_derivatives(y0 + 0.5 * dt * k2, self.power_level)
+        k4 = self._xenon_derivatives(y0 + dt * k3, self.power_level)
         
-        # Équation pour le Xénon-135: d[Xe]/dt = γXe * Σf * Φ + λI * [I] - λXe * [Xe] - σXe * Φ * [Xe]
-        xenon_production_direct = config.XENON_YIELD_DIRECT * fission_rate
-        xenon_production_from_iodine = config.IODINE_DECAY_CONSTANT * self.iodine_concentration
-        xenon_decay = config.XENON_DECAY_CONSTANT * self.xenon_concentration
-        xenon_burnup = config.XENON_ABSORPTION_CROSS_SECTION * thermal_flux * self.xenon_concentration * 1e-24
+        # Intégration RK4
+        y_new = y0 + (dt / 6.0) * (k1 + 2*k2 + 2*k3 + k4)
         
-        d_xenon_dt = xenon_production_direct + xenon_production_from_iodine - xenon_decay - xenon_burnup
-        
-        # Intégration d'Euler (première approximation)
-        self.iodine_concentration += d_iodine_dt * dt
-        self.xenon_concentration += d_xenon_dt * dt
+        # Mise à jour des concentrations
+        self.iodine_concentration, self.xenon_concentration = y_new
         self.simulation_time += dt
         
         # Assurer que les concentrations ne deviennent pas négatives
@@ -275,9 +343,9 @@ class ReactorModel:
         Calcule l'effet du Xénon-135 sur la réactivité (en pcm).
         """
         # Calcul de l'anti-réactivité due au Xénon-135
-        thermal_flux = config.THERMAL_FLUX_NOMINAL * (self.power_level / 100.0)
+        thermal_flux = config.THERMAL_FLUX_NOMINAL * (self.power_level / config.PERCENT_TO_FRACTION)
         xenon_absorption_rate = (config.XENON_ABSORPTION_CROSS_SECTION * 
-                               self.xenon_concentration * thermal_flux * 1e-24)
+                               self.xenon_concentration * thermal_flux * config.BARNS_TO_CM2)
         
         # Conversion approximative en pcm (cette formule dépend du réacteur)
         # Ici, nous utilisons une approximation basée sur l'importance neutronique
@@ -292,7 +360,7 @@ class ReactorModel:
         Args:
             hours: nombre d'heures à simuler
         """
-        dt_seconds = hours * 3600.0
+        dt_seconds = hours * config.HOURS_TO_SECONDS
         self.update_xenon_dynamics(dt_seconds)
         # Recalcul de tous les paramètres après la mise à jour Xénon
         self.calculate_all()
@@ -322,7 +390,7 @@ class ReactorModel:
         """Méthode de rétrocompatibilité - convertit % en positions équivalentes R et GCP"""
         # Conversion approximative pour maintenir la rétrocompatibilité
         steps_max = config.parameters_config['conversion']['steps_to_percent']
-        equivalent_steps = (100.0 - position) * steps_max / 100.0
+        equivalent_steps = (config.PERCENT_TO_FRACTION - position) * steps_max / config.PERCENT_TO_FRACTION
         self.rod_group_R_position = equivalent_steps
         self.rod_group_GCP_position = equivalent_steps
         self.calculate_all()
@@ -358,7 +426,7 @@ class ReactorModel:
         # Control rod effect (simplified)
         # Nouvelle convention: 0% = insérées, 100% = retirées
         if self._get_equivalent_rod_position_percent() > 0 and self._get_equivalent_rod_position_percent() < 100:
-            rod_withdrawal_fraction = self._get_equivalent_rod_position_percent() / 100.0  # Fraction de retrait
+            rod_withdrawal_fraction = self._get_equivalent_rod_position_percent() / config.PERCENT_TO_FRACTION  # Fraction de retrait
             rod_insertion_depth = 1.0 - rod_withdrawal_fraction  # Profondeur d'insertion réelle
             rod_insertion_point = 1 - rod_insertion_depth  # Position des pointes des barres
             
@@ -546,7 +614,7 @@ class ReactorModel:
         Returns concentrations and reactivity effects.
         """
         return {
-            "time_hours": self.simulation_time / 3600.0,
+            "time_hours": self.simulation_time / config.HOURS_TO_SECONDS,
             "iodine_concentration": self.iodine_concentration,
             "xenon_concentration": self.xenon_concentration,
             "xenon_reactivity_pcm": self.get_xenon_reactivity_effect(),

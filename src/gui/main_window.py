@@ -17,6 +17,7 @@ from src.gui.widgets.credits_button import CreditsButton
 from src.gui.widgets.info_manager import InfoManager
 from src.gui.widgets.enhanced_widgets import InfoGroupBox
 from src.gui.widgets.info_dialog import InfoDialog
+from src.model import config
 
 
 class MainWindow(QMainWindow):
@@ -513,7 +514,7 @@ class MainWindow(QMainWindow):
     def update_reactor_params(self, params):
         """Update the display of reactor parameters"""
         k_eff = params["k_effective"]
-        reactivity_pcm = params["reactivity"] * 100000
+        reactivity_pcm = params["reactivity"] * config.REACTIVITY_TO_PCM
         doubling_time = params["doubling_time"]
         
         self.k_effective_label.setText(f"k-eff: {k_eff:.4f}")

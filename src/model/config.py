@@ -41,6 +41,13 @@ NEUTRONS_PER_THERMAL_FISSION_U235 = _phys_const.get("NEUTRONS_PER_THERMAL_FISSIO
 BESSEL_J0_FIRST_ZERO = _phys_const.get("BESSEL_J0_FIRST_ZERO", 2.405)
 CELSIUS_TO_KELVIN = _phys_const.get("CELSIUS_TO_KELVIN", 273.15)
 
+# Constantes de conversion d'unités
+_unit_conversions = _config.get("unit_conversions", {})
+HOURS_TO_SECONDS = _unit_conversions.get("HOURS_TO_SECONDS", 3600.0)
+BARNS_TO_CM2 = _unit_conversions.get("BARNS_TO_CM2", 1e-24)
+REACTIVITY_TO_PCM = _unit_conversions.get("REACTIVITY_TO_PCM", 100000.0)
+PERCENT_TO_FRACTION = _unit_conversions.get("PERCENT_TO_FRACTION", 100.0)
+
 # Coefficients du modèle des quatre facteurs
 _four_factors = _config.get("four_factors", {})
 

@@ -35,6 +35,12 @@
         "BESSEL_J0_FIRST_ZERO": 2.405,
         "CELSIUS_TO_KELVIN": 273.15
     },
+    "unit_conversions": {
+        "HOURS_TO_SECONDS": 3600.0,
+        "BARNS_TO_CM2": 1e-24,
+        "REACTIVITY_TO_PCM": 100000.0,
+        "PERCENT_TO_FRACTION": 100.0
+    },
     "parameters_config": {
         "rod_group_R": {
             "label": "Groupe R (Régulation)",

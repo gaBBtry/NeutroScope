@@ -55,6 +55,35 @@ L'application est entièrement pilotée par un fichier de configuration central.
 -   **Framework de Test** : `pytest` avec `pytest-qt`.
 -   **Build et Déploiement** : **PyInstaller** avec des scripts de build automatisés.
 
+## Optimisations et Améliorations Récentes
+
+### **Précision Numérique Avancée**
+-   **Algorithme Runge-Kutta 4** : Remplacement de l'intégration d'Euler pour la simulation temporelle des isotopes Xénon-135
+-   **Précision améliorée** : Réduction significative des erreurs numériques pour les pas de temps longs (>1 heure)
+-   **Stabilité temporelle** : Conservation des équations de Bateman sur de longues périodes de simulation
+
+### **Stratégie de Tests Multicouches**
+-   **Tests de Validation Physique** : `tests/test_physics_validation.py` avec cas de référence industriels
+    - Validation k_eff pour états critiques connus
+    - Vérification équilibres Xénon production/disparition  
+    - Tests coefficients de température (signes et magnitudes)
+    - Validation plages physiques des quatre facteurs
+-   **Tests avec Mocks** : `tests/test_mock_config.py` utilisant `pytest-mock`
+    - Isolation complète des dépendances externes
+    - Tests reproductibles avec configurations contrôlées
+    - Validation de la logique métier pure
+-   **Tests d'Intégration** : Validation des interactions entre composants
+
+### **Architecture de Code Optimisée**
+-   **Refactorisation Modulaire** : Décomposition des méthodes monolithiques
+    - `calculate_four_factors()` → méthodes privées spécialisées (`_calculate_eta()`, `_calculate_p()`, etc.)
+    - Code plus maintenable et testable individuellement
+    - Séparation claire des responsabilités physiques
+-   **Élimination Constantes Magiques** : Centralisation complète dans `config.json`
+    - Section `unit_conversions` pour toutes les constantes de conversion
+    - Aucune valeur codée en dur dans le code source
+    - Configuration 100% externalisée
+
 ## Dépendances Critiques (`requirements.txt`)
 ```
 PyQt6
@@ -63,6 +92,7 @@ matplotlib
 scipy
 pytest
 pytest-qt
+pytest-mock
 pyinstaller
 ```
 
@@ -72,7 +102,9 @@ pyinstaller
 2.  **Configuration over Code**: L'apparence et les limites de l'interface sont définies par des données, non par du code.
 3.  **Séparation Stricte des Responsabilités**: Le Modèle calcule, le Contrôleur orchestre et configure, la Vue affiche.
 4.  **Don't Repeat Yourself (DRY)**: La création des widgets de l'interface est factorisée dans une méthode unique qui lit la configuration.
+5.  **Test-Driven Quality**: Validation automatique de l'exactitude physique en plus des tests fonctionnels.
+6.  **Numerical Accuracy**: Utilisation d'algorithmes numériquement stables pour les simulations temporelles.
 
 ## Conclusion Technique
 
-L'implémentation technique de NeutroScope représente un équilibre optimal entre la rigueur scientifique et la flexibilité de la configuration. L'architecture est maintenant plus simple, plus maintenable et plus facilement extensible, constituant une base professionnelle et robuste. 
+L'implémentation technique de NeutroScope représente un équilibre optimal entre la rigueur scientifique et la flexibilité de la configuration. L'architecture est maintenant plus simple, plus maintenable et plus facilement extensible, constituant une base professionnelle et robuste. Les récentes optimisations transforment le projet d'un simulateur éducatif vers un outil pédagogique de niveau professionnel avec une précision numérique industrielle et une robustesse logicielle exemplaire. 
