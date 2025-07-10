@@ -5,10 +5,10 @@ This widget displays the evolution of Iodine-135 and Xenon-135 concentrations ov
 along with their effect on reactor reactivity.
 """
 import matplotlib.pyplot as plt
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
+from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QSlider
-from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton
+from PyQt6.QtCore import pyqtSignal
 from typing import Optional
 from ..widgets.info_manager import InfoManager
 
@@ -152,78 +152,11 @@ class XenonPlot(FigureCanvasQTAgg):
             self.info_manager.info_cleared.emit()
 
 
-class XenonControlWidget(QWidget):
-    """Widget de contrôle pour la simulation temporelle du Xénon"""
-    
-    time_advance_requested = pyqtSignal(float)  # Signal émis quand l'utilisateur veut avancer le temps
-    reset_requested = pyqtSignal()  # Signal pour remettre à l'équilibre
-    
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self._setup_ui()
-        
-    def _setup_ui(self):
-        """Configure l'interface utilisateur des contrôles"""
-        layout = QVBoxLayout(self)
-        
-        # Titre
-        title = QLabel("Contrôles Temporels")
-        title.setStyleSheet("font-weight: bold; font-size: 14px; margin-bottom: 10px;")
-        layout.addWidget(title)
-        
-        # Contrôles de temps
-        time_layout = QHBoxLayout()
-        
-        # Slider pour le pas de temps
-        time_layout.addWidget(QLabel("Pas de temps:"))
-        self.time_slider = QSlider(Qt.Orientation.Horizontal)
-        self.time_slider.setMinimum(1)
-        self.time_slider.setMaximum(24)
-        self.time_slider.setValue(1)
-        self.time_slider.valueChanged.connect(self._update_time_label)
-        time_layout.addWidget(self.time_slider)
-        
-        self.time_label = QLabel("1h")
-        self.time_label.setMinimumWidth(30)
-        time_layout.addWidget(self.time_label)
-        
-        layout.addLayout(time_layout)
-        
-        # Boutons de contrôle
-        button_layout = QHBoxLayout()
-        
-        self.advance_button = QPushButton("Avancer le Temps")
-        self.advance_button.clicked.connect(self._advance_time)
-        button_layout.addWidget(self.advance_button)
-        
-        self.reset_button = QPushButton("Remettre à l'Équilibre")
-        self.reset_button.clicked.connect(self.reset_requested.emit)
-        button_layout.addWidget(self.reset_button)
-        
-        layout.addLayout(button_layout)
-        
-        # Info sur l'état actuel
-        self.status_label = QLabel("État: Équilibre initial")
-        self.status_label.setStyleSheet("color: #2E8B57; font-style: italic;")
-        layout.addWidget(self.status_label)
-        
-    def _update_time_label(self, value):
-        """Met à jour le label du temps sélectionné"""
-        self.time_label.setText(f"{value}h")
-        
-    def _advance_time(self):
-        """Émet le signal pour avancer le temps du nombre d'heures sélectionné"""
-        hours = self.time_slider.value()
-        self.time_advance_requested.emit(hours)
-        self.status_label.setText(f"Dernier avancement: +{hours}h")
-        
-    def reset_status(self):
-        """Remet à zéro le statut"""
-        self.status_label.setText("État: Remi à l'équilibre")
-
-
 class XenonVisualizationWidget(QWidget):
-    """Widget principal combinant le graphique Xénon et ses contrôles"""
+    """Widget principal pour la visualisation Xénon avec bouton Reset intégré"""
+    
+    # Signal pour communiquer la demande de reset Xénon
+    xenon_reset_requested = pyqtSignal()
     
     def __init__(self, parent=None, info_manager: Optional[InfoManager] = None):
         super().__init__(parent)
@@ -231,16 +164,26 @@ class XenonVisualizationWidget(QWidget):
         self._setup_ui()
         
     def _setup_ui(self):
-        """Configure l'interface utilisateur du widget complet"""
+        """Configure l'interface utilisateur du widget avec graphique et bouton reset"""
         layout = QVBoxLayout(self)
         
         # Graphique principal
         self.xenon_plot = XenonPlot(self, info_manager=self.info_manager)
-        layout.addWidget(self.xenon_plot, stretch=3)
+        layout.addWidget(self.xenon_plot)
         
-        # Contrôles
-        self.controls = XenonControlWidget(self)
-        layout.addWidget(self.controls, stretch=1)
+        # Layout horizontal pour le bouton centré
+        button_layout = QHBoxLayout()
+        button_layout.addStretch()  # Espace à gauche
+        
+        # Bouton Reset Xénon
+        self.reset_button = QPushButton("Reset Xénon")
+        self.reset_button.setMaximumWidth(120)
+        self.reset_button.setToolTip("Remettre le Xénon à l'équilibre et effacer les courbes")
+        self.reset_button.clicked.connect(self.xenon_reset_requested.emit)
+        button_layout.addWidget(self.reset_button)
+        
+        button_layout.addStretch()  # Espace à droite
+        layout.addLayout(button_layout)
         
     def update_data(self, data):
         """Met à jour les données du graphique"""
@@ -248,5 +191,4 @@ class XenonVisualizationWidget(QWidget):
         
     def clear_history(self):
         """Efface l'historique"""
-        self.xenon_plot.clear_history()
-        self.controls.reset_status() 
+        self.xenon_plot.clear_history() 

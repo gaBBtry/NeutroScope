@@ -205,14 +205,13 @@ class MainWindow(QMainWindow):
         # No need for manual signal connections
     
     def connect_xenon_signals(self):
-        """Connecte les signaux des contrôles de dynamique Xénon"""
-        xenon_controls = self.visualization_panel.get_xenon_controls()
-        xenon_controls.time_advance_requested.connect(self.on_time_advance)
-        xenon_controls.reset_requested.connect(self.on_xenon_reset)
-        
+        """Connecte les signaux de la simulation temps réel et du bouton Reset Xénon"""
         # Connect realtime simulation engine
         self.realtime_engine.time_advanced.connect(self.on_realtime_time_advance)
         self.realtime_engine.simulation_state_changed.connect(self.on_realtime_state_changed)
+        
+        # Connect xenon reset button from xenon widget
+        self.visualization_panel.xenon_widget.xenon_reset_requested.connect(self.on_xenon_reset)
     
     def create_control_panel(self):
         """Crée le panneau de contrôle avec les contrôles des paramètres du réacteur"""
@@ -758,21 +757,8 @@ class MainWindow(QMainWindow):
         new_value = max(1.0, min(5.0, current_value + step))
         self.fuel_enrichment_spinbox.setValue(new_value)
 
-    def on_time_advance(self, hours):
-        """Handle time advancement for xenon dynamics"""
-        params = self.controller.advance_time(hours)
-        self.update_reactor_params(params)
-        self.update_visualizations()
-        self.check_for_custom_preset()
-    
-    def on_xenon_reset(self):
-        """Handle xenon reset to equilibrium"""
-        params = self.controller.reset_xenon_to_equilibrium()
-        self.update_reactor_params(params)
-        self.update_visualizations()
-        # Clear xenon plot history
-        self.visualization_panel.xenon_widget.clear_history()
-        self.check_for_custom_preset()
+    # Les méthodes on_time_advance() et on_xenon_reset() ont été supprimées
+    # car ces fonctionnalités sont maintenant gérées par la simulation temps réel globale
     
     def on_realtime_time_advance(self, hours_advanced):
         """Handle automatic time advancement from realtime simulation engine"""
@@ -785,15 +771,21 @@ class MainWindow(QMainWindow):
         
     def on_realtime_state_changed(self, state):
         """Handle realtime simulation state changes"""
-        # Optionnel: désactiver certains contrôles pendant la simulation
-        if state == "playing":
-            # Pendant la simulation, désactiver les contrôles manuels xénon
-            xenon_controls = self.visualization_panel.get_xenon_controls()
-            xenon_controls.setEnabled(False)
-        else:
-            # Réactiver les contrôles manuels
-            xenon_controls = self.visualization_panel.get_xenon_controls()
-            xenon_controls.setEnabled(True)
+        # Note: Les anciens contrôles manuels Xénon n'existent plus.
+        # La simulation temps réel globale gère maintenant toutes les fonctionnalités temporelles.
+        pass
+    
+    def on_xenon_reset(self):
+        """Handle xenon reset to equilibrium and clear curves"""
+        # Remettre les concentrations Xénon à l'équilibre
+        params = self.controller.reset_xenon_to_equilibrium()
+        self.update_reactor_params(params)
+        self.update_visualizations()
+        
+        # Effacer l'historique des courbes Xénon
+        self.visualization_panel.xenon_widget.clear_history()
+        
+        self.check_for_custom_preset()
     
 
 

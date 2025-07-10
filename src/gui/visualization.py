@@ -85,9 +85,8 @@ class VisualizationPanel(QWidget):
         """Update the xenon dynamics plot."""
         self.xenon_widget.update_data(data)
 
-    def get_xenon_controls(self):
-        """Get reference to xenon control widget for signal connections."""
-        return self.xenon_widget.controls
+    # La méthode get_xenon_controls() a été supprimée car les contrôles temporels
+    # ont été retirés du widget Xénon (maintenant gérés par la simulation temps réel globale)
 
     # --- Info Panel Methods ---
     def get_info_manager(self):

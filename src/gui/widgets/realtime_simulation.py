@@ -116,6 +116,8 @@ class RealtimeControlWidget(QWidget):
     et curseur de vitesse temporelle.
     """
     
+    # Signal xenon_reset_requested supprimé - maintenant dans le widget Xénon
+    
     def __init__(self, engine: RealtimeSimulationEngine, info_manager: Optional[InfoManager] = None, parent=None):
         super().__init__(parent)
         self.engine = engine
@@ -149,6 +151,8 @@ class RealtimeControlWidget(QWidget):
         main_layout.addWidget(self.play_button)
         main_layout.addWidget(self.pause_button)
         main_layout.addWidget(self.stop_button)
+        
+        # Séparateur supprimé - bouton Reset Xénon déplacé dans le widget Xénon
         
         # Espacement entre boutons et curseur
         main_layout.addSpacing(20)

@@ -3,9 +3,51 @@
 ## Focus Actuel
 - **STATUT RÉVOLUTIONNAIRE** : NeutroScope est maintenant transformé d'un simulateur statique en un simulateur **temps réel dynamique** de niveau professionnel, avec simulation continue à 1Hz et contrôles de vitesse temporelle.
 - **Dernière révolution majeure** : **SIMULATION TEMPS RÉEL** - Implémentation complète d'un moteur de simulation dynamique avec contrôles type lecteur multimédia (▶⏸⏸⏹) et curseur de vitesse 1s/s à 1h/s.
-- **Dernière optimisation majeure** : **INTERFACE CONTRÔLES TEMPS RÉEL** - Optimisation complète de l'interface des contrôles de simulation avec positionnement en haut de fenêtre et layout horizontal ultra-compact.
+- **Dernière optimisation majeure** : **SIMPLIFICATION WIDGET XÉNON** - Suppression des contrôles temporels redondants du widget Xénon car la simulation temps réel globale gère maintenant ces fonctionnalités.
 
 ## Accomplissements Majeurs Récents
+
+### 1. Ajout Bouton Reset Xénon - MISE À JOUR 🎯
+- **Positionnement optimisé** : Bouton "Reset Xénon" repositionné dans le widget Xénon lui-même au lieu des contrôles globaux
+- **Fonctionnalité complète** :
+  - **Remise à l'équilibre** : Utilise `reset_xenon_to_equilibrium()` pour restaurer concentrations I-135/Xe-135
+  - **Effacement courbes** : Appelle `clear_history()` pour nettoyer l'historique des graphiques
+  - **Mise à jour interface** : Actualisation automatique de tous les paramètres et visualisations
+- **Interface optimisée** :
+  - **Bouton contextuel** : "Reset Xénon" de 120px centré sous les graphiques
+  - **Tooltip informatif** : "Remettre le Xénon à l'équilibre et effacer les courbes"
+  - **Positionnement logique** : Directement dans le widget concerné pour proximité visuelle
+  - **Signal dédié** : `xenon_reset_requested` émis depuis le widget vers le contrôleur
+- **Architecture MVC respectée** :
+  - **Widget** : Signal émis depuis `XenonVisualizationWidget`
+  - **Contrôleur** : Orchestration via `on_xenon_reset()` dans main_window
+  - **Modèle** : Action via méthodes existantes du modèle physique
+- **Avantages obtenus** :
+  - **Proximité visuelle** : Bouton directement sous les courbes qu'il va réinitialiser
+  - **Interface épurée** : Contrôles globaux focalisés sur simulation temps réel uniquement
+  - **Workflow intuitif** : Action contextuelle placée au bon endroit
+  - **Meilleure UX** : Utilisateur ne cherche pas le contrôle dans une autre zone
+
+### 2. Simplification Widget Xénon - CONSERVÉE 🎯
+- **Suppression contrôles redondants** : Élimination complète de la classe `XenonControlWidget` et de ses contrôles temporels
+- **Widget visualisation pure** : `XenonVisualizationWidget` transformé en widget de visualisation uniquement
+- **Suppression fonctionnalités obsolètes** :
+  - **Sliders temporels** : Pas de temps 1h-24h supprimé
+  - **Boutons contrôle** : "Avancer le Temps" et "Remettre à l'Équilibre" supprimés
+  - **Labels de statut** : Indicateurs d'état temporel supprimés
+  - **Signaux dédiés** : `time_advance_requested` et `reset_requested` supprimés
+- **Nettoyage architecture** :
+  - **`main_window.py`** : Suppression méthodes `on_time_advance()` et `on_xenon_reset()`
+  - **`visualization.py`** : Suppression méthode `get_xenon_controls()`
+  - **Connexions signaux** : Nettoyage des connexions obsolètes vers anciens contrôles
+- **Interface épurée** : Widget Xénon maintenant focus pur sur visualisation concentrations et réactivité
+- **Correction backend** : Mise à jour import matplotlib de `backend_qt6agg` vers `backend_qtagg` pour cohérence
+- **Responsabilité unique** : Widget Xénon ne gère plus que l'affichage, simulation temps réel gère le contrôle temporel
+- **Avantages obtenus** :
+  - **Élimination confusion** : Plus de doublons entre contrôles locaux et globaux
+  - **Interface cohérente** : Toutes fonctions temporelles centralisées dans contrôles globaux
+  - **Code simplifié** : Suppression ~90 lignes de code de contrôles redondants
+  - **Maintenance facilitée** : Une seule source de vérité pour gestion temporelle
 
 ### 1. Optimisation Interface Contrôles Temps Réel - NOUVELLE 🎯
 - **Positionnement stratégique** : Déplacement des contrôles de simulation du panneau latéral vers **le haut de la fenêtre principale**
