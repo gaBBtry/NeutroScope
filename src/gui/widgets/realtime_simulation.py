@@ -143,7 +143,7 @@ class RealtimeControlWidget(QWidget):
         self.play_button.setToolTip("Démarrer la simulation temps réel")
         self.play_button.clicked.connect(self.engine.play)
         
-        self.pause_button = QPushButton("⏸⏸")
+        self.pause_button = QPushButton("⏸")
         self.pause_button.setMaximumWidth(40)
         self.pause_button.setToolTip("Mettre en pause la simulation")
         self.pause_button.clicked.connect(self.engine.pause)
