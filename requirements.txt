@@ -4,10 +4,5 @@ numpy
 matplotlib
 scipy
 
-# Testing dependencies
-pytest
-pytest-qt
-pytest-cov
-
 # Build dependencies
 pyinstaller
