@@ -17,6 +17,7 @@ from src.gui.widgets.credits_button import CreditsButton
 from src.gui.widgets.info_manager import InfoManager
 from src.gui.widgets.enhanced_widgets import InfoGroupBox
 from src.gui.widgets.info_dialog import InfoDialog
+from src.gui.widgets.realtime_simulation import RealtimeSimulationEngine, RealtimeControlWidget
 
 
 class MainWindow(QMainWindow):
@@ -27,6 +28,9 @@ class MainWindow(QMainWindow):
         
         # Create controller
         self.controller = ReactorController()
+        
+        # Create realtime simulation engine
+        self.realtime_engine = RealtimeSimulationEngine(self.controller)
         
         self.setWindowTitle("Simulation Neutronique des REP")
         self.setMinimumSize(1200, 800)
@@ -92,7 +96,10 @@ class MainWindow(QMainWindow):
         
         # Create the central widget and main layout
         central_widget = QWidget()
-        main_layout = QHBoxLayout(central_widget)
+        main_layout = QVBoxLayout(central_widget)
+        
+        # Create horizontal layout for main content (controls + visualizations)
+        content_layout = QHBoxLayout()
         
         # Create left side container (controls + info panel)
         left_container = QWidget()
@@ -131,9 +138,18 @@ class MainWindow(QMainWindow):
         # Create visualization area (right side)
         self.visualization_panel = VisualizationPanel(info_manager=self.info_manager)
         
-        # Add left and right containers to main layout
-        main_layout.addWidget(left_container, 1)
-        main_layout.addWidget(self.visualization_panel, 3)
+        # Create realtime simulation controls for top of window
+        self.realtime_control_widget = RealtimeControlWidget(self.realtime_engine, self.info_manager)
+        
+        # Add realtime controls to top of window
+        main_layout.addWidget(self.realtime_control_widget)
+        
+        # Add left and right containers to content layout
+        content_layout.addWidget(left_container, 1)
+        content_layout.addWidget(self.visualization_panel, 3)
+        
+        # Add content layout to main layout
+        main_layout.addLayout(content_layout)
         
         self.setCentralWidget(central_widget)
         
@@ -193,6 +209,10 @@ class MainWindow(QMainWindow):
         xenon_controls = self.visualization_panel.get_xenon_controls()
         xenon_controls.time_advance_requested.connect(self.on_time_advance)
         xenon_controls.reset_requested.connect(self.on_xenon_reset)
+        
+        # Connect realtime simulation engine
+        self.realtime_engine.time_advanced.connect(self.on_realtime_time_advance)
+        self.realtime_engine.simulation_state_changed.connect(self.on_realtime_state_changed)
     
     def create_control_panel(self):
         """Crée le panneau de contrôle avec les contrôles des paramètres du réacteur"""
@@ -753,6 +773,27 @@ class MainWindow(QMainWindow):
         # Clear xenon plot history
         self.visualization_panel.xenon_widget.clear_history()
         self.check_for_custom_preset()
+    
+    def on_realtime_time_advance(self, hours_advanced):
+        """Handle automatic time advancement from realtime simulation engine"""
+        # Mise à jour de l'interface après avancement automatique du temps
+        params = self.controller.get_reactor_parameters()
+        self.update_reactor_params(params)
+        self.update_visualizations()
+        # Note: Pas de check_for_custom_preset() car la simulation temps réel 
+        # ne devrait pas changer le preset en cours
+        
+    def on_realtime_state_changed(self, state):
+        """Handle realtime simulation state changes"""
+        # Optionnel: désactiver certains contrôles pendant la simulation
+        if state == "playing":
+            # Pendant la simulation, désactiver les contrôles manuels xénon
+            xenon_controls = self.visualization_panel.get_xenon_controls()
+            xenon_controls.setEnabled(False)
+        else:
+            # Réactiver les contrôles manuels
+            xenon_controls = self.visualization_panel.get_xenon_controls()
+            xenon_controls.setEnabled(True)
     
 
 

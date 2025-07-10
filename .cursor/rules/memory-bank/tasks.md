@@ -1107,3 +1107,155 @@ annotation = self.axes.text(i, y, f'{value:.4f}')      # Affiche 0.8408
 - **Formatage adaptatif** : Précision automatique selon la magnitude de la valeur
 - **Modes d'affichage** : Mode "débutant" (.2f) et mode "expert" (.4f)
 - **Autres paramètres** : Appliquer la même logique à d'autres paramètres critiques 
+
+---
+
+## Optimisation Interface Contrôles Temps Réel (Positionnement et Compacité)
+
+**Dernière exécution :** Janvier 2025  
+**Contexte :** Optimisation complète de l'interface des contrôles de simulation temps réel pour maximiser l'accessibilité et économiser l'espace
+
+### Type de tâche :
+Refactoring d'interface utilisateur avec repositionnement stratégique et optimisation de l'espace
+
+### Problème identifié :
+- **Accessibilité limitée** : Contrôles temps réel cachés dans le panneau de contrôle latéral
+- **Encombrement visuel** : Titre et indicateurs d'état occupaient trop d'espace vertical
+- **Navigation nécessaire** : Utilisateurs devaient faire défiler pour accéder aux contrôles temporels
+- **Hiérarchie non-optimale** : Contrôles globaux mélangés avec paramètres physiques locaux
+
+### Solution implémentée :
+- **Positionnement stratégique** : Déplacement des contrôles vers le haut de la fenêtre principale
+- **Interface ultra-compacte** : Suppression des éléments non-essentiels et layout horizontal
+- **Positionnement forcé** : Curseur de vitesse garanti à droite des boutons avec espacement clair
+
+### Fichiers modifiés :
+- `src/gui/main_window.py` - **RESTRUCTURÉ** : Layout principal transformé de horizontal à vertical avec contrôles en haut
+- `src/gui/widgets/realtime_simulation.py` - **OPTIMISÉ** : Interface widget transformée en layout horizontal compact
+
+### Workflow d'Optimisation Interface :
+
+**Étape 1 : Restructuration Layout Principal**
+1. **Changement architecture** : 
+   - **Avant** : `QHBoxLayout` principal avec panneau gauche + visualisations
+   - **Après** : `QVBoxLayout` principal avec contrôles en haut + layout horizontal pour contenu
+2. **Réorganisation hiérarchique** :
+   - **Haut** : Contrôles de simulation temps réel (globaux)
+   - **Bas** : Layout horizontal avec panneau contrôle (local) + visualisations
+3. **Suppression duplication** : Élimination de l'ancienne instance dans le panneau latéral
+
+**Étape 2 : Optimisation Widget Contrôles**
+1. **Suppression éléments volumineux** :
+   - **Titre** "Simulation Temps Réel" supprimé pour économiser espace vertical
+   - **Indicateur d'état** texte supprimé (état visible via boutons activés/désactivés)
+   - **GroupBox "Vitesse"** supprimé pour interface plus épurée
+2. **Layout horizontal compact** :
+   - **Transformation** : De `QVBoxLayout` complexe vers `QHBoxLayout` unique
+   - **Ordre forcé** : ▶ ⏸⏸ ⏹ [espacement] 1s/s [curseur] 1h/s [vitesse] [temps]
+   - **Largeurs contrôlées** : Curseur 200px minimum, autres éléments taille fixe
+3. **Informations essentielles conservées** :
+   - **Vitesse actuelle** : Format compact ("1 s/s", "5.5 min/s", "1 h/s")
+   - **Temps simulé** : Format ultra-compact ("2.5 h", "1.2 j")
+
+**Étape 3 : Garantie de Positionnement**
+1. **Espacement clair** : 20px entre boutons et curseur pour éviter confusion
+2. **Largeur minimum curseur** : 200px pour manipulation aisée garantie
+3. **Marges visuelles** : Espacement autour des labels pour lisibilité
+4. **Stretch final** : Pousse tous éléments vers la gauche pour cohérence
+
+**Étape 4 : Préservation Fonctionnalité**
+1. **Signaux conservés** : Toutes connexions Qt préservées avec nouvelles méthodes
+2. **Gestion d'état** : `_update_buttons_state()` remplace `_update_status()` sans indicateur texte
+3. **Performance maintenue** : Aucun impact sur moteur de simulation 1Hz
+4. **Accessibilité préservée** : Tooltips et aide contextuelle conservés
+
+### Bonnes pratiques identifiées :
+
+#### **Hiérarchie Interface Optimale**
+- **Contrôles globaux en haut** : Standard des interfaces (type lecteurs multimédia)
+- **Contrôles locaux latéraux** : Paramètres physiques spécifiques dans panneau dédié
+- **Visualisations centrales** : Espace maximal préservé pour contenu scientifique
+- **Accessibilité immédiate** : Fonctions importantes sans navigation nécessaire
+
+#### **Optimisation Espace Interface**
+- **Suppression sélective** : Éliminer uniquement éléments non-critiques
+- **Layout horizontal** : Utiliser largeur écran plutôt que hauteur pour contrôles
+- **Informations condensées** : Formats compacts sans perte de clarté
+- **Espacement intelligent** : Balance entre compacité et lisibilité
+
+#### **Positionnement Forcé Éléments**
+- **Ordre garanti** : Utiliser layout avec largeurs fixes et espacement contrôlé
+- **Contraintes minimum** : Assurer manipulation aisée avec largeurs minimales
+- **Validation visuelle** : Tester différentes tailles fenêtre pour cohérence
+- **Stretch final** : Utiliser pour pousser éléments vers position désirée
+
+### Code type pour optimisation interface :
+
+```python
+# AVANT - Layout vertical avec éléments volumineux
+def _setup_ui(self):
+    layout = QVBoxLayout(self)
+    title = QLabel("Simulation Temps Réel")  # Titre volumineux
+    layout.addWidget(title)
+    
+    speed_group = QGroupBox("Vitesse de Simulation")  # GroupBox encombrant
+    # ... layout complexe
+    
+    self.status_label = QLabel("État: Arrêté")  # Indicateur texte
+    layout.addWidget(self.status_label)
+
+# APRÈS - Layout horizontal ultra-compact
+def _setup_ui(self):
+    main_layout = QHBoxLayout(self)  # Une seule ligne
+    
+    # Boutons directement dans layout principal
+    main_layout.addWidget(self.play_button)
+    main_layout.addWidget(self.pause_button)
+    main_layout.addWidget(self.stop_button)
+    
+    main_layout.addSpacing(20)  # Espacement forcé
+    
+    # Curseur avec largeur minimum garantie
+    self.speed_slider.setMinimumWidth(200)
+    main_layout.addWidget(self.speed_slider)
+    
+    # Informations compactes
+    self.speed_label.setMinimumWidth(60)
+    self.sim_time_label.setMinimumWidth(50)
+    
+    main_layout.addStretch()  # Pousse tout vers la gauche
+```
+
+### Points critiques :
+
+1. **Préservation fonctionnalité** : Tous signaux et méthodes doivent rester opérationnels
+2. **Lisibilité maintenue** : Compacité sans sacrifier clarté des informations
+3. **Responsive design** : Interface doit fonctionner sur différentes tailles d'écran
+4. **Hiérarchie visuelle** : Importance relative des éléments doit rester claire
+5. **Performance préservée** : Optimisation ne doit pas impacter fluidité
+
+### Bénéfices obtenus :
+
+#### **Accessibilité Maximale**
+- **Visibilité immédiate** : Contrôles temps réel toujours visibles sans défilement
+- **Logique intuitive** : Contrôles globaux en position standard (haut)
+- **Workflow naturel** : Start/pause/stop immédiatement accessibles
+- **Réduction navigation** : Moins de clics et mouvements souris nécessaires
+
+#### **Optimisation Espace**
+- **Gain vertical** : Plus d'espace pour visualisations scientifiques importantes
+- **Utilisation largeur** : Exploitation intelligente dimension horizontale écran
+- **Interface épurée** : Réduction encombrement visuel global
+- **Focus contenu** : Priorité aux graphiques et données scientifiques
+
+#### **Expérience Utilisateur Améliorée**
+- **Réactivité perçue** : Contrôles immédiatement disponibles
+- **Cohérence standards** : Interface conforme aux attentes utilisateurs
+- **Efficacité opérationnelle** : Manipulation plus rapide et fluide
+- **Satisfaction visuelle** : Interface plus moderne et professionnelle
+
+### Extensions futures possibles :
+- **Contrôles contextuels** : Adaptation selon mode de simulation active
+- **Personnalisation** : Permettre repositionnement selon préférences utilisateur
+- **Raccourcis clavier** : Accès direct aux fonctions sans souris
+- **États visuels** : Indicateurs plus sophistiqués pour modes de simulation 

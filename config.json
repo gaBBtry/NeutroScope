@@ -83,9 +83,9 @@
     },
     "presets": {
         "PMD en début de cycle": {
-            "rod_group_R_position": 228,
+            "rod_group_R_position": 218,
             "rod_group_GCP_position": 228,
-            "boron_concentration": 500.0,
+            "boron_concentration": 505.0,
             "average_temperature": 304.6,
             "fuel_enrichment": 3.5,
             "power_level": 100.0
