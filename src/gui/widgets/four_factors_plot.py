@@ -1,21 +1,16 @@
 """
 Matplotlib canvas for plotting the four factors
 """
-from matplotlib.figure import Figure
-from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from typing import Optional
-from ..widgets.info_manager import InfoManager
+from .base_matplotlib_widget import BaseMatplotlibWidget
+from .info_manager import InfoManager
 
 
-class FourFactorsPlot(FigureCanvasQTAgg):
+class FourFactorsPlot(BaseMatplotlibWidget):
     """Matplotlib canvas for plotting the four factors"""
     
     def __init__(self, parent=None, width=5, height=4, dpi=100, info_manager: Optional[InfoManager] = None):
-        self.fig = Figure(figsize=(width, height), dpi=dpi)
-        self.axes = self.fig.add_subplot(111)
-        super().__init__(self.fig)
-        self.setParent(parent)
-        self.info_manager = info_manager
+        super().__init__(parent, width, height, dpi, info_manager)
         
         # Initial empty plot
         self.bars = None
@@ -24,17 +19,13 @@ class FourFactorsPlot(FigureCanvasQTAgg):
         # References to plot elements that need to be cleaned up
         self.critical_line = None
         self.value_annotations = []
-        
+    
+    def _setup_plot(self):
+        """Initialise le contenu spécifique du plot des quatre facteurs."""
         self.axes.set_xlabel('Facteur')
         self.axes.set_ylabel('Valeur')
         self.axes.set_title('Facteurs du Cycle Neutronique')
         self.axes.grid(True, axis='y')
-        
-        # Connect mouse motion event
-        self.fig.canvas.mpl_connect('motion_notify_event', self.on_mouse_move)
-        self.fig.canvas.mpl_connect('axes_leave_event', self.on_axes_leave)
-        
-        self.fig.tight_layout()
     
     def update_plot(self, factors_data):
         """Update the four factors plot with new data"""
@@ -115,8 +106,7 @@ class FourFactorsPlot(FigureCanvasQTAgg):
         
     def on_axes_leave(self, event):
         """Handle mouse leaving the axes area"""
-        if self.info_manager:
-            self.info_manager.info_cleared.emit()
+        super().on_axes_leave(event)  # Utilise l'implémentation de la classe de base
 
     def show_tooltip_in_panel(self, index):
         """Show tooltip information in the info panel"""

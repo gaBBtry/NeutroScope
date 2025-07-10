@@ -2,32 +2,23 @@
 Matplotlib canvas for plotting neutron balance
 """
 import matplotlib.pyplot as plt
-from matplotlib.figure import Figure
-from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from typing import Optional
-from ..widgets.info_manager import InfoManager
+from .base_matplotlib_widget import BaseMatplotlibWidget
+from .info_manager import InfoManager
 
 
-class NeutronBalancePlot(FigureCanvasQTAgg):
+class NeutronBalancePlot(BaseMatplotlibWidget):
     """Matplotlib canvas for plotting the neutron balance as a pie chart"""
     
     def __init__(self, parent=None, width=5, height=4, dpi=100, info_manager: Optional[InfoManager] = None):
-        self.fig = Figure(figsize=(width, height), dpi=dpi)
-        self.axes = self.fig.add_subplot(111)
-        super().__init__(self.fig)
-        self.setParent(parent)
-        self.info_manager = info_manager
-        
-        self.axes.set_title('Bilan Neutronique (Destin des Neutrons)')
+        super().__init__(parent, width, height, dpi, info_manager)
         
         # Store tooltips
         self.tooltips = []
-        
-        # Connect mouse motion event
-        self.fig.canvas.mpl_connect('motion_notify_event', self.on_mouse_move)
-        self.fig.canvas.mpl_connect('axes_leave_event', self.on_axes_leave)
-
-        self.fig.tight_layout()
+    
+    def _setup_plot(self):
+        """Initialise le contenu spécifique du plot de bilan neutronique."""
+        self.axes.set_title('Bilan Neutronique (Destin des Neutrons)')
 
     def update_plot(self, balance_data):
         """Update the neutron balance pie chart with new data"""
@@ -73,8 +64,7 @@ class NeutronBalancePlot(FigureCanvasQTAgg):
         
     def on_axes_leave(self, event):
         """Handle mouse leaving the axes"""
-        if self.info_manager:
-            self.info_manager.info_cleared.emit()
+        super().on_axes_leave(event)  # Utilise l'implémentation de la classe de base
 
     def show_tooltip_in_panel(self, index):
         """Show tooltip information in the info panel"""

@@ -47,7 +47,7 @@ def main():
         "--hidden-import=PyQt6.QtCore", # Imports cachés nécessaires pour PyQt6
         "--hidden-import=PyQt6.QtGui",
         "--hidden-import=PyQt6.QtWidgets",
-        "--hidden-import=matplotlib.backends.backend_qt5agg",
+        "--hidden-import=matplotlib.backends.backend_qtagg",
         "--hidden-import=matplotlib.backends.backend_agg",
         "--hidden-import=numpy",
         "--hidden-import=scipy",

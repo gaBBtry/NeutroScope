@@ -1,23 +1,22 @@
 """
 Matplotlib canvas for plotting axial flux distribution
 """
-import matplotlib
-from matplotlib.figure import Figure
-from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from typing import Optional
-from ..widgets.info_manager import InfoManager
+from .base_matplotlib_widget import BaseMatplotlibWidget
+from .info_manager import InfoManager
 
 
-class FluxDistributionPlot(FigureCanvasQTAgg):
+class FluxDistributionPlot(BaseMatplotlibWidget):
     """Matplotlib canvas for plotting axial flux distribution"""
     
     def __init__(self, parent=None, width=5, height=4, dpi=100, info_manager: Optional[InfoManager] = None):
-        self.fig = Figure(figsize=(width, height), dpi=dpi)
-        self.axes = self.fig.add_subplot(111)
-        super().__init__(self.fig)
-        self.setParent(parent)
-        self.info_manager = info_manager
+        super().__init__(parent, width, height, dpi, info_manager)
         
+        # Store information for tooltip
+        self.tooltip_text = ""
+    
+    def _setup_plot(self):
+        """Initialise le contenu spécifique du plot de flux axial."""
         # Initial empty plot - Vertical orientation
         self.line, = self.axes.plot([], [])
         self.axes.set_ylabel('Hauteur relative du cœur')
@@ -29,15 +28,6 @@ class FluxDistributionPlot(FigureCanvasQTAgg):
         
         # Mark control rod positions - now horizontal line
         self.rod_line = self.axes.axhline(y=1, color='r', linestyle='--', alpha=0.5)
-        
-        # Store information for tooltip
-        self.tooltip_text = ""
-        
-        # Connect mouse events
-        self.fig.canvas.mpl_connect('motion_notify_event', self.on_mouse_move)
-        self.fig.canvas.mpl_connect('axes_leave_event', self.on_axes_leave)
-        
-        self.fig.tight_layout()
     
     def update_plot(self, height, flux, rod_position):
         """Update the flux distribution plot with new data"""
@@ -159,5 +149,4 @@ class FluxDistributionPlot(FigureCanvasQTAgg):
     def on_axes_leave(self, event):
         """Handle mouse leaving the axes"""
         self.tooltip_text = ""
-        if self.info_manager:
-            self.info_manager.info_cleared.emit()
+        super().on_axes_leave(event)  # Utilise l'implémentation de la classe de base

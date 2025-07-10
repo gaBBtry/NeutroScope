@@ -3,12 +3,7 @@ from unittest.mock import MagicMock, patch
 from PyQt6.QtWidgets import QApplication, QWidget
 from src.gui.widgets.four_factors_plot import FourFactorsPlot
 
-@pytest.fixture(scope="session")
-def qapp():
-    app = QApplication.instance()
-    if app is None:
-        app = QApplication([])
-    return app
+# QApplication fixture maintenant dans conftest.py
 
 @pytest.fixture
 def factors_plot(qapp):

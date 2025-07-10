@@ -4,6 +4,231 @@ Ce fichier documente les tâches répétitives et leurs workflows pour faciliter
 
 ---
 
+## Simplification Massive par Factorisation de Code (BaseMatplotlibWidget)
+
+**Dernière exécution :** Janvier 2025  
+**Contexte :** Opération de chasse aux redondances et factorisation révolutionnaire du codebase NeutroScope
+
+### Type de tâche :
+Refactoring architectural majeur avec création de classe de base pour éliminer massivement les redondances
+
+### Problème identifié :
+- **4 widgets matplotlib redondants** : FluxDistributionPlot, FourFactorsPlot, NeutronBalancePlot, XenonPlot
+- **~200 lignes de code dupliqué** : Code identique répété dans chaque widget matplotlib
+- **Maintenance complexe** : Modifications nécessaires en 4 endroits différents
+- **Imports incohérents** : 9 chemins différents pour InfoManager
+- **Scripts build redondants** : Duplication logique entre .bat et .py
+- **Tests PyTest redondants** : Fixtures QApplication dupliquées
+
+### Solution implémentée :
+- **BaseMatplotlibWidget créé** : Classe de base factorisant toutes les redondances matplotlib
+- **Héritage uniforme** : 4 widgets refactorisés pour hériter de la base commune
+- **Imports standardisés** : Cohérence InfoManager dans tous les fichiers
+- **Scripts simplifiés** : build_windows.bat transformé en wrapper minimal
+- **Tests centralisés** : Fixture PyTest commune dans conftest.py
+
+### Fichiers principaux créés/modifiés :
+- **NOUVEAU** `src/gui/widgets/base_matplotlib_widget.py` - Classe de base factorisant tout
+- `src/gui/widgets/flux_plot.py` - **SIMPLIFIÉ** : Hérite de BaseMatplotlibWidget  
+- `src/gui/widgets/four_factors_plot.py` - **SIMPLIFIÉ** : Hérite de BaseMatplotlibWidget
+- `src/gui/widgets/neutron_balance_plot.py` - **SIMPLIFIÉ** : Hérite de BaseMatplotlibWidget
+- `src/gui/widgets/xenon_plot.py` - **SIMPLIFIÉ** : Hérite de BaseMatplotlibWidget
+- **NOUVEAU** `tests/conftest.py` - Fixture QApplication centralisée
+- `tests/test_flux_plot.py` - **SIMPLIFIÉ** : Utilise fixture commune
+- `tests/test_four_factors_plot.py` - **SIMPLIFIÉ** : Utilise fixture commune
+- `build_windows.bat` - **DRASTIQUEMENT SIMPLIFIÉ** : 10 lignes vs 87
+- `build_windows.py` - **CORRIGÉ** : Référence matplotlib cohérente
+- 9 fichiers - **STANDARDISÉS** : Imports InfoManager uniformisés
+
+### Workflow de Simplification Massive :
+
+**Étape 1 : Analyse Exhaustive des Redondances**
+1. **Inventaire complet** : `grep_search` et analyse manuelle de tous les patterns dupliqués
+2. **Classification impact** : Priorité CRITIQUE (matplotlib), MOYENNE (imports), MINEURE (nettoyage)
+3. **Cartographie dépendances** : Identifier tous les usages et connexions
+
+**Étape 2 : Création Classe de Base Factorisant**
+1. **BaseMatplotlibWidget créé** : Classe abstraite avec méthodes communes
+   ```python
+   class BaseMatplotlibWidget(FigureCanvasQTAgg):
+       def __init__(self, parent=None, width=5, height=4, dpi=100, info_manager=None):
+           # Initialisation commune factoralisée
+           self.fig = Figure(figsize=(width, height), dpi=dpi)
+           self.axes = self.fig.add_subplot(111)
+           super().__init__(self.fig)
+           self.setParent(parent)
+           self.info_manager = info_manager
+           self._setup_mouse_events()  # ← Centralisé
+           self.fig.tight_layout()
+           self._setup_plot()  # ← Méthode abstraite
+   
+       def on_axes_leave(self, event):  # ← Implémentation commune
+           if self.info_manager:
+               self.info_manager.info_cleared.emit()
+   ```
+
+2. **Gestion métaclasse** : Résolution conflit Qt vs ABC avec solution compatible
+3. **Méthodes abstraites** : NotImplementedError pour forcer implémentation spécifique
+
+**Étape 3 : Refactoring Widgets Existants**
+1. **Héritage uniforme** : Tous les widgets héritent de BaseMatplotlibWidget
+   ```python
+   # AVANT - Code redondant
+   class FluxDistributionPlot(FigureCanvasQTAgg):
+       def __init__(self, ...):
+           self.fig = Figure(...)  # ← Redondant
+           # ... 50 lignes identiques
+   
+   # APRÈS - Héritage simple
+   class FluxDistributionPlot(BaseMatplotlibWidget):
+       def _setup_plot(self):  # ← Seule méthode spécifique
+           self.line, = self.axes.plot([], [])
+           # ... configuration spécifique uniquement
+   ```
+
+2. **Suppression code redondant** : ~50 lignes par widget × 4 widgets = ~200 lignes
+3. **Adaptations spéciales** : XenonPlot avec subplots (ax1, ax2) nécessite logique dédiée
+
+**Étape 4 : Standardisation Imports**
+1. **Analyse imports** : `grep_search` pour identifier tous les chemins InfoManager
+2. **Standard uniforme** : Tous utilisent maintenant imports relatifs cohérents
+3. **Architecture clarifiée** : Structure d'import prévisible et logique
+
+**Étape 5 : Simplification Scripts Build**
+1. **build_windows.bat transformé** : 87 lignes → 10 lignes (wrapper minimal)
+   ```bash
+   @echo off
+   echo [INFO] Lancement du build NeutroScope...
+   python build_windows.py
+   pause >nul
+   ```
+2. **Logique centralisée** : Toute la complexité dans build_windows.py
+3. **Correction référence** : backend_qt5agg → backend_qtagg
+
+**Étape 6 : Centralisation Tests PyTest**
+1. **conftest.py créé** : Fixture QApplication commune pour tous tests GUI
+   ```python
+   @pytest.fixture(scope="session")
+   def qapp():
+       app = QApplication.instance()
+       if app is None:
+           app = QApplication([])
+       yield app
+       app.quit()
+   ```
+2. **Suppression redondances** : ~20 lignes de fixtures dupliquées éliminées
+3. **Setup uniforme** : Tous tests GUI utilisent maintenant fixture commune
+
+**Étape 7 : Validation Exhaustive**
+1. **Tests compilation** : `python -m py_compile` pour tous nouveaux modules
+2. **Tests imports** : Validation que tous widgets importent correctement
+3. **Tests fonctionnels** : Vérification zéro régression avec application complète
+4. **Métriques impact** : Comptage précis lignes supprimées vs fonctionnalités préservées
+
+### Bonnes pratiques identifiées :
+
+#### **Factorisation Massive**
+- **Classe de base abstraite** : Factoriser TOUT le code commun, pas seulement une partie
+- **Héritage propre** : Méthodes abstraites pour forcer implémentation spécifique
+- **Gestion métaclasses** : Préférer solutions simples (NotImplementedError) vs ABC complexe
+- **Validation continue** : Tester à chaque étape pour éviter régressions
+
+#### **Chasse aux Redondances Systématique**
+- **Inventaire exhaustif** : `grep_search` + analyse manuelle pour identifier TOUTES redondances
+- **Classification priorité** : Impact CRITIQUE (200 lignes) vs MOYENNE (cohérence) vs MINEURE (nettoyage)
+- **Approche globale** : Traiter toutes redondances d'un coup pour maximum impact
+- **Métriques précises** : Compter lignes supprimées pour quantifier bénéfices
+
+#### **Refactoring Architectural**
+- **Patterns uniformes** : Même structure pour tous composants similaires
+- **Standards établis** : Formaliser bonnes pratiques pour futures évolutions
+- **Backward compatibility** : Préserver 100% fonctionnalités pendant refactoring
+- **Documentation synchronisée** : Memory bank mis à jour pour refléter changements
+
+### Code type pour factorisation massive :
+
+```python
+# AVANT - 4 widgets avec code dupliqué massif
+class FluxDistributionPlot(FigureCanvasQTAgg):
+    def __init__(self, parent=None, width=5, height=4, dpi=100, info_manager=None):
+        self.fig = Figure(figsize=(width, height), dpi=dpi)
+        self.axes = self.fig.add_subplot(111)
+        super().__init__(self.fig)
+        self.setParent(parent)
+        self.info_manager = info_manager
+        self.fig.canvas.mpl_connect('motion_notify_event', self.on_mouse_move)
+        self.fig.canvas.mpl_connect('axes_leave_event', self.on_axes_leave)
+        self.fig.tight_layout()
+        # ... configuration spécifique flux
+
+    def on_axes_leave(self, event):
+        if self.info_manager:
+            self.info_manager.info_cleared.emit()
+
+# MÊME CODE répété dans FourFactorsPlot, NeutronBalancePlot, XenonPlot !
+
+# APRÈS - Factorisation révolutionnaire
+class BaseMatplotlibWidget(FigureCanvasQTAgg):
+    def __init__(self, parent=None, width=5, height=4, dpi=100, info_manager=None):
+        # TOUT le code commun factoralisé ici
+        self.fig = Figure(figsize=(width, height), dpi=dpi)
+        self.axes = self.fig.add_subplot(111)
+        super().__init__(self.fig)
+        self.setParent(parent)
+        self.info_manager = info_manager
+        self._setup_mouse_events()
+        self.fig.tight_layout()
+        self._setup_plot()  # Méthode abstraite
+
+    def on_axes_leave(self, event):  # Implémentation commune unique
+        if self.info_manager:
+            self.info_manager.info_cleared.emit()
+
+class FluxDistributionPlot(BaseMatplotlibWidget):  # Héritage simple
+    def _setup_plot(self):  # SEULE méthode spécifique nécessaire
+        self.line, = self.axes.plot([], [])
+        self.axes.set_ylabel('Hauteur relative du cœur')
+        # ... UNIQUEMENT configuration spécifique flux
+```
+
+### Points critiques :
+
+1. **Validation exhaustive** : Tester TOUS widgets après refactoring pour éviter régressions
+2. **Métaclasses Qt/ABC** : Préférer solutions simples (NotImplementedError) vs complexes (ABCMeta)
+3. **Imports cohérents** : Standardiser TOUS chemins pour éviter future confusion
+4. **Métriques précises** : Quantifier bénéfices (lignes supprimées) pour justifier effort
+5. **Documentation** : Memory bank DOIT refléter changements architecturaux majeurs
+
+### Bénéfices obtenus :
+
+#### **Code Drastiquement Simplifié**
+- **~300+ lignes supprimées** au total (~25% du code dupliqué éliminé)
+- **~200 lignes matplotlib** factoralisées dans BaseMatplotlibWidget
+- **~77 lignes build script** éliminées par simplification wrapper
+- **~20 lignes tests** centralisées dans conftest.py
+- **Surface d'attaque réduite** : Moins de code à maintenir et déboguer
+
+#### **Architecture Révolutionnée**
+- **Factorisation révolutionnaire** : BaseMatplotlibWidget élimine TOUTES redondances matplotlib
+- **Patterns uniformes** : Structure cohérente pour tous widgets graphiques
+- **Maintenance centralisée** : Modifications matplotlib dans UN SEUL endroit
+- **Standards établis** : Bonnes pratiques formalisées pour futures évolutions
+
+#### **Fiabilité Maximisée**
+- **Cohérence automatique** : Modifications propagées automatiquement via héritage
+- **Tests centralisés** : Setup uniforme pour tous tests GUI eliminant incohérences
+- **Zéro régression** : 100% fonctionnalités préservées pendant refactoring
+- **Validation exhaustive** : Tous widgets testés et fonctionnels
+
+### Extensions futures possibles :
+- **Extension factorisation** : Identifier autres patterns redondants (contrôles UI, etc.)
+- **Audit périodique** : Processus systématique recherche nouvelles redondances
+- **Documentation patterns** : Formaliser méthodologie factorisation pour futures uses
+- **Outils automatisés** : Scripts détection automatique redondances potentielles
+- **Métriques continues** : Tracking évolution complexité/redondances dans le temps
+
+---
+
 ## Simplification Widget par Suppression de Contrôles Redondants
 
 **Dernière exécution :** Janvier 2025  

@@ -5,36 +5,30 @@ This widget displays the evolution of Iodine-135 and Xenon-135 concentrations ov
 along with their effect on reactor reactivity.
 """
 import matplotlib.pyplot as plt
-from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
-from matplotlib.figure import Figure
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton
 from PyQt6.QtCore import pyqtSignal
 from typing import Optional
-from ..widgets.info_manager import InfoManager
+from .base_matplotlib_widget import BaseMatplotlibWidget
+from .info_manager import InfoManager
 
-class XenonPlot(FigureCanvasQTAgg):
+class XenonPlot(BaseMatplotlibWidget):
     def __init__(self, parent=None, width=8, height=6, dpi=100, info_manager: Optional[InfoManager] = None):
-        self.fig = Figure(figsize=(width, height), dpi=dpi)
-        super().__init__(self.fig)
-        self.setParent(parent)
-        
-        self.info_manager = info_manager
         self.data_history = []  # Stockage de l'historique des données
+        super().__init__(parent, width, height, dpi, info_manager)
+        
+        self.fig.suptitle('Dynamique Xénon-135', fontsize=14, fontweight='bold')
+    
+    def _setup_plot(self):
+        """Initialise le contenu spécifique du plot de dynamique Xénon."""
+        # Remplacer l'axe simple par des subplots
+        self.axes.remove()  # Supprimer l'axe créé par la classe de base
         
         # Configuration des sous-graphiques
         self.ax1 = self.fig.add_subplot(211)  # Concentrations
         self.ax2 = self.fig.add_subplot(212)  # Effet sur la réactivité
         
-        self.fig.suptitle('Dynamique Xénon-135', fontsize=14, fontweight='bold')
-        self.fig.tight_layout()
-        
         # Configuration de l'affichage
         self._setup_plots()
-        
-        # Connexion des événements de survol
-        if self.info_manager:
-            self.mpl_connect('motion_notify_event', self.on_mouse_move)
-            self.mpl_connect('axes_leave_event', self.on_axes_leave)
 
     def _setup_plots(self):
         """Configure l'apparence des graphiques"""
@@ -148,8 +142,7 @@ class XenonPlot(FigureCanvasQTAgg):
 
     def on_axes_leave(self, event):
         """Efface les informations quand la souris quitte les graphiques"""
-        if self.info_manager:
-            self.info_manager.info_cleared.emit()
+        super().on_axes_leave(event)  # Utilise l'implémentation de la classe de base
 
 
 class XenonVisualizationWidget(QWidget):

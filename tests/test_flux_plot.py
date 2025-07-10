@@ -3,13 +3,7 @@ from unittest.mock import MagicMock
 from PyQt6.QtWidgets import QApplication, QWidget
 from src.gui.widgets.flux_plot import FluxDistributionPlot
 
-@pytest.fixture(scope="session")
-def qapp():
-    """Fixture to create a QApplication instance for GUI tests."""
-    app = QApplication.instance()
-    if app is None:
-        app = QApplication([])
-    return app
+# QApplication fixture maintenant dans conftest.py
 
 @pytest.fixture
 def flux_plot(qapp):

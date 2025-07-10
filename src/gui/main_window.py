@@ -14,7 +14,7 @@ from src.gui.visualization import VisualizationPanel
 from src.gui.widgets.info_panel import InfoPanel
 
 from src.gui.widgets.credits_button import CreditsButton
-from src.gui.widgets.info_manager import InfoManager
+from .widgets.info_manager import InfoManager
 from src.gui.widgets.enhanced_widgets import InfoGroupBox
 from src.gui.widgets.info_dialog import InfoDialog
 from src.gui.widgets.realtime_simulation import RealtimeSimulationEngine
