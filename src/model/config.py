@@ -1,21 +1,24 @@
 """
-Configuration file for the ReactorModel.
+Configuration loader for NeutroScope.
 
-This module loads the reactor's physical and operational parameters
-from the 'config.json' file located in the project's root directory.
+This module provides a simple function to load configuration directly from config.json
+without creating redundant variable definitions.
 """
 
 import json
 import os
 from pathlib import Path
 
-def _load_config():
+def load_config():
     """
     Loads configuration from the project's root config.json file.
     The path is determined relative to this file's location.
+    
+    Returns:
+        dict: The complete configuration dictionary from config.json
     """
     try:
-        # Ce fichier est dans src/model/, donc nous remontons de trois niveaux jusqu'à la racine du projet.
+        # Ce fichier est dans src/model/, donc nous remontons de deux niveaux jusqu'à la racine du projet.
         config_path = Path(__file__).resolve().parent.parent.parent / 'config.json'
         with config_path.open('r', encoding='utf-8') as f:
             return json.load(f)
@@ -24,80 +27,95 @@ def _load_config():
     except json.JSONDecodeError as e:
         raise ValueError(f"Invalid JSON in configuration file 'config.json'. Please check its syntax. Original error: {e}")
 
-def get_project_root():
-    """Get the project root directory path."""
-    return Path(__file__).resolve().parent.parent.parent
+# Load configuration once at module import
+_config = load_config()
 
-_config = _load_config()
+def get_config():
+    """
+    Returns the loaded configuration dictionary.
+    
+    Returns:
+        dict: The complete configuration dictionary
+    """
+    return _config
 
-# --- Déballage de la configuration en variables au niveau du module pour un accès facile ---
+def get_physical_constants():
+    """
+    Returns the physical constants section.
+    
+    Returns:
+        dict: Physical constants from config.json
+    """
+    return _config.get("physical_constants", {})
 
-# Constantes physiques
-_phys_const = _config.get("physical_constants", {})
-DELAYED_NEUTRON_FRACTION = _phys_const.get("DELAYED_NEUTRON_FRACTION", 0.0065)
-PROMPT_NEUTRON_LIFETIME = _phys_const.get("PROMPT_NEUTRON_LIFETIME", 2.0e-5)
-EFFECTIVE_DECAY_CONSTANT = _phys_const.get("EFFECTIVE_DECAY_CONSTANT", 0.1)
-NEUTRONS_PER_THERMAL_FISSION_U235 = _phys_const.get("NEUTRONS_PER_THERMAL_FISSION_U235", 2.43)
-BESSEL_J0_FIRST_ZERO = _phys_const.get("BESSEL_J0_FIRST_ZERO", 2.405)
-CELSIUS_TO_KELVIN = _phys_const.get("CELSIUS_TO_KELVIN", 273.15)
+def get_four_factors():
+    """
+    Returns the four factors configuration section.
+    
+    Returns:
+        dict: Four factors configuration from config.json
+    """
+    return _config.get("four_factors", {})
 
-# Coefficients du modèle des quatre facteurs
-_four_factors = _config.get("four_factors", {})
+def get_neutron_leakage():
+    """
+    Returns the neutron leakage configuration section.
+    
+    Returns:
+        dict: Neutron leakage configuration from config.json
+    """
+    return _config.get("neutron_leakage", {})
 
-_eta = _four_factors.get("eta", {})
-ETA_BASE = _eta.get("BASE", 2.0)
-ETA_ENRICHMENT_COEFF = _eta.get("ENRICHMENT_COEFF", 0.1)
-ETA_ENRICHMENT_REF = _eta.get("ENRICHMENT_REF", 3.0)
-ETA_ENRICHMENT_SCALE = _eta.get("ENRICHMENT_SCALE", 2.0)
+def get_control_kinetics():
+    """
+    Returns the control kinetics configuration section.
+    
+    Returns:
+        dict: Control kinetics configuration from config.json
+    """
+    return _config.get("control_kinetics", {})
 
-EPSILON = _four_factors.get("epsilon", 1.03)
+def get_thermal_kinetics():
+    """
+    Returns the thermal kinetics configuration section.
+    
+    Returns:
+        dict: Thermal kinetics configuration from config.json
+    """
+    return _config.get("thermal_kinetics", {})
 
-_p = _four_factors.get("p", {})
-P_BASE = _p.get("BASE", 0.75)
-P_REF_TEMP_K = _p.get("REF_TEMP_K", 873.15)
-P_DOPPLER_COEFF = _p.get("DOPPLER_COEFF", 0.008)
-P_MOD_TEMP_COEFF = _p.get("MOD_TEMP_COEFF", 0.0015)
-P_REF_MOD_TEMP_C = _p.get("REF_MOD_TEMP_C", 300.0)
+def get_doubling_time():
+    """
+    Returns the doubling time configuration section.
+    
+    Returns:
+        dict: Doubling time configuration from config.json
+    """
+    return _config.get("doubling_time", {})
 
-_f = _four_factors.get("f", {})
-F_BASE = _f.get("BASE", 0.71)
-F_BASE_ABS_RATIO = _f.get("BASE_ABS_RATIO", 0.408)
-F_REF_MOD_TEMP_C = _f.get("REF_MOD_TEMP_C", 300.0)
-F_CONTROL_ROD_WORTH = _f.get("CONTROL_ROD_WORTH", 0.26)
-F_BORON_WORTH_PER_PPM = _f.get("BORON_WORTH_PER_PPM", 2.8e-5)
-F_MOD_TEMP_ABS_COEFF = _f.get("MOD_TEMP_ABS_COEFF", 0.003)
+def get_xenon_dynamics():
+    """
+    Returns the xenon dynamics configuration section.
+    
+    Returns:
+        dict: Xenon dynamics configuration from config.json
+    """
+    return _config.get("xenon_dynamics", {})
 
-# --- Facteurs de fuite neutronique ---
-_leakage = _config.get("neutron_leakage", {})
-CORE_HEIGHT_M = _leakage.get("CORE_HEIGHT_M", 4.0)
-CORE_DIAMETER_M = _leakage.get("CORE_DIAMETER_M", 3.0)
-THERMAL_DIFFUSION_AREA_M2 = _leakage.get("THERMAL_DIFFUSION_AREA_M2", 0.0064)
-FAST_DIFFUSION_AREA_M2 = _leakage.get("FAST_DIFFUSION_AREA_M2", 0.0097)
-MODERATOR_DENSITY_COEFF = _leakage.get("MODERATOR_DENSITY_COEFF", 8.0e-4)
-CONTROL_ROD_EFFECT_COEFF = _leakage.get("CONTROL_ROD_EFFECT_COEFF", 10.0)
+def get_control_rod_groups():
+    """
+    Returns the control rod groups configuration section.
+    
+    Returns:
+        dict: Control rod groups configuration from config.json
+    """
+    return _config.get("control_rod_groups", {})
 
-# Cinétique des contrôles
-control_kinetics = _config.get("control_kinetics", {})
-
-# Cinétique thermique
-thermal_kinetics = _config.get("thermal_kinetics", {})
-
-# Calcul du temps de doublement
-_doubling = _config.get("doubling_time", {})
-DOUBLING_TIME_COEFF = _doubling.get("DOUBLING_TIME_COEFF", 80.0)
-
-# Dynamique Xénon-135
-_xenon = _config.get("xenon_dynamics", {})
-IODINE_YIELD = _xenon.get("IODINE_YIELD", 0.064)
-XENON_YIELD_DIRECT = _xenon.get("XENON_YIELD_DIRECT", 0.003)
-IODINE_DECAY_CONSTANT = _xenon.get("IODINE_DECAY_CONSTANT", 2.87e-5)  # s^-1
-XENON_DECAY_CONSTANT = _xenon.get("XENON_DECAY_CONSTANT", 2.11e-5)    # s^-1
-XENON_ABSORPTION_CROSS_SECTION = _xenon.get("XENON_ABSORPTION_CROSS_SECTION", 2.65e6)  # barns
-THERMAL_FLUX_NOMINAL = _xenon.get("THERMAL_FLUX_NOMINAL", 3.0e13)     # n/cm²/s
-FISSION_RATE_COEFF = _xenon.get("FISSION_RATE_COEFF", 1.0e-6)
-
-# Groupes de barres de contrôle
-control_rod_groups = _config.get("control_rod_groups", {})
-
-# Préréglages par défaut
-PRESETS = _config.get("presets", {}) 
+def get_presets():
+    """
+    Returns the presets configuration section.
+    
+    Returns:
+        dict: Presets configuration from config.json
+    """
+    return _config.get("presets", {}) 

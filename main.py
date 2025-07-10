@@ -5,7 +5,6 @@ import sys
 import os
 from PyQt6.QtWidgets import QApplication, QMessageBox
 from src.gui.main_window import MainWindow
-from src.model.config import get_project_root
 
 def main():
     """Main function to run the application"""

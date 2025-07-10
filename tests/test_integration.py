@@ -6,7 +6,7 @@ from PyQt6.QtWidgets import QApplication, QSlider, QSpinBox, QLabel, QComboBox
 from src.gui.main_window import MainWindow
 from src.controller.reactor_controller import ReactorController
 from unittest.mock import patch, MagicMock
-from src.model import config as global_config
+from src.model.config import get_config
 
 # --- Fixtures ---
 
@@ -102,25 +102,29 @@ def test_controller_updates_model_rod_position(controller):
     """Verify that updating rod position via controller changes the model's state."""
     new_position = 75
     controller.update_control_rod_position(new_position)
-    assert controller.model.control_rod_position == new_position
+    # La méthode de rétrocompatibilité définit les cibles pour les deux groupes
+    assert controller.model.target_rod_group_R_position > 0
+    assert controller.model.target_rod_group_GCP_position > 0
 
 def test_controller_updates_model_boron(controller):
     """Verify that updating boron concentration via controller changes the model's state."""
     new_concentration = 1200
-    controller.update_boron_concentration(new_concentration)
-    assert controller.model.boron_concentration == new_concentration
+    controller.set_target_boron_concentration(new_concentration)
+    assert controller.model.target_boron_concentration == new_concentration
 
 def test_controller_applies_preset_to_model(controller):
     """Verify that applying a preset via controller updates the model correctly."""
     preset_name = controller.get_preset_names()[1] # Choose a preset
     controller.apply_preset(preset_name)
     
-    from src.model import config
-    preset_values = config.PRESETS[preset_name]
+    config = get_config()
+    preset_values = config["presets"][preset_name]
     
-    assert controller.model.control_rod_position == preset_values["control_rod_position"]
+    # Les presets utilisent maintenant des groupes de barres séparés R et GCP
+    assert controller.model.rod_group_R_position == preset_values["rod_group_R_position"]
+    assert controller.model.rod_group_GCP_position == preset_values["rod_group_GCP_position"]
     assert controller.model.boron_concentration == preset_values["boron_concentration"]
-    assert controller.model.average_temperature == preset_values["average_temperature"]
+    assert controller.model.moderator_temperature == preset_values["average_temperature"]
     assert controller.model.fuel_enrichment == preset_values["fuel_enrichment"]
 
 def test_controller_returns_correct_k_eff_after_update(controller):
@@ -303,7 +307,8 @@ def test_preset_application_updates_ui(app):
     Test that applying a preset correctly updates the model and subsequently the UI widgets.
     """
     preset_name = "Critique à puissance nominale"
-    preset_config = global_config.PRESETS[preset_name]
+    config = get_config()
+    preset_config = config["presets"][preset_name]
     
     # Simulate applying the preset in the controller
     result = app.controller.apply_preset(preset_name)

@@ -156,8 +156,8 @@ class PresetManager:
     def _load_system_presets(self):
         """Charge les presets système depuis config.json"""
         try:
-            with open(self.system_presets_file, 'r', encoding='utf-8') as f:
-                config = json.load(f)
+            from .config import get_config
+            config = get_config()
             
             system_presets = config.get('presets', {})
             now = datetime.now()

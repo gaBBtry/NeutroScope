@@ -4,7 +4,7 @@ Controller module connecting the UI with the reactor model
 from src.model.reactor_model import ReactorModel
 from src.model.abstract_reactor_model import AbstractReactorModel
 from src.model.preset_model import PresetCategory
-from src.model import config
+from src.model.config import get_config
 import copy
 from typing import Type
 
@@ -20,6 +20,7 @@ class ReactorController:
             model_class: Classe du modèle de réacteur à utiliser (doit hériter d'AbstractReactorModel)
         """
         self.model: AbstractReactorModel = model_class()
+        self.config = get_config()
     
     # --- MÉTHODES DE CONTRÔLE CIBLÉ ---
     def set_target_rod_group_R_position(self, position):
@@ -53,26 +54,26 @@ class ReactorController:
             "R": {
                 "position": self.model.rod_group_R_position,
                 "target_position": self.model.target_rod_group_R_position,
-                "description": config.control_rod_groups['R']['description'],
-                "worth_fraction": config.control_rod_groups['R']['worth_fraction'],
-                "min_step": config.control_rod_groups['R']['min_step'],
-                "max_step": config.control_rod_groups['R']['max_step'],
-                "normal_step": config.control_rod_groups['R']['normal_step'],
-                "speed_steps_per_sec": config.control_rod_groups['R']['speed_steps_per_sec'],
-                "position_range": config.control_rod_groups['R']['position_range']
+                "description": self.config['control_rod_groups']['R']['description'],
+                "worth_fraction": self.config['control_rod_groups']['R']['worth_fraction'],
+                "min_step": self.config['control_rod_groups']['R']['min_step'],
+                "max_step": self.config['control_rod_groups']['R']['max_step'],
+                "normal_step": self.config['control_rod_groups']['R']['normal_step'],
+                "speed_steps_per_sec": self.config['control_rod_groups']['R']['speed_steps_per_sec'],
+                "position_range": self.config['control_rod_groups']['R']['position_range']
             },
             "GCP": {
                 "position": self.model.rod_group_GCP_position,
                 "target_position": self.model.target_rod_group_GCP_position,
-                "description": config.control_rod_groups['GCP']['description'],
-                "worth_fraction": config.control_rod_groups['GCP']['worth_fraction'],
-                "min_step": config.control_rod_groups['GCP']['min_step'],
-                "max_step": config.control_rod_groups['GCP']['max_step'],
-                "normal_step": config.control_rod_groups['GCP']['normal_step'],
-                "speed_steps_per_sec": config.control_rod_groups['GCP']['speed_steps_per_sec'],
-                "position_range": config.control_rod_groups['GCP']['position_range']
+                "description": self.config['control_rod_groups']['GCP']['description'],
+                "worth_fraction": self.config['control_rod_groups']['GCP']['worth_fraction'],
+                "min_step": self.config['control_rod_groups']['GCP']['min_step'],
+                "max_step": self.config['control_rod_groups']['GCP']['max_step'],
+                "normal_step": self.config['control_rod_groups']['GCP']['normal_step'],
+                "speed_steps_per_sec": self.config['control_rod_groups']['GCP']['speed_steps_per_sec'],
+                "position_range": self.config['control_rod_groups']['GCP']['position_range']
             },
-            "conversion": config.control_rod_groups['conversion']
+            "conversion": self.config['control_rod_groups']['conversion']
         }
 
     def update_control_rod_position(self, position):

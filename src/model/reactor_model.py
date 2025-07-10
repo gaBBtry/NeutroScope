@@ -2,7 +2,7 @@
 Modèle de physique des réacteurs pour les calculs de neutronique
 """
 import numpy as np
-from . import config
+from .config import get_config
 from .preset_model import PresetManager, PresetData, PresetCategory, PresetType
 from .abstract_reactor_model import AbstractReactorModel
 
@@ -12,6 +12,8 @@ class ReactorModel(AbstractReactorModel):
     """
     
     def __init__(self):
+        # Charger la configuration
+        self.config = get_config()
         # --- NOUVELLES VARIABLES D'ÉTAT DYNAMIQUES ---
         # Positions actuelles (évoluent dans le temps)
         self.rod_group_R_position = 0.0
@@ -31,7 +33,7 @@ class ReactorModel(AbstractReactorModel):
         self.fuel_enrichment = 3.5  # %
         
         # Constantes physiques
-        self.delayed_neutron_fraction = config.DELAYED_NEUTRON_FRACTION  # β
+        self.delayed_neutron_fraction = self.config['physical_constants']['DELAYED_NEUTRON_FRACTION']  # β
         
         # Variables de dynamique Xénon-135 (concentrations en atomes/cm³)
         self.iodine_concentration = 0.0
@@ -44,7 +46,7 @@ class ReactorModel(AbstractReactorModel):
         self.k_infinite = 1.0
         self.reactivity = 0.0
         self.doubling_time = float('inf')
-        self.neutron_flux = config.thermal_kinetics['nominal_flux']
+        self.neutron_flux = self.config['thermal_kinetics']['nominal_flux']
         
         # Quatre facteurs
         self.eta = 2.0
@@ -67,19 +69,19 @@ class ReactorModel(AbstractReactorModel):
     def _update_control_kinetics(self, dt_sec: float):
         """Met à jour la position des barres et la concentration de bore vers leurs cibles."""
         # Cinétique des barres de régulation (R)
-        r_speed = config.control_rod_groups['R']['speed_steps_per_sec']
+        r_speed = self.config['control_rod_groups']['R']['speed_steps_per_sec']
         diff_r = self.target_rod_group_R_position - self.rod_group_R_position
         step_r = min(abs(diff_r), r_speed * dt_sec) * np.sign(diff_r)
         self.rod_group_R_position += step_r
 
         # Cinétique des barres de compensation (GCP)
-        gcp_speed = config.control_rod_groups['GCP']['speed_steps_per_sec']
+        gcp_speed = self.config['control_rod_groups']['GCP']['speed_steps_per_sec']
         diff_gcp = self.target_rod_group_GCP_position - self.rod_group_GCP_position
         step_gcp = min(abs(diff_gcp), gcp_speed * dt_sec) * np.sign(diff_gcp)
         self.rod_group_GCP_position += step_gcp
 
         # Cinétique du bore
-        boron_speed = config.control_kinetics['boron']['max_change_rate_ppm_per_sec']
+        boron_speed = self.config['control_kinetics']['boron']['max_change_rate_ppm_per_sec']
         diff_boron = self.target_boron_concentration - self.boron_concentration
         step_boron = min(abs(diff_boron), boron_speed * dt_sec) * np.sign(diff_boron)
         self.boron_concentration += step_boron
@@ -87,14 +89,14 @@ class ReactorModel(AbstractReactorModel):
     def _update_thermal_kinetics(self, dt_sec: float):
         """Met à jour les températures du combustible et du modérateur."""
         # Conversion du flux neutronique en puissance thermique (MW)
-        power_MW = self.neutron_flux * (config.thermal_kinetics['nominal_power_MW'] / config.thermal_kinetics['nominal_flux'])
+        power_MW = self.neutron_flux * (self.config['thermal_kinetics']['nominal_power_MW'] / self.config['thermal_kinetics']['nominal_flux'])
 
         # Coefficients de transfert et capacités calorifiques
-        K_fm = config.thermal_kinetics['heat_transfer_coeff_fuel_to_moderator_MW_per_C']
-        K_mc = config.thermal_kinetics['heat_transfer_coeff_moderator_to_coolant_MW_per_C']
-        C_fuel = config.thermal_kinetics['fuel_heat_capacity_MJ_per_C']
-        C_mod = config.thermal_kinetics['moderator_heat_capacity_MJ_per_C']
-        T_coolant_in = config.thermal_kinetics['coolant_inlet_temperature_C']
+        K_fm = self.config['thermal_kinetics']['heat_transfer_coeff_fuel_to_moderator_MW_per_C']
+        K_mc = self.config['thermal_kinetics']['heat_transfer_coeff_moderator_to_coolant_MW_per_C']
+        C_fuel = self.config['thermal_kinetics']['fuel_heat_capacity_MJ_per_C']
+        C_mod = self.config['thermal_kinetics']['moderator_heat_capacity_MJ_per_C']
+        T_coolant_in = self.config['thermal_kinetics']['coolant_inlet_temperature_C']
 
         # Équations différentielles (intégration d'Euler)
         # d(T_fuel)/dt = (Puissance - Transfert_fm) / C_fuel
@@ -116,7 +118,7 @@ class ReactorModel(AbstractReactorModel):
 
     def _update_neutron_flux(self, dt_sec: float):
         """Mise à jour du flux neutronique basée sur la cinétique ponctuelle simplifiée."""
-        prompt_neutron_lifetime = config.PROMPT_NEUTRON_LIFETIME
+        prompt_neutron_lifetime = self.config['physical_constants']['PROMPT_NEUTRON_LIFETIME']
 
         if prompt_neutron_lifetime > 1e-9:
             # Solution analytique pour dN/dt = (rho/l) * N  => N(t) = N(0) * exp((rho/l)*t)
@@ -127,8 +129,8 @@ class ReactorModel(AbstractReactorModel):
             self.neutron_flux *= np.exp(exponent)
 
         # Plafonner pour la stabilité et éviter les valeurs négatives
-        self.neutron_flux = max(0, min(self.neutron_flux, config.thermal_kinetics['nominal_flux'] * 2.5))
-        self.power_level = (self.neutron_flux / config.thermal_kinetics['nominal_flux']) * 100.0
+        self.neutron_flux = max(0, min(self.neutron_flux, self.config['thermal_kinetics']['nominal_flux'] * 2.5))
+        self.power_level = (self.neutron_flux / self.config['thermal_kinetics']['nominal_flux']) * 100.0
 
     def calculate_four_factors(self):
         """Calcule les quatre facteurs du cycle neutronique"""
@@ -136,56 +138,60 @@ class ReactorModel(AbstractReactorModel):
         
         # Eta (nombre moyen de neutrons par fission)
         # Dépend principalement de l'enrichissement du combustible
-        self.eta = config.ETA_BASE + config.ETA_ENRICHMENT_COEFF * (self.fuel_enrichment - config.ETA_ENRICHMENT_REF) / config.ETA_ENRICHMENT_SCALE
+        eta_params = self.config['four_factors']['eta']
+        self.eta = eta_params['BASE'] + eta_params['ENRICHMENT_COEFF'] * (self.fuel_enrichment - eta_params['ENRICHMENT_REF']) / eta_params['ENRICHMENT_SCALE']
         
         # Epsilon (facteur de fission rapide)
         # Typiquement constant pour une conception de réacteur donnée
-        self.epsilon = config.EPSILON
+        self.epsilon = self.config['four_factors']['epsilon']
         
         # Probabilité d'échapper aux résonances
         # Affectée par la température du combustible (élargissement Doppler) et la température du modérateur
         
         # 1. Effet Doppler (température du combustible)
-        fuel_temp_K = self.fuel_temperature + config.CELSIUS_TO_KELVIN
-        sqrt_T_diff = np.sqrt(fuel_temp_K) - np.sqrt(config.P_REF_TEMP_K)
-        doppler_effect = np.exp(-config.P_DOPPLER_COEFF * sqrt_T_diff)
+        p_params = self.config['four_factors']['p']
+        fuel_temp_K = self.fuel_temperature + self.config['physical_constants']['CELSIUS_TO_KELVIN']
+        sqrt_T_diff = np.sqrt(fuel_temp_K) - np.sqrt(p_params['REF_TEMP_K'])
+        doppler_effect = np.exp(-p_params['DOPPLER_COEFF'] * sqrt_T_diff)
         
         # 2. Effet température du modérateur (densité et efficacité de ralentissement)
-        mod_temp_deviation = self.moderator_temperature - config.P_REF_MOD_TEMP_C
-        moderator_effect = 1.0 - config.P_MOD_TEMP_COEFF * mod_temp_deviation
+        mod_temp_deviation = self.moderator_temperature - p_params['REF_MOD_TEMP_C']
+        moderator_effect = 1.0 - p_params['MOD_TEMP_COEFF'] * mod_temp_deviation
         
         # 3. Combinaison des deux effets
-        self.p = config.P_BASE * doppler_effect * moderator_effect
+        self.p = p_params['BASE'] * doppler_effect * moderator_effect
         
         # Facteur d'utilisation thermique (f)
         # Nouveau modèle basé sur les rapports d'absorption : f = 1 / (1 + A_non_fuel)
         # A_non_fuel est le rapport d'absorption dans les matériaux non-combustibles par rapport au combustible
         
         # 1. Rapport d'absorption de base, ajusté pour la température du modérateur
-        temp_deviation = self.moderator_temperature - config.F_REF_MOD_TEMP_C
-        mod_temp_effect = config.F_MOD_TEMP_ABS_COEFF * temp_deviation
-        base_abs_ratio = config.F_BASE_ABS_RATIO * (1 + mod_temp_effect)
+        f_params = self.config['four_factors']['f']
+        temp_deviation = self.moderator_temperature - f_params['REF_MOD_TEMP_C']
+        mod_temp_effect = f_params['MOD_TEMP_ABS_COEFF'] * temp_deviation
+        base_abs_ratio = f_params['BASE_ABS_RATIO'] * (1 + mod_temp_effect)
         
         # 2. Rapport d'absorption des barres de contrôle
         # La convention physique est 0 pas = extrait (0% insertion), 228 pas = inséré (100% insertion)
         # La valeur d'anti-réactivité est proportionnelle à la fraction d'insertion.
-        rod_abs_ratio = config.F_CONTROL_ROD_WORTH * self._get_total_rod_worth_fraction()
+        rod_abs_ratio = f_params['CONTROL_ROD_WORTH'] * self._get_total_rod_worth_fraction()
         
         # 3. Rapport d'absorption du bore
-        boron_abs_ratio = config.F_BORON_WORTH_PER_PPM * self.boron_concentration
+        boron_abs_ratio = f_params['BORON_WORTH_PER_PPM'] * self.boron_concentration
         
         # 4. Rapport d'absorption du Xénon-135
         # L'ancienne formule était incorrecte et dimensionnellement incohérente.
         # Nouvelle approche : calcul du rapport Σa_xenon / Σa_fuel pour assurer la cohérence.
-        sigma_a_xenon = self.xenon_concentration * config.XENON_ABSORPTION_CROSS_SECTION * 1e-24
+        xenon_params = self.config['xenon_dynamics']
+        sigma_a_xenon = self.xenon_concentration * xenon_params['XENON_ABSORPTION_CROSS_SECTION'] * 1e-24
 
         # On déduit Σa_fuel à partir de la définition de eta = nu * Σf / Σa_fuel.
         # Σf est lui-même déduit du FISSION_RATE_COEFF pour la cohérence du modèle.
         # Note : le ratio final est indépendant de la valeur exacte de FISSION_RATE_COEFF.
-        sigma_f_nominal = config.FISSION_RATE_COEFF * 100.0  # Valeur de Σf à 100% puissance
+        sigma_f_nominal = xenon_params['FISSION_RATE_COEFF'] * 100.0  # Valeur de Σf à 100% puissance
 
         if self.eta > 1e-9: # Prévenir la division par zéro
-            sigma_a_fuel_nominal = (sigma_f_nominal * config.NEUTRONS_PER_THERMAL_FISSION_U235) / self.eta
+            sigma_a_fuel_nominal = (sigma_f_nominal * self.config['physical_constants']['NEUTRONS_PER_THERMAL_FISSION_U235']) / self.eta
         else:
             sigma_a_fuel_nominal = 1.0 # Fallback improbable, mais sécuritaire
 
@@ -212,17 +218,18 @@ class ReactorModel(AbstractReactorModel):
         
         # Nouveau calcul de fuite basé sur la théorie de diffusion à deux groupes
         # 1. Laplacien géométrique B^2
-        R = config.CORE_DIAMETER_M / 2.0
-        H = config.CORE_HEIGHT_M
-        geometric_buckling = (np.pi / H)**2 + (config.BESSEL_J0_FIRST_ZERO / R)**2
+        leakage_params = self.config['neutron_leakage']
+        R = leakage_params['CORE_DIAMETER_M'] / 2.0
+        H = leakage_params['CORE_HEIGHT_M']
+        geometric_buckling = (np.pi / H)**2 + (self.config['physical_constants']['BESSEL_J0_FIRST_ZERO'] / R)**2
         
         # 2. Effet de la température sur la densité du modérateur et les aires de diffusion
         # L^2 et L_s^2 sont proportionnels à (rho_ref/rho_T)^2
-        temp_deviation = self.moderator_temperature - config.F_REF_MOD_TEMP_C
-        density_ratio = 1.0 / (1.0 - config.MODERATOR_DENSITY_COEFF * temp_deviation)
+        temp_deviation = self.moderator_temperature - self.config['four_factors']['f']['REF_MOD_TEMP_C']
+        density_ratio = 1.0 / (1.0 - leakage_params['MODERATOR_DENSITY_COEFF'] * temp_deviation)
         
-        thermal_diffusion_area = config.THERMAL_DIFFUSION_AREA_M2 * (density_ratio**2)
-        fast_diffusion_area = config.FAST_DIFFUSION_AREA_M2 * (density_ratio**2)
+        thermal_diffusion_area = leakage_params['THERMAL_DIFFUSION_AREA_M2'] * (density_ratio**2)
+        fast_diffusion_area = leakage_params['FAST_DIFFUSION_AREA_M2'] * (density_ratio**2)
         
         # 3. Probabilités de non-fuite
         self.fast_non_leakage_prob = 1.0 / (1.0 + geometric_buckling * fast_diffusion_area)
@@ -255,7 +262,7 @@ class ReactorModel(AbstractReactorModel):
             # Utilisation de l'approximation du saut prompt : T = l / (ρ - β)
             prompt_reactivity = rho - self.delayed_neutron_fraction
             if prompt_reactivity > 0:
-                period = config.PROMPT_NEUTRON_LIFETIME / prompt_reactivity
+                period = self.config['physical_constants']['PROMPT_NEUTRON_LIFETIME'] / prompt_reactivity
                 self.doubling_time = period * np.log(2)
             else:
                 # Exactement critique prompt, la période est théoriquement zéro.
@@ -267,7 +274,7 @@ class ReactorModel(AbstractReactorModel):
             # Utilisation de l'approximation à un groupe de neutrons retardés T ≈ β / (λ * ρ)
             # où λ est la constante de décroissance effective des précurseurs de neutrons retardés.
             # Une valeur typique pour λ_eff est ~0.1 s⁻¹
-            effective_decay_constant = config.EFFECTIVE_DECAY_CONSTANT  # lambda_eff (s^-1)
+            effective_decay_constant = self.config['physical_constants']['EFFECTIVE_DECAY_CONSTANT']  # lambda_eff (s^-1)
             
             # Une approximation plus simple et plus courante pour une petite réactivité est T ≈ β / (λ * ρ)
             if rho > 0:
@@ -282,17 +289,19 @@ class ReactorModel(AbstractReactorModel):
         pour le niveau de puissance actuel.
         """
         # Taux de fission basé sur le niveau de puissance
-        fission_rate = self.power_level * config.FISSION_RATE_COEFF * config.thermal_kinetics['nominal_flux']
+        xenon_params = self.config['xenon_dynamics']
+        thermal_params = self.config['thermal_kinetics']
+        fission_rate = self.power_level * xenon_params['FISSION_RATE_COEFF'] * thermal_params['nominal_flux']
         
         # Concentrations d'équilibre
         # Iode: λI * [I] = γI * Σf * Φ (production = disparition)
-        self.iodine_concentration = (config.IODINE_YIELD * fission_rate) / config.IODINE_DECAY_CONSTANT
+        self.iodine_concentration = (xenon_params['IODINE_YIELD'] * fission_rate) / xenon_params['IODINE_DECAY_CONSTANT']
         
         # Xénon: λX * [Xe] + σXe * Φ * [Xe] = γXe * Σf * Φ + λI * [I]
-        thermal_flux = config.thermal_kinetics['nominal_flux'] * (self.power_level / 100.0)
-        xenon_removal_rate = config.XENON_DECAY_CONSTANT + config.XENON_ABSORPTION_CROSS_SECTION * thermal_flux * 1e-24
-        xenon_production_rate = (config.XENON_YIELD_DIRECT * fission_rate + 
-                               config.IODINE_DECAY_CONSTANT * self.iodine_concentration)
+        thermal_flux = thermal_params['nominal_flux'] * (self.power_level / 100.0)
+        xenon_removal_rate = xenon_params['XENON_DECAY_CONSTANT'] + xenon_params['XENON_ABSORPTION_CROSS_SECTION'] * thermal_flux * 1e-24
+        xenon_production_rate = (xenon_params['XENON_YIELD_DIRECT'] * fission_rate + 
+                               xenon_params['IODINE_DECAY_CONSTANT'] * self.iodine_concentration)
         
         if xenon_removal_rate > 1e-9:
             self.xenon_concentration = xenon_production_rate / xenon_removal_rate
@@ -311,19 +320,21 @@ class ReactorModel(AbstractReactorModel):
             dt = self.time_step
             
         # Taux de fission actuel
-        fission_rate = self.power_level * config.FISSION_RATE_COEFF * config.thermal_kinetics['nominal_flux']
-        thermal_flux = config.thermal_kinetics['nominal_flux'] * (self.power_level / 100.0)
+        xenon_params = self.config['xenon_dynamics']
+        thermal_params = self.config['thermal_kinetics']
+        fission_rate = self.power_level * xenon_params['FISSION_RATE_COEFF'] * thermal_params['nominal_flux']
+        thermal_flux = thermal_params['nominal_flux'] * (self.power_level / 100.0)
         
         # Équation pour l'Iode-135: d[I]/dt = γI * Σf * Φ - λI * [I]
-        iodine_production = config.IODINE_YIELD * fission_rate
-        iodine_decay = config.IODINE_DECAY_CONSTANT * self.iodine_concentration
+        iodine_production = xenon_params['IODINE_YIELD'] * fission_rate
+        iodine_decay = xenon_params['IODINE_DECAY_CONSTANT'] * self.iodine_concentration
         d_iodine_dt = iodine_production - iodine_decay
         
         # Équation pour le Xénon-135: d[Xe]/dt = γXe * Σf * Φ + λI * [I] - λXe * [Xe] - σXe * Φ * [Xe]
-        xenon_production_direct = config.XENON_YIELD_DIRECT * fission_rate
-        xenon_production_from_iodine = config.IODINE_DECAY_CONSTANT * self.iodine_concentration
-        xenon_decay = config.XENON_DECAY_CONSTANT * self.xenon_concentration
-        xenon_burnup = config.XENON_ABSORPTION_CROSS_SECTION * thermal_flux * self.xenon_concentration * 1e-24
+        xenon_production_direct = xenon_params['XENON_YIELD_DIRECT'] * fission_rate
+        xenon_production_from_iodine = xenon_params['IODINE_DECAY_CONSTANT'] * self.iodine_concentration
+        xenon_decay = xenon_params['XENON_DECAY_CONSTANT'] * self.xenon_concentration
+        xenon_burnup = xenon_params['XENON_ABSORPTION_CROSS_SECTION'] * thermal_flux * self.xenon_concentration * 1e-24
         
         d_xenon_dt = xenon_production_direct + xenon_production_from_iodine - xenon_decay - xenon_burnup
         
@@ -341,8 +352,8 @@ class ReactorModel(AbstractReactorModel):
         Calcule l'effet du Xénon-135 sur la réactivité (en pcm).
         """
         # Calcul de l'anti-réactivité due au Xénon-135
-        thermal_flux = config.thermal_kinetics['nominal_flux'] * (self.power_level / 100.0)
-        xenon_absorption_rate = (config.XENON_ABSORPTION_CROSS_SECTION * 
+        thermal_flux = self.config['thermal_kinetics']['nominal_flux'] * (self.power_level / 100.0)
+        xenon_absorption_rate = (self.config['xenon_dynamics']['XENON_ABSORPTION_CROSS_SECTION'] * 
                                self.xenon_concentration * thermal_flux * 1e-24)
         
         # Conversion approximative en pcm (cette formule dépend du réacteur)
@@ -390,7 +401,7 @@ class ReactorModel(AbstractReactorModel):
     def update_control_rod_position(self, position):
         """Méthode de rétrocompatibilité - convertit % en positions équivalentes R et GCP"""
         # Conversion approximative pour maintenir la rétrocompatibilité
-        steps_max = config.control_rod_groups['conversion']['steps_to_percent']
+        steps_max = self.config['control_rod_groups']['conversion']['steps_to_percent']
         equivalent_steps = (100.0 - position) * steps_max / 100.0
         self.target_rod_group_R_position = equivalent_steps
         self.target_rod_group_GCP_position = equivalent_steps
@@ -455,9 +466,9 @@ class ReactorModel(AbstractReactorModel):
                     sigmoid_factor = 1.0 / (1.0 + np.exp(-12 * (relative_depth - 0.5)))
                     attenuation_factor = 1.0 - sigmoid_factor
                     
-                    effect_coeff = config.CONTROL_ROD_EFFECT_COEFF * attenuation_factor
+                    effect_coeff = self.config['neutron_leakage']['CONTROL_ROD_EFFECT_COEFF'] * attenuation_factor
                 else:
-                    effect_coeff = config.CONTROL_ROD_EFFECT_COEFF
+                    effect_coeff = self.config['neutron_leakage']['CONTROL_ROD_EFFECT_COEFF']
                 
                 # Application de l'effet gaussien atténué
                 if effect_coeff > 0:
@@ -517,7 +528,7 @@ class ReactorModel(AbstractReactorModel):
         
         # To split fuel absorptions, we use eta. eta = nu * Sigma_f / Sigma_a_fuel
         # Fraction of absorptions causing fission is eta/nu.
-        nu = config.NEUTRONS_PER_THERMAL_FISSION_U235  # Neutrons per thermal fission in U-235
+        nu = self.config['physical_constants']['NEUTRONS_PER_THERMAL_FISSION_U235']  # Neutrons per thermal fission in U-235
         fission_fraction_in_fuel = self.eta / nu
         fission_fraction_in_fuel = min(fission_fraction_in_fuel, 1.0) # Cannot be > 1
 
@@ -648,7 +659,7 @@ class ReactorModel(AbstractReactorModel):
 
         self.fuel_enrichment = preset.fuel_enrichment
         self.power_level = preset.power_level
-        self.neutron_flux = config.thermal_kinetics['nominal_flux'] * (self.power_level / 100.0)
+        self.neutron_flux = self.config['thermal_kinetics']['nominal_flux'] * (self.power_level / 100.0)
 
         # Calculer les températures à l'équilibre pour cet état
         self._calculate_equilibrium_temperatures()
@@ -672,10 +683,11 @@ class ReactorModel(AbstractReactorModel):
 
     def _calculate_equilibrium_temperatures(self):
         """Calcule les températures du combustible et du modérateur à l'équilibre thermique."""
-        power_MW = self.neutron_flux * (config.thermal_kinetics['nominal_power_MW'] / config.thermal_kinetics['nominal_flux'])
-        K_fm = config.thermal_kinetics['heat_transfer_coeff_fuel_to_moderator_MW_per_C']
-        K_mc = config.thermal_kinetics['heat_transfer_coeff_moderator_to_coolant_MW_per_C']
-        T_coolant_in = config.thermal_kinetics['coolant_inlet_temperature_C']
+        thermal_params = self.config['thermal_kinetics']
+        power_MW = self.neutron_flux * (thermal_params['nominal_power_MW'] / thermal_params['nominal_flux'])
+        K_fm = thermal_params['heat_transfer_coeff_fuel_to_moderator_MW_per_C']
+        K_mc = thermal_params['heat_transfer_coeff_moderator_to_coolant_MW_per_C']
+        T_coolant_in = thermal_params['coolant_inlet_temperature_C']
 
         # À l'équilibre, Puissance = K_mc * (T_mod - T_coolant_in)
         if K_mc > 1e-6:
@@ -814,14 +826,15 @@ class ReactorModel(AbstractReactorModel):
             float: Fraction totale d'anti-réactivité (0.0 à 1.0)
         """
         # Convention physique interne : 0 pas = 0% inséré, 228 pas = 100% inséré.
-        steps_max = config.control_rod_groups['conversion']['steps_to_percent']
+        rod_groups = self.config['control_rod_groups']
+        steps_max = rod_groups['conversion']['steps_to_percent']
         
         r_insertion_fraction = self.rod_group_R_position / steps_max
         gcp_insertion_fraction = self.rod_group_GCP_position / steps_max
         
         # Calcul des contributions pondérées
-        r_worth = config.control_rod_groups['R']['worth_fraction']
-        gcp_worth = config.control_rod_groups['GCP']['worth_fraction']
+        r_worth = rod_groups['R']['worth_fraction']
+        gcp_worth = rod_groups['GCP']['worth_fraction']
         
         total_worth_fraction = (r_insertion_fraction * r_worth + 
                                gcp_insertion_fraction * gcp_worth)
