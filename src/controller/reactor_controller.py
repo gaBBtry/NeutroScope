@@ -12,7 +12,15 @@ class ReactorController:
     
     def __init__(self):
         self.model = ReactorModel()
-    
+
+    def get_gui_settings(self):
+        """Retourne les paramètres de configuration de l'interface graphique."""
+        return config.gui_settings
+
+    def get_parameter_config(self, param_name):
+        """Retourne la configuration pour un paramètre spécifique."""
+        return config.parameters_config.get(param_name, {})
+
     # Nouvelles méthodes pour les groupes de barres
     def update_rod_group_R_position(self, position):
         """Update R group position (0-228 steps)"""
@@ -31,30 +39,6 @@ class ReactorController:
             "GCP": self.model.rod_group_GCP_position
         }
     
-    def get_rod_groups_info(self):
-        """Get information about rod groups configuration"""
-        return {
-            "R": {
-                "position": self.model.rod_group_R_position,
-                "description": config.control_rod_groups['R']['description'],
-                "worth_fraction": config.control_rod_groups['R']['worth_fraction'],
-                "min_step": config.control_rod_groups['R']['min_step'],
-                "max_step": config.control_rod_groups['R']['max_step'],
-                "normal_step": config.control_rod_groups['R']['normal_step'],
-                "position_range": config.control_rod_groups['R']['position_range']
-            },
-            "GCP": {
-                "position": self.model.rod_group_GCP_position,
-                "description": config.control_rod_groups['GCP']['description'],
-                "worth_fraction": config.control_rod_groups['GCP']['worth_fraction'],
-                "min_step": config.control_rod_groups['GCP']['min_step'],
-                "max_step": config.control_rod_groups['GCP']['max_step'],
-                "normal_step": config.control_rod_groups['GCP']['normal_step'],
-                "position_range": config.control_rod_groups['GCP']['position_range']
-            },
-            "conversion": config.control_rod_groups['conversion']
-        }
-
     def update_control_rod_position(self, position):
         """Méthode de rétrocompatibilité pour les anciens contrôles"""
         return self.model.update_control_rod_position(position)
@@ -184,7 +168,8 @@ class ReactorController:
     def create_preset_from_current_state(self, name, description="", category=None):
         """Crée un nouveau preset basé sur l'état actuel"""
         current_params = {
-            "control_rod_position": self.model.control_rod_position,
+            "rod_group_R_position": self.model.rod_group_R_position,
+            "rod_group_GCP_position": self.model.rod_group_GCP_position,
             "boron_concentration": self.model.boron_concentration,
             "average_temperature": self.model.average_temperature,
             "fuel_enrichment": self.model.fuel_enrichment,

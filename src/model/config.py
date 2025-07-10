@@ -93,9 +93,14 @@ XENON_DECAY_CONSTANT = _xenon.get("XENON_DECAY_CONSTANT", 2.11e-5)    # s^-1
 XENON_ABSORPTION_CROSS_SECTION = _xenon.get("XENON_ABSORPTION_CROSS_SECTION", 2.65e6)  # barns
 THERMAL_FLUX_NOMINAL = _xenon.get("THERMAL_FLUX_NOMINAL", 3.0e13)     # n/cm²/s
 FISSION_RATE_COEFF = _xenon.get("FISSION_RATE_COEFF", 1.0e-6)
+XENON_REACTIVITY_CONVERSION_FACTOR = _xenon.get("XENON_REACTIVITY_CONVERSION_FACTOR", 1e5)
 
-# Groupes de barres de contrôle
-control_rod_groups = _config.get("control_rod_groups", {})
+# Configuration de l'interface et des paramètres
+gui_settings = _config.get("gui_settings", {})
+parameters_config = _config.get("parameters_config", {})
 
 # Préréglages par défaut
-PRESETS = _config.get("presets", {}) 
+PRESETS = _config.get("presets", {})
+
+# État par défaut
+default_state = _config.get("default_state", {}) 

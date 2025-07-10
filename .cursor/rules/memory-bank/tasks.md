@@ -4,9 +4,60 @@ Ce fichier documente les tâches répétitives et leurs workflows pour faciliter
 
 ---
 
-## Implémentation Système de Grappes R et GCP avec Granularité Fine
+## Centralisation Complète de la Configuration dans `config.json`
 
-**Dernière exécution :** Janvier 2025  
+**Dernière exécution :** Juillet 2025
+**Contexte :** Refactoring majeur pour faire de `config.json` la source unique de vérité pour tous les paramètres de l'application (physique, UI, état initial).
+
+### Type de tâche :
+Refactoring d'architecture pour la maintenabilité et la flexibilité.
+
+### Problème identifié :
+- Des valeurs (plages de l'interface, libellés, textes d'aide, constantes de calcul, états initiaux) étaient codées en dur dans différentes parties du code (`gui`, `model`).
+- Manque de cohérence et difficulté de maintenance. Toute modification nécessitait de chercher et de changer le code à plusieurs endroits.
+
+### Solution implémentée :
+- **Centralisation totale** : Toutes les valeurs de configuration ont été déplacées vers `config.json`.
+- **Architecture pilotée par la config** : L'application lit ce fichier au démarrage pour configurer le modèle, le contrôleur et l'interface.
+- **Interface dynamique** : La `MainWindow` construit ses widgets dynamiquement en fonction de la configuration reçue du contrôleur.
+
+### Workflow d'ajout d'un nouveau paramètre (Ex: Pression)
+
+1.  **`config.json`** :
+    - Ajouter `pression` à la section `default_state` avec sa valeur initiale.
+    - Ajouter une nouvelle entrée `pression` dans `parameters_config` avec son `label`, `range`, `step`, `suffix`, `info_text`, etc.
+    - Ajouter les coefficients physiques liés à la pression dans une section appropriée (ex: `four_factors`).
+
+2.  **`src/model/config.py`** :
+    - S'assurer que les nouvelles clés de configuration sont chargées. (Normalement automatique si elles sont dans des sections déjà chargées).
+
+3.  **`src/model/reactor_model.py`** :
+    - Ajouter `self.pression = config.default_state.get("pression", ...)` dans `__init__`.
+    - Ajouter la méthode `update_pression(self, value)`.
+    - Intégrer `self.pression` dans les calculs physiques (ex: `calculate_four_factors`).
+
+4.  **`src/controller/reactor_controller.py`** :
+    - Ajouter la méthode `update_pression(self, pression)` qui appelle la méthode correspondante du modèle.
+
+5.  **`src/gui/main_window.py`** :
+    - Dans `create_control_panel`, ajouter une ligne pour créer le nouveau contrôle :
+      `self.pression_group, ... = self._create_parameter_control('pression')`
+    - Ajouter `control_layout.addWidget(self.pression_group)`.
+    - Dans `connect_signals`, connecter les signaux du nouveau widget (slider/spinbox) à ses méthodes de handler (ex: `on_pression_slider_changed`).
+    - Créer les méthodes de handler (`on_pression_slider_changed`, `on_pression_spinbox_changed`, etc.) qui appellent `controller.update_pression(value)`.
+
+### Bonnes pratiques identifiées :
+- **Source unique de vérité** : `config.json` pilote tout.
+- **Factorisation** : La méthode `_create_parameter_control` dans `MainWindow` rend l'ajout de nouveaux contrôles trivial.
+- **Découplage** : Le modèle n'a aucune connaissance de l'interface. La vue ne connaît rien de la physique.
+
+---
+
+## [OBSOLÈTE] Implémentation Système de Grappes R et GCP avec Granularité Fine
+
+**NOTE : Ce workflow est obsolète. La configuration est maintenant centralisée dans `config.json` sous `parameters_config`.**
+
+**Dernière exécution :** Janvier 2025
 **Contexte :** Transformation complète du système de contrôle des barres pour distinguer les groupes R (Régulation) et GCP (Compensation de Puissance)
 
 ### Type de tâche :
@@ -172,9 +223,11 @@ def create_rod_groups_controls(self):
 
 ---
 
-## Inversion Complète de Convention d'Interface (Barres de Contrôle)
+## [OBSOLÈTE] Inversion Complète de Convention d'Interface (Barres de Contrôle)
 
-**Dernière exécution :** Janvier 2025  
+**NOTE : Ce workflow est obsolète. La convention est maintenant définie par la logique de l'interface qui lit les `range` depuis `config.json`.**
+
+**Dernière exécution :** Janvier 2025
 **Contexte :** Inversion de la convention des barres de contrôle pour adopter un standard industriel plus intuitif
 
 ### Type de tâche :

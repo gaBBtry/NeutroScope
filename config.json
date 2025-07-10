@@ -1,4 +1,32 @@
 {
+    "gui_settings": {
+        "window_title": "Simulation Neutronique des REP",
+        "minimum_size": [
+            1200,
+            800
+        ],
+        "control_panel_ratio": 1,
+        "visualization_ratio": 3,
+        "widths": {
+            "reset_button": 60,
+            "rod_spinbox": 80,
+            "rod_plus_minus_button": 30,
+            "boron_spinbox": 80,
+            "boron_plus_minus_button": 35,
+            "temp_spinbox": 80,
+            "temp_plus_minus_button": 30,
+            "enrichment_spinbox": 80,
+            "enrichment_plus_minus_button": 40
+        },
+        "preset_matching_tolerances": {
+            "rod_position": 1,
+            "boron_concentration": 1.0,
+            "average_temperature": 0.5,
+            "fuel_enrichment": 0.01,
+            "power_level": 0.1,
+            "xenon_concentration": 1e12
+        }
+    },
     "physical_constants": {
         "DELAYED_NEUTRON_FRACTION": 0.0065,
         "PROMPT_NEUTRON_LIFETIME": 2.0e-5,
@@ -6,6 +34,83 @@
         "NEUTRONS_PER_THERMAL_FISSION_U235": 2.43,
         "BESSEL_J0_FIRST_ZERO": 2.405,
         "CELSIUS_TO_KELVIN": 273.15
+    },
+    "parameters_config": {
+        "rod_group_R": {
+            "label": "Groupe R (Régulation)",
+            "info_text": "Le groupe R est utilisé pour le contrôle fin de la réactivité et les ajustements de puissance. Il représente environ 30% de la valeur totale des barres de contrôle.\n\nPosition: 0 pas (barres extraites) à 228 pas (barres insérées)\nCurseur: gauche = extraites, droite = insérées\nPas recommandés: 1-10 pas pour les ajustements fins",
+            "range": [
+                0,
+                228
+            ],
+            "tick_interval": 50,
+            "step": 1,
+            "suffix": " pas",
+            "description": "Groupe de Régulation",
+            "worth_fraction": 0.3
+        },
+        "rod_group_GCP": {
+            "label": "Groupe GCP (Compensation)",
+            "info_text": "Le groupe GCP est utilisé pour la compensation des variations de réactivité dues au burn-up et aux effets xénon. Il représente environ 70% de la valeur totale.\n\nPosition: 0 pas (barres extraites) à 228 pas (barres insérées)\nCurseur: gauche = extraites, droite = insérées\nPas recommandés: 5-50 pas pour les ajustements significatifs",
+            "range": [
+                0,
+                228
+            ],
+            "tick_interval": 50,
+            "step": 5,
+            "suffix": " pas",
+            "description": "Groupe de Compensation de Puissance",
+            "worth_fraction": 0.7
+        },
+        "boron": {
+            "label": "Concentration en Bore (ppm)",
+            "info_text": "Le bore dissous dans l'eau du circuit primaire est un poison neutronique qui permet un contrôle fin et homogène de la réactivité du cœur. Une concentration plus élevée réduit la réactivité.\n\nPlage typique: 0 à 2000 ppm (parties par million)",
+            "range": [
+                0,
+                2000
+            ],
+            "tick_interval": 250,
+            "step": 10,
+            "decimals": 0,
+            "suffix": " ppm"
+        },
+        "moderator_temp": {
+            "label": "Température Moyenne (°C)",
+            "info_text": "La température de l'eau (modérateur) affecte sa densité et donc son efficacité à ralentir les neutrons. Une augmentation de température réduit généralement la réactivité (coefficient de température modérateur négatif).\n\nPlage d'opération normale: 280°C à 350°C",
+            "range": [
+                280,
+                350
+            ],
+            "tick_interval": 10,
+            "step": 1,
+            "decimals": 1,
+            "suffix": " °C"
+        },
+        "fuel_enrichment": {
+            "label": "Enrichissement Combustible (%)",
+            "info_text": "Le pourcentage d'uranium-235 (isotope fissile) dans le combustible. Un enrichissement plus élevé augmente la réactivité et permet des cycles de combustible plus longs.\n\nPlage typique REP: 1.0% à 5.0%",
+            "range": [
+                1.0,
+                5.0
+            ],
+            "slider_range_multiplier": 10,
+            "tick_interval": 5,
+            "step": 0.1,
+            "decimals": 1,
+            "suffix": " %"
+        },
+        "presets_info": {
+            "label": "Préréglages",
+            "info_text": "Sélectionnez un préréglage pour configurer rapidement le réacteur dans un état spécifique:\n\n- Démarrage: Configuration typique au démarrage du réacteur\n- Critique à puissance nominale: Réacteur en fonctionnement normal\n- Fin de cycle: Configuration typique en fin de cycle du combustible\n- Surcritique: État où le réacteur voit sa puissance augmenter\n- Sous-critique: État où le réacteur voit sa puissance diminuer\n\nLe préréglage 'Personnalisé' est automatiquement sélectionné lorsque vous modifiez manuellement les paramètres.\n\nBouton 'Reset': Permet de revenir aux paramètres originaux du preset sélectionné si des modifications ont été apportées."
+        },
+        "reactor_params_info": {
+            "label": "Paramètres du Réacteur",
+            "info_text": "Paramètres neutroniques du réacteur\n\n- Taux de neutrons retardés (β): Fraction des neutrons émis avec un délai\n- Temps de doublement: Temps nécessaire pour doubler la puissance\n- Réactivité (ρ): Écart relatif par rapport à la criticité\n- k-effectif: Facteur de multiplication effectif (k=1: critique)"
+        },
+        "conversion": {
+            "steps_to_percent": 228,
+            "reference_worth": 0.26
+        }
     },
     "four_factors": {
         "eta": {
@@ -51,35 +156,8 @@
         "XENON_DECAY_CONSTANT": 2.11e-5,
         "XENON_ABSORPTION_CROSS_SECTION": 2.65e6,
         "THERMAL_FLUX_NOMINAL": 3.0e13,
-        "FISSION_RATE_COEFF": 1.0e-6
-    },
-    "control_rod_groups": {
-        "R": {
-            "description": "Groupe de Régulation",
-            "worth_fraction": 0.3,
-            "min_step": 1,
-            "max_step": 10,
-            "normal_step": 5,
-            "position_range": [
-                0,
-                228
-            ]
-        },
-        "GCP": {
-            "description": "Groupe de Compensation de Puissance",
-            "worth_fraction": 0.7,
-            "min_step": 5,
-            "max_step": 50,
-            "normal_step": 20,
-            "position_range": [
-                0,
-                228
-            ]
-        },
-        "conversion": {
-            "steps_to_percent": 228,
-            "reference_worth": 0.26
-        }
+        "FISSION_RATE_COEFF": 1.0e-6,
+        "XENON_REACTIVITY_CONVERSION_FACTOR": 1e5
     },
     "presets": {
         "PMD en début de cycle": {
@@ -114,5 +192,14 @@
             "fuel_enrichment": 3.5,
             "power_level": 100.0
         }
+    },
+    "default_state": {
+        "rod_group_R_position": 0,
+        "rod_group_GCP_position": 0,
+        "boron_concentration": 500.0,
+        "average_temperature": 310.0,
+        "power_level": 100.0,
+        "fuel_enrichment": 3.5,
+        "time_step": 3600.0
     }
 }

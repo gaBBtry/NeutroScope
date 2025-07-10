@@ -11,14 +11,16 @@ class ReactorModel:
     """
     
     def __init__(self):
-        # Paramètres par défaut - nouveaux groupes de barres
-        self.rod_group_R_position = 0  # 0-228 pas (Groupe de Régulation)
-        self.rod_group_GCP_position = 0  # 0-228 pas (Groupe de Compensation de Puissance)
-        self.boron_concentration = 500.0  # ppm
-        self.average_temperature = 310.0  # °C
-        self.power_level = 100.0 # %
-        self.fuel_enrichment = 3.5  # %
-        
+        # Paramètres par défaut chargés depuis la configuration
+        defaults = config.default_state
+        self.rod_group_R_position = defaults.get("rod_group_R_position", 0)
+        self.rod_group_GCP_position = defaults.get("rod_group_GCP_position", 0)
+        self.boron_concentration = defaults.get("boron_concentration", 500.0)
+        self.average_temperature = defaults.get("average_temperature", 310.0)
+        self.power_level = defaults.get("power_level", 100.0)
+        self.fuel_enrichment = defaults.get("fuel_enrichment", 3.5)
+        self.time_step = defaults.get("time_step", 3600.0)
+
         # Ceci est maintenant une valeur calculée, pas une entrée directe
         self.fuel_temperature = 0.0  # °C, sera calculée
         
@@ -29,7 +31,6 @@ class ReactorModel:
         self.iodine_concentration = 0.0  # I-135 concentration
         self.xenon_concentration = 0.0   # Xe-135 concentration
         self.simulation_time = 0.0       # temps de simulation en secondes
-        self.time_step = 3600.0          # pas de temps par défaut : 1 heure
         
         # Paramètres calculés
         self.k_effective = 1.0
@@ -280,7 +281,7 @@ class ReactorModel:
         
         # Conversion approximative en pcm (cette formule dépend du réacteur)
         # Ici, nous utilisons une approximation basée sur l'importance neutronique
-        xenon_reactivity_pcm = -xenon_absorption_rate * 1e5  # facteur de conversion approximatif
+        xenon_reactivity_pcm = -xenon_absorption_rate * config.XENON_REACTIVITY_CONVERSION_FACTOR
         
         return xenon_reactivity_pcm
 
@@ -320,7 +321,7 @@ class ReactorModel:
     def update_control_rod_position(self, position):
         """Méthode de rétrocompatibilité - convertit % en positions équivalentes R et GCP"""
         # Conversion approximative pour maintenir la rétrocompatibilité
-        steps_max = config.control_rod_groups['conversion']['steps_to_percent']
+        steps_max = config.parameters_config['conversion']['steps_to_percent']
         equivalent_steps = (100.0 - position) * steps_max / 100.0
         self.rod_group_R_position = equivalent_steps
         self.rod_group_GCP_position = equivalent_steps
@@ -593,22 +594,24 @@ class ReactorModel:
         Get the name of the current preset if the current parameters match one.
         If no preset matches, return 'Personnalisé'.
         """
+        tolerances = config.gui_settings.get("preset_matching_tolerances", {})
+        
         for preset in self.preset_manager.get_all_presets().values():
             # Comparer les paramètres de base
-            if (np.isclose(self.rod_group_R_position, preset.rod_group_R_position, atol=1) and
-            np.isclose(self.rod_group_GCP_position, preset.rod_group_GCP_position, atol=1) and
-                np.isclose(self.boron_concentration, preset.boron_concentration, atol=1.0) and
-                np.isclose(self.average_temperature, preset.average_temperature, atol=0.5) and
-                np.isclose(self.fuel_enrichment, preset.fuel_enrichment, atol=0.01) and
-                np.isclose(self.power_level, preset.power_level, atol=0.1)):
+            if (np.isclose(self.rod_group_R_position, preset.rod_group_R_position, atol=tolerances.get("rod_position", 1)) and
+                np.isclose(self.rod_group_GCP_position, preset.rod_group_GCP_position, atol=tolerances.get("rod_position", 1)) and
+                np.isclose(self.boron_concentration, preset.boron_concentration, atol=tolerances.get("boron_concentration", 1.0)) and
+                np.isclose(self.average_temperature, preset.average_temperature, atol=tolerances.get("average_temperature", 0.5)) and
+                np.isclose(self.fuel_enrichment, preset.fuel_enrichment, atol=tolerances.get("fuel_enrichment", 0.01)) and
+                np.isclose(self.power_level, preset.power_level, atol=tolerances.get("power_level", 0.1))):
                 
                 # Pour les presets temporels, vérifier aussi les concentrations Xénon
                 if preset.category == PresetCategory.TEMPOREL:
                     if (preset.xenon_concentration is not None and
-                        not np.isclose(self.xenon_concentration, preset.xenon_concentration, atol=1e12)):
+                        not np.isclose(self.xenon_concentration, preset.xenon_concentration, atol=tolerances.get("xenon_concentration", 1e12))):
                         continue
                     if (preset.iodine_concentration is not None and
-                        not np.isclose(self.iodine_concentration, preset.iodine_concentration, atol=1e12)):
+                        not np.isclose(self.iodine_concentration, preset.iodine_concentration, atol=tolerances.get("xenon_concentration", 1e12))):
                         continue
                 
                 return preset.name
@@ -709,14 +712,14 @@ class ReactorModel:
             float: Fraction totale d'anti-réactivité (0.0 à 1.0)
         """
         # Conversion des positions en fractions d'insertion (0 = extrait, 1 = inséré)
-        steps_max = config.control_rod_groups['conversion']['steps_to_percent']
+        steps_max = config.parameters_config['conversion']['steps_to_percent']
         
         r_insertion_fraction = (steps_max - self.rod_group_R_position) / steps_max
         gcp_insertion_fraction = (steps_max - self.rod_group_GCP_position) / steps_max
         
         # Calcul des contributions pondérées
-        r_worth = config.control_rod_groups['R']['worth_fraction']
-        gcp_worth = config.control_rod_groups['GCP']['worth_fraction']
+        r_worth = config.parameters_config['rod_group_R']['worth_fraction']
+        gcp_worth = config.parameters_config['rod_group_GCP']['worth_fraction']
         
         total_worth_fraction = (r_insertion_fraction * r_worth + 
                                gcp_insertion_fraction * gcp_worth)
