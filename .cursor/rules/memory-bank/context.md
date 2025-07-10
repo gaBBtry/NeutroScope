@@ -2,7 +2,9 @@
 
 ## Focus Actuel
 - **STATUT FINAL** : Suite au rapport d'audit, toutes les optimisations à **haute priorité** et plusieurs à **priorité moyenne** ont été implémentées avec succès. NeutroScope est maintenant un simulateur physiquement précis, techniquement robuste et hautement maintenable.
-- **Dernières modifications majeures** : Optimisations basées sur AUDIT_REPORT.md - amélioration de la précision physique, tests de validation, refactorisation et centralisation complète.
+- **Dernières modifications majeures** : 
+  - **Optimisations Audit** : Amélioration de la précision physique, tests de validation, refactorisation et centralisation complète
+  - **Simplification Interface** : Suppression des contrôles UI pour température moyenne et enrichissement combustible (conservés comme paramètres d'entrée)
 
 ## Accomplissements Majeurs Récents : Optimisations Audit ✅
 
@@ -40,6 +42,23 @@ Basées sur le rapport d'audit technique, les optimisations suivantes ont été 
 - **Problème identifié** : Tests dépendaient de fichiers externes et configurations complexes
 - **Solution implémentée** : Nouveau fichier `tests/test_mock_config.py` utilisant `pytest-mock`
 - **Impact** : Tests plus robustes, reproductibles et isolés des dépendances externes
+
+## Modifications Récentes : Simplification Interface 🎯
+
+### **Suppression des Contrôles UI pour Paramètres d'Entrée**
+- **Besoin identifié** : La température moyenne et l'enrichissement combustible ne doivent pas être manipulables par l'utilisateur mais rester comme paramètres d'entrée configurables
+- **Solution implémentée** : 
+  - Suppression des contrôles UI (sliders, spinboxes, boutons ±) pour `moderator_temp` et `fuel_enrichment`
+  - Suppression des méthodes de gestion des signaux associées
+  - Mise à jour de `update_ui_from_preset()` pour ne plus référencer ces contrôles
+- **Paramètres conservés** :
+  - ✅ Configuration dans `config.json` (`parameters_config`)
+  - ✅ Utilisation dans tous les presets système
+  - ✅ Calculs physiques dans `ReactorModel` (facteur eta pour enrichissement, effets de température)
+  - ✅ Méthodes `update_average_temperature()` et `update_fuel_enrichment()`
+  - ✅ Validation dans `PresetData`
+- **Fichier modifié** : `src/gui/main_window.py`
+- **Impact** : Interface simplifiée, ces paramètres restent configurables via presets et fichier de configuration
 
 ## Corrections d'Erreurs Critiques Appliquées
 

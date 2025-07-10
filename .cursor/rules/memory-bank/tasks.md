@@ -1323,3 +1323,132 @@ annotation = self.axes.text(i, y, f'{value:.4f}')      # Affiche 0.8408
 - **Formatage adaptatif** : Précision automatique selon la magnitude de la valeur
 - **Modes d'affichage** : Mode "débutant" (.2f) et mode "expert" (.4f)
 - **Autres paramètres** : Appliquer la même logique à d'autres paramètres critiques 
+
+---
+
+## Suppression de Contrôles UI pour Paramètres d'Entrée
+
+**Dernière exécution :** Janvier 2025  
+**Contexte :** Simplification de l'interface utilisateur en supprimant les contrôles manipulables pour la température moyenne et l'enrichissement combustible, tout en les conservant comme paramètres d'entrée configurables
+
+### Type de tâche :
+Simplification d'interface avec préservation complète des fonctionnalités backend
+
+### Problème identifié :
+- **Complexité interface** : Trop de paramètres manipulables par l'utilisateur
+- **Distinction conceptuelle** : Certains paramètres sont des caractéristiques du réacteur (température moyenne, enrichissement) plutôt que des variables de contrôle
+- **Besoin de simplification** : Réduire la complexité pour les utilisateurs tout en gardant la flexibilité de configuration
+
+### Solution implémentée :
+- **Suppression ciblée** : Retrait des contrôles UI uniquement, conservation complète des paramètres dans la logique
+- **Préservation fonctionnalité** : Paramètres restent configurables via presets et fichier config.json
+- **Maintien cohérence** : Tous les calculs physiques et systèmes de validation conservés
+
+### Fichiers modifiés :
+- `src/gui/main_window.py` - **MODIFIÉ** : Suppression des contrôles UI et méthodes de gestion
+
+### Workflow de Suppression Ciblée :
+
+**Étape 1 : Suppression des Contrôles UI**
+1. **create_control_panel()** : 
+   - Suppression des lignes `_create_parameter_control('moderator_temp')` et `_create_parameter_control('fuel_enrichment')`
+   - Suppression de l'ajout de ces groupes au layout de contrôle
+2. **Validation interface** : S'assurer que l'interface reste fonctionnelle après suppression
+
+**Étape 2 : Suppression des Gestionnaires de Signaux**
+1. **connect_signals()** :
+   - Suppression des références aux config de moderator_temp et fuel_enrichment
+   - Suppression de toutes les connexions de signaux pour ces contrôles
+2. **Méthodes de gestion** :
+   - Suppression complète des méthodes `on_moderator_temp_*` et `on_fuel_enrichment_*`
+   - Suppression des méthodes `adjust_moderator_temp()` et `adjust_fuel_enrichment()`
+
+**Étape 3 : Mise à Jour des Méthodes Existantes**
+1. **update_ui_from_preset()** :
+   - Suppression des références aux widgets supprimés dans la liste `widgets`
+   - Suppression des lignes de mise à jour des sliders et spinboxes pour ces paramètres
+2. **Cohérence méthodologie** : S'assurer qu'aucune référence orpheline ne reste
+
+**Étape 4 : Vérification de Préservation**
+1. **Paramètres dans config.json** : Confirmation que les sections `moderator_temp` et `fuel_enrichment` restent dans `parameters_config`
+2. **Calculs physiques** : Vérification que les méthodes `_calculate_eta()` et `_calculate_p()` utilisent toujours ces paramètres
+3. **Système de presets** : Validation que tous les presets contiennent ces paramètres
+4. **Méthodes update** : Confirmation que `update_average_temperature()` et `update_fuel_enrichment()` existent toujours
+
+### Bonnes pratiques identifiées :
+
+#### **Suppression UI Ciblée**
+- **Suppression progressive** : UI → Signaux → Méthodes → Mise à jour références
+- **Préservation backend** : Maintenir absolument toute la logique métier et les calculs
+- **Validation complète** : Tester que l'application fonctionne après chaque étape
+- **Documentation claire** : Expliquer pourquoi ces paramètres restent configurables ailleurs
+
+#### **Distinction Paramètres d'Entrée vs Contrôles**
+- **Paramètres d'entrée** : Caractéristiques fondamentales du réacteur (enrichissement, température moyenne)
+- **Contrôles utilisateur** : Variables de pilotage (barres de contrôle, concentration bore)
+- **Configuration flexible** : Garder possibilité de modifier les paramètres d'entrée via presets et configuration
+- **Interface épurée** : Présenter seulement les contrôles pertinents pour l'utilisateur final
+
+#### **Conservation de Flexibilité**
+- **Presets système** : Tous les presets conservent ces paramètres avec leurs valeurs spécifiques
+- **Configuration externalisée** : Possibilité de modifier via `config.json` sans recompilation
+- **Validation maintenue** : Système de validation des presets conserve ces paramètres
+- **Extensibilité future** : Possibilité de rajouter ces contrôles facilement si besoin
+
+### Code type pour suppression ciblée :
+
+```python
+# AVANT - Contrôles UI complets
+def create_control_panel(self):
+    # ...
+    self.moderator_temp_group, self.moderator_temp_slider, ... = self._create_parameter_control('moderator_temp')
+    self.fuel_enrichment_group, self.fuel_enrichment_slider, ... = self._create_parameter_control('fuel_enrichment')
+    # ...
+    control_layout.addWidget(self.moderator_temp_group)
+    control_layout.addWidget(self.fuel_enrichment_group)
+
+def connect_signals(self):
+    config_temp = self.controller.get_parameter_config('moderator_temp')
+    config_enrich = self.controller.get_parameter_config('fuel_enrichment')
+    self.moderator_temp_slider.valueChanged.connect(self.on_moderator_temp_slider_changed)
+    # ... autres connexions
+
+# APRÈS - Suppression ciblée, paramètres conservés dans backend
+def create_control_panel(self):
+    # ...
+    # moderator_temp et fuel_enrichment supprimés de l'UI
+    # Mais restent dans config.json, presets, et calculs physiques
+    # ...
+
+def connect_signals(self):
+    config_r = self.controller.get_parameter_config('rod_group_R')
+    config_gcp = self.controller.get_parameter_config('rod_group_GCP')
+    config_boron = self.controller.get_parameter_config('boron')
+    # Pas de config pour temp et enrichment car plus de contrôles UI
+```
+
+### Points critiques :
+
+1. **Préservation backend totale** : Les paramètres doivent rester 100% fonctionnels dans la logique
+2. **Tests de non-régression** : Vérifier que tous les presets se chargent correctement
+3. **Validation calculs** : S'assurer que la physique utilise toujours ces paramètres
+4. **Documentation utilisateur** : Expliquer comment ces paramètres peuvent être modifiés (presets)
+5. **Interface cohérente** : L'interface simplifiée doit rester intuitive et complète
+
+### Bénéfices obtenus :
+
+#### **Simplification Interface**
+- **Interface épurée** : Moins de contrôles à l'écran, focus sur les variables de pilotage
+- **Conceptualisation claire** : Distinction entre paramètres de configuration et contrôles de pilotage
+- **Expérience utilisateur** : Plus facile pour l'utilisateur de se concentrer sur les actions de pilotage
+
+#### **Flexibilité Préservée**
+- **Configuration complète** : Paramètres restent modifiables via presets et config.json
+- **Évolutivité** : Possibilité de rajouter les contrôles UI facilement si besoin futur
+- **Cohérence système** : Toute la logique backend reste intacte et fonctionnelle
+
+### Extensions futures possibles :
+- **Mode avancé** : Option pour afficher/masquer ces contrôles selon le niveau utilisateur
+- **Configuration dynamique** : Interface permettant de choisir quels paramètres sont contrôlables
+- **Presets spécialisés** : Création d'interfaces spécifiques pour modification de ces paramètres
+- **Documentation interactive** : Aide contextuelle expliquant où/comment modifier ces paramètres

@@ -102,8 +102,6 @@ class MainWindow(QMainWindow):
         config_r = self.controller.get_parameter_config('rod_group_R')
         config_gcp = self.controller.get_parameter_config('rod_group_GCP')
         config_boron = self.controller.get_parameter_config('boron')
-        config_temp = self.controller.get_parameter_config('moderator_temp')
-        config_enrich = self.controller.get_parameter_config('fuel_enrichment')
 
         # Groupe R signals
         self.rod_R_slider.valueChanged.connect(self.on_rod_R_slider_changed)
@@ -122,16 +120,6 @@ class MainWindow(QMainWindow):
         self.boron_spinbox.valueChanged.connect(self.on_boron_spinbox_changed)
         self.boron_plus_btn.clicked.connect(lambda: self.adjust_boron(config_boron.get('step', 10)))
         self.boron_minus_btn.clicked.connect(lambda: self.adjust_boron(-config_boron.get('step', 10)))
-
-        self.moderator_temp_slider.valueChanged.connect(self.on_moderator_temp_slider_changed)
-        self.moderator_temp_spinbox.valueChanged.connect(self.on_moderator_temp_spinbox_changed)
-        self.moderator_temp_plus_btn.clicked.connect(lambda: self.adjust_moderator_temp(config_temp.get('step', 1)))
-        self.moderator_temp_minus_btn.clicked.connect(lambda: self.adjust_moderator_temp(-config_temp.get('step', 1)))
-
-        self.fuel_enrichment_slider.valueChanged.connect(self.on_fuel_enrichment_slider_changed)
-        self.fuel_enrichment_spinbox.valueChanged.connect(self.on_fuel_enrichment_spinbox_changed)
-        self.fuel_enrichment_plus_btn.clicked.connect(lambda: self.adjust_fuel_enrichment(config_enrich.get('step', 0.1)))
-        self.fuel_enrichment_minus_btn.clicked.connect(lambda: self.adjust_fuel_enrichment(-config_enrich.get('step', 0.1)))
 
         self.preset_combo.currentTextChanged.connect(self.on_preset_changed)
 
@@ -173,8 +161,6 @@ class MainWindow(QMainWindow):
         self.rod_R_group, self.rod_R_slider, self.rod_R_spinbox, self.rod_R_plus_btn, self.rod_R_minus_btn = self._create_parameter_control('rod_group_R')
         self.rod_GCP_group, self.rod_GCP_slider, self.rod_GCP_spinbox, self.rod_GCP_plus_btn, self.rod_GCP_minus_btn = self._create_parameter_control('rod_group_GCP')
         self.boron_group, self.boron_slider, self.boron_spinbox, self.boron_plus_btn, self.boron_minus_btn = self._create_parameter_control('boron')
-        self.moderator_temp_group, self.moderator_temp_slider, self.moderator_temp_spinbox, self.moderator_temp_plus_btn, self.moderator_temp_minus_btn = self._create_parameter_control('moderator_temp')
-        self.fuel_enrichment_group, self.fuel_enrichment_slider, self.fuel_enrichment_spinbox, self.fuel_enrichment_plus_btn, self.fuel_enrichment_minus_btn = self._create_parameter_control('fuel_enrichment')
 
         # Reactor Parameters Display
         params_info_config = self.controller.get_parameter_config('reactor_params_info')
@@ -195,8 +181,6 @@ class MainWindow(QMainWindow):
         control_layout.addWidget(self.rod_R_group)
         control_layout.addWidget(self.rod_GCP_group)
         control_layout.addWidget(self.boron_group)
-        control_layout.addWidget(self.moderator_temp_group)
-        control_layout.addWidget(self.fuel_enrichment_group)
         control_layout.addWidget(self.reactor_params_group)
         control_layout.addStretch(1)
 
@@ -235,9 +219,14 @@ class MainWindow(QMainWindow):
         minus_btn.setMaximumWidth(widths.get(f"{param_name.split('_')[0]}_plus_minus_button", 40))
         minus_btn.setToolTip(f"Diminuer (-{step}{config.get('suffix', '')})")
 
+        # Ajout des widgets dans l'ordre adapté
         layout.addWidget(slider)
-        layout.addWidget(minus_btn)
-        layout.addWidget(plus_btn)
+        if param_name in ('rod_group_R', 'rod_group_GCP'):
+            layout.addWidget(plus_btn)
+            layout.addWidget(minus_btn)
+        else:
+            layout.addWidget(minus_btn)
+            layout.addWidget(plus_btn)
         layout.addWidget(spinbox)
         group.setLayout(layout)
 
@@ -304,8 +293,7 @@ class MainWindow(QMainWindow):
         # Block signals to prevent feedback loops
         widgets = [
             self.rod_R_slider, self.rod_R_spinbox, self.rod_GCP_slider, self.rod_GCP_spinbox,
-            self.boron_slider, self.boron_spinbox, self.moderator_temp_slider, self.moderator_temp_spinbox,
-            self.fuel_enrichment_slider, self.fuel_enrichment_spinbox
+            self.boron_slider, self.boron_spinbox
         ]
         for widget in widgets:
             widget.blockSignals(True)
@@ -325,14 +313,6 @@ class MainWindow(QMainWindow):
         
         self.boron_slider.setValue(int(config["boron_concentration"]))
         self.boron_spinbox.setValue(config["boron_concentration"])
-        
-        self.moderator_temp_slider.setValue(int(config["average_temperature"]))
-        self.moderator_temp_spinbox.setValue(config["average_temperature"])
-        
-        enrich_config = self.controller.get_parameter_config('fuel_enrichment')
-        multiplier = enrich_config.get('slider_range_multiplier', 10)
-        self.fuel_enrichment_slider.setValue(int(config["fuel_enrichment"] * multiplier))
-        self.fuel_enrichment_spinbox.setValue(config["fuel_enrichment"])
 
         # Unblock signals
         for widget in widgets:
@@ -442,59 +422,9 @@ class MainWindow(QMainWindow):
         new_value = max(min_val, min(max_val, current_value + step))
         self.boron_spinbox.setValue(new_value)
 
-    def on_moderator_temp_slider_changed(self, value):
-        """Handle moderator temperature slider change"""
-        self.moderator_temp_spinbox.blockSignals(True)
-        self.moderator_temp_spinbox.setValue(float(value))
-        self.moderator_temp_spinbox.blockSignals(False)
-        self._update_parameter_and_ui(self.controller.update_average_temperature, value)
-        
-    def on_moderator_temp_spinbox_changed(self, value):
-        """Handle moderator temperature spinbox change"""
-        self.moderator_temp_slider.blockSignals(True)
-        self.moderator_temp_slider.setValue(int(value))
-        self.moderator_temp_slider.blockSignals(False)
-        self._update_parameter_and_ui(self.controller.update_average_temperature, value)
 
-    def adjust_moderator_temp(self, step):
-        """Adjust moderator temperature by step amount"""
-        config = self.controller.get_parameter_config('moderator_temp')
-        min_val, max_val = config.get('range', [280, 350])
-        current_value = self.moderator_temp_spinbox.value()
-        new_value = max(min_val, min(max_val, current_value + step))
-        self.moderator_temp_spinbox.setValue(new_value)
 
-    def on_fuel_enrichment_slider_changed(self, value):
-        """Handle fuel enrichment slider change"""
-        config = self.controller.get_parameter_config('fuel_enrichment')
-        multiplier = config.get('slider_range_multiplier', 10)
-        enrichment = value / multiplier
-        
-        self.fuel_enrichment_spinbox.blockSignals(True)
-        self.fuel_enrichment_spinbox.setValue(enrichment)
-        self.fuel_enrichment_spinbox.blockSignals(False)
-        self._update_parameter_and_ui(self.controller.update_fuel_enrichment, enrichment)
-        
-    def on_fuel_enrichment_spinbox_changed(self, value):
-        """Handle fuel enrichment spinbox change"""
-        config = self.controller.get_parameter_config('fuel_enrichment')
-        multiplier = config.get('slider_range_multiplier', 10)
-        slider_value = int(value * multiplier)
-        
-        self.fuel_enrichment_slider.blockSignals(True)
-        self.fuel_enrichment_slider.setValue(slider_value)
-        self.fuel_enrichment_slider.blockSignals(False)
-        self._update_parameter_and_ui(self.controller.update_fuel_enrichment, value)
 
-    def adjust_fuel_enrichment(self, step):
-        """Adjust fuel enrichment by step amount"""
-        config = self.controller.get_parameter_config('fuel_enrichment')
-        min_val, max_val = config.get('range', [1.0, 5.0])
-        current_value = self.fuel_enrichment_spinbox.value()
-        new_value = max(min_val, min(max_val, current_value + step))
-        # Arrondir pour éviter les pbs de flottants
-        new_value = round(new_value, len(str(step).split('.')[-1]) if '.' in str(step) else 0)
-        self.fuel_enrichment_spinbox.setValue(new_value)
 
     def on_time_advance(self, hours):
         """Handle time advancement for xenon dynamics"""
