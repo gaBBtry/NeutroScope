@@ -4,8 +4,9 @@ Modèle de physique des réacteurs pour les calculs de neutronique
 import numpy as np
 from . import config
 from .preset_model import PresetManager, PresetData, PresetCategory, PresetType
+from .abstract_reactor_model import AbstractReactorModel
 
-class ReactorModel:
+class ReactorModel(AbstractReactorModel):
     """
     Modèle de réacteur de base implémentant les calculs de neutronique pour un REP
     """
@@ -838,3 +839,60 @@ class ReactorModel:
         total_insertion_fraction = self._get_total_rod_worth_fraction()
         # Conversion pour l'UI : 0% insertion -> 100% retiré; 100% insertion -> 0% retiré.
         return (1.0 - total_insertion_fraction) * 100.0
+
+    def get_reactor_parameters(self):
+        """
+        Récupère tous les paramètres calculés du réacteur.
+        
+        Returns:
+            Dict contenant: k_effective, k_infinite, reactivity, doubling_time,
+            delayed_neutron_fraction, eta, epsilon, p, f, thermal_non_leakage_prob,
+            fast_non_leakage_prob, fuel_temperature, moderator_temperature,
+            power_level, neutron_flux
+        """
+        return {
+            "k_effective": self.k_effective,
+            "k_infinite": self.k_infinite,
+            "reactivity": self.reactivity,
+            "doubling_time": self.doubling_time,
+            "delayed_neutron_fraction": self.delayed_neutron_fraction,
+            "eta": self.eta,
+            "epsilon": self.epsilon,
+            "p": self.p,
+            "f": self.f,
+            "thermal_non_leakage_prob": self.thermal_non_leakage_prob,
+            "fast_non_leakage_prob": self.fast_non_leakage_prob,
+            "fuel_temperature": self.fuel_temperature,
+            "moderator_temperature": self.moderator_temperature,
+            "power_level": self.power_level,
+            "neutron_flux": self.neutron_flux
+        }
+
+    def get_current_configuration(self):
+        """
+        Récupère la configuration actuelle du réacteur.
+        
+        Returns:
+            Dict contenant les positions actuelles et cibles des barres, 
+            concentrations de bore, températures, enrichissement, niveau de puissance
+        """
+        return {
+            "rod_group_R_position": self.rod_group_R_position,
+            "rod_group_GCP_position": self.rod_group_GCP_position,
+            "target_rod_group_R_position": self.target_rod_group_R_position,
+            "target_rod_group_GCP_position": self.target_rod_group_GCP_position,
+            "boron_concentration": self.boron_concentration,
+            "target_boron_concentration": self.target_boron_concentration,
+            "moderator_temperature": self.moderator_temperature,
+            "fuel_temperature": self.fuel_temperature,
+            "fuel_enrichment": self.fuel_enrichment,
+            "power_level": self.power_level
+        }
+
+    def reset_xenon_to_equilibrium(self):
+        """Réinitialise les concentrations de xénon à l'équilibre et l'état temporel."""
+        self.simulation_time = 0.0
+        self.calculate_xenon_equilibrium()
+        # Il faut aussi réinitialiser les températures à l'équilibre
+        self._calculate_equilibrium_temperatures()
+        self.calculate_all()

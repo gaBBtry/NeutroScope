@@ -2,16 +2,24 @@
 Controller module connecting the UI with the reactor model
 """
 from src.model.reactor_model import ReactorModel
+from src.model.abstract_reactor_model import AbstractReactorModel
 from src.model.preset_model import PresetCategory
 from src.model import config
 import copy
+from typing import Type
 
 
 class ReactorController:
     """Contrôleur pour l'interface entre la vue et le modèle de réacteur"""
     
-    def __init__(self):
-        self.model = ReactorModel()
+    def __init__(self, model_class: Type[AbstractReactorModel] = ReactorModel):
+        """
+        Initialise le contrôleur avec un modèle de réacteur.
+        
+        Args:
+            model_class: Classe du modèle de réacteur à utiliser (doit hériter d'AbstractReactorModel)
+        """
+        self.model: AbstractReactorModel = model_class()
     
     # --- MÉTHODES DE CONTRÔLE CIBLÉ ---
     def set_target_rod_group_R_position(self, position):
