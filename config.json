@@ -134,6 +134,7 @@
             "REF_MOD_TEMP_C": 300.0
         },
         "f": {
+            "BASE": 0.71,
             "BASE_ABS_RATIO": 0.408,
             "REF_MOD_TEMP_C": 300.0,
             "CONTROL_ROD_WORTH": 0.26,
