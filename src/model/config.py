@@ -30,84 +30,94 @@ def get_project_root():
 
 _config = _load_config()
 
-# --- Déballage de la configuration en variables au niveau du module pour un accès facile ---
+try:
+    # --- Déballage de la configuration en variables au niveau du module pour un accès facile ---
+    # Cette approche est stricte : si une clé est manquante dans config.json,
+    # le programme lèvera une exception KeyError au démarrage, ce qui garantit
+    # que config.json est la seule source de vérité et évite les erreurs silencieuses.
 
-# Constantes physiques
-_phys_const = _config.get("physical_constants", {})
-DELAYED_NEUTRON_FRACTION = _phys_const.get("DELAYED_NEUTRON_FRACTION", 0.0065)
-PROMPT_NEUTRON_LIFETIME = _phys_const.get("PROMPT_NEUTRON_LIFETIME", 2.0e-5)
-EFFECTIVE_DECAY_CONSTANT = _phys_const.get("EFFECTIVE_DECAY_CONSTANT", 0.1)
-NEUTRONS_PER_THERMAL_FISSION_U235 = _phys_const.get("NEUTRONS_PER_THERMAL_FISSION_U235", 2.43)
-BESSEL_J0_FIRST_ZERO = _phys_const.get("BESSEL_J0_FIRST_ZERO", 2.405)
-CELSIUS_TO_KELVIN = _phys_const.get("CELSIUS_TO_KELVIN", 273.15)
+    # Constantes physiques
+    _phys_const = _config["physical_constants"]
+    DELAYED_NEUTRON_FRACTION = _phys_const["DELAYED_NEUTRON_FRACTION"]
+    PROMPT_NEUTRON_LIFETIME = _phys_const["PROMPT_NEUTRON_LIFETIME"]
+    EFFECTIVE_DECAY_CONSTANT = _phys_const["EFFECTIVE_DECAY_CONSTANT"]
+    NEUTRONS_PER_THERMAL_FISSION_U235 = _phys_const["NEUTRONS_PER_THERMAL_FISSION_U235"]
+    BESSEL_J0_FIRST_ZERO = _phys_const["BESSEL_J0_FIRST_ZERO"]
+    CELSIUS_TO_KELVIN = _phys_const["CELSIUS_TO_KELVIN"]
 
-# Constantes de conversion d'unités
-_unit_conversions = _config.get("unit_conversions", {})
-HOURS_TO_SECONDS = _unit_conversions.get("HOURS_TO_SECONDS", 3600.0)
-BARNS_TO_CM2 = _unit_conversions.get("BARNS_TO_CM2", 1e-24)
-REACTIVITY_TO_PCM = _unit_conversions.get("REACTIVITY_TO_PCM", 100000.0)
-PERCENT_TO_FRACTION = _unit_conversions.get("PERCENT_TO_FRACTION", 100.0)
+    # Constantes de conversion d'unités
+    _unit_conversions = _config["unit_conversions"]
+    HOURS_TO_SECONDS = _unit_conversions["HOURS_TO_SECONDS"]
+    BARNS_TO_CM2 = _unit_conversions["BARNS_TO_CM2"]
+    REACTIVITY_TO_PCM = _unit_conversions["REACTIVITY_TO_PCM"]
+    PERCENT_TO_FRACTION = _unit_conversions["PERCENT_TO_FRACTION"]
 
-# Coefficients du modèle des quatre facteurs
-_four_factors = _config.get("four_factors", {})
+    # Coefficients du modèle des quatre facteurs
+    _four_factors = _config["four_factors"]
 
-_eta = _four_factors.get("eta", {})
-ETA_BASE = _eta.get("BASE", 2.0)
-ETA_ENRICHMENT_COEFF = _eta.get("ENRICHMENT_COEFF", 0.1)
-ETA_ENRICHMENT_REF = _eta.get("ENRICHMENT_REF", 3.0)
-ETA_ENRICHMENT_SCALE = _eta.get("ENRICHMENT_SCALE", 2.0)
+    _eta = _four_factors["eta"]
+    ETA_BASE = _eta["BASE"]
+    ETA_ENRICHMENT_COEFF = _eta["ENRICHMENT_COEFF"]
+    ETA_ENRICHMENT_REF = _eta["ENRICHMENT_REF"]
+    ETA_ENRICHMENT_SCALE = _eta["ENRICHMENT_SCALE"]
 
-EPSILON = _four_factors.get("epsilon", 1.03)
+    EPSILON = _four_factors["epsilon"]
 
-_p = _four_factors.get("p", {})
-P_BASE = _p.get("BASE", 0.75)
-P_REF_TEMP_K = _p.get("REF_TEMP_K", 873.15)
-P_DOPPLER_COEFF = _p.get("DOPPLER_COEFF", 0.008)
-P_MOD_TEMP_COEFF = _p.get("MOD_TEMP_COEFF", 0.0015)
-P_REF_MOD_TEMP_C = _p.get("REF_MOD_TEMP_C", 300.0)
+    _p = _four_factors["p"]
+    P_BASE = _p["BASE"]
+    P_REF_TEMP_K = _p["REF_TEMP_K"]
+    P_DOPPLER_COEFF = _p["DOPPLER_COEFF"]
+    P_MOD_TEMP_COEFF = _p["MOD_TEMP_COEFF"]
+    P_REF_MOD_TEMP_C = _p["REF_MOD_TEMP_C"]
 
-_f = _four_factors.get("f", {})
-F_BASE = _f.get("BASE", 0.71)
-F_BASE_ABS_RATIO = _f.get("BASE_ABS_RATIO", 0.408)
-F_REF_MOD_TEMP_C = _f.get("REF_MOD_TEMP_C", 300.0)
-F_CONTROL_ROD_WORTH = _f.get("CONTROL_ROD_WORTH", 0.26)
-F_BORON_WORTH_PER_PPM = _f.get("BORON_WORTH_PER_PPM", 2.8e-5)
-F_MOD_TEMP_ABS_COEFF = _f.get("MOD_TEMP_ABS_COEFF", 0.003)
+    _f = _four_factors["f"]
+    F_BASE = _f["BASE"]
+    F_BASE_ABS_RATIO = _f["BASE_ABS_RATIO"]
+    F_REF_MOD_TEMP_C = _f["REF_MOD_TEMP_C"]
+    F_CONTROL_ROD_WORTH = _f["CONTROL_ROD_WORTH"]
+    F_BORON_WORTH_PER_PPM = _f["BORON_WORTH_PER_PPM"]
+    F_MOD_TEMP_ABS_COEFF = _f["MOD_TEMP_ABS_COEFF"]
 
-# --- Facteurs de fuite neutronique ---
-_leakage = _config.get("neutron_leakage", {})
-CORE_HEIGHT_M = _leakage.get("CORE_HEIGHT_M", 4.0)
-CORE_DIAMETER_M = _leakage.get("CORE_DIAMETER_M", 3.0)
-THERMAL_DIFFUSION_AREA_M2 = _leakage.get("THERMAL_DIFFUSION_AREA_M2", 0.0064)
-FAST_DIFFUSION_AREA_M2 = _leakage.get("FAST_DIFFUSION_AREA_M2", 0.0097)
-MODERATOR_DENSITY_COEFF = _leakage.get("MODERATOR_DENSITY_COEFF", 8.0e-4)
-CONTROL_ROD_EFFECT_COEFF = _leakage.get("CONTROL_ROD_EFFECT_COEFF", 10.0)
+    # --- Facteurs de fuite neutronique ---
+    _leakage = _config["neutron_leakage"]
+    CORE_HEIGHT_M = _leakage["CORE_HEIGHT_M"]
+    CORE_DIAMETER_M = _leakage["CORE_DIAMETER_M"]
+    THERMAL_DIFFUSION_AREA_M2 = _leakage["THERMAL_DIFFUSION_AREA_M2"]
+    FAST_DIFFUSION_AREA_M2 = _leakage["FAST_DIFFUSION_AREA_M2"]
+    MODERATOR_DENSITY_COEFF = _leakage["MODERATOR_DENSITY_COEFF"]
+    CONTROL_ROD_EFFECT_COEFF = _leakage["CONTROL_ROD_EFFECT_COEFF"]
 
-# Thermo-hydraulique
-_thermo = _config.get("thermal_hydraulics", {})
-POWER_TO_FUEL_TEMP_COEFF = _thermo.get("POWER_TO_FUEL_TEMP_COEFF", 3.0)
+    # Thermo-hydraulique
+    _thermo = _config["thermal_hydraulics"]
+    POWER_TO_FUEL_TEMP_COEFF = _thermo["POWER_TO_FUEL_TEMP_COEFF"]
 
-# Calcul du temps de doublement
-_doubling = _config.get("doubling_time", {})
-DOUBLING_TIME_COEFF = _doubling.get("DOUBLING_TIME_COEFF", 80.0)
+    # Calcul du temps de doublement
+    _doubling = _config["doubling_time"]
+    DOUBLING_TIME_COEFF = _doubling["DOUBLING_TIME_COEFF"]
 
-# Dynamique Xénon-135
-_xenon = _config.get("xenon_dynamics", {})
-IODINE_YIELD = _xenon.get("IODINE_YIELD", 0.064)
-XENON_YIELD_DIRECT = _xenon.get("XENON_YIELD_DIRECT", 0.003)
-IODINE_DECAY_CONSTANT = _xenon.get("IODINE_DECAY_CONSTANT", 2.87e-5)  # s^-1
-XENON_DECAY_CONSTANT = _xenon.get("XENON_DECAY_CONSTANT", 2.11e-5)    # s^-1
-XENON_ABSORPTION_CROSS_SECTION = _xenon.get("XENON_ABSORPTION_CROSS_SECTION", 2.65e6)  # barns
-THERMAL_FLUX_NOMINAL = _xenon.get("THERMAL_FLUX_NOMINAL", 3.0e13)     # n/cm²/s
-FISSION_RATE_COEFF = _xenon.get("FISSION_RATE_COEFF", 1.0e-6)
-XENON_REACTIVITY_CONVERSION_FACTOR = _xenon.get("XENON_REACTIVITY_CONVERSION_FACTOR", 1e5)
+    # Dynamique Xénon-135
+    _xenon = _config["xenon_dynamics"]
+    IODINE_YIELD = _xenon["IODINE_YIELD"]
+    XENON_YIELD_DIRECT = _xenon["XENON_YIELD_DIRECT"]
+    IODINE_DECAY_CONSTANT = _xenon["IODINE_DECAY_CONSTANT"]  # s^-1
+    XENON_DECAY_CONSTANT = _xenon["XENON_DECAY_CONSTANT"]    # s^-1
+    XENON_ABSORPTION_CROSS_SECTION = _xenon["XENON_ABSORPTION_CROSS_SECTION"]  # barns
+    THERMAL_FLUX_NOMINAL = _xenon["THERMAL_FLUX_NOMINAL"]     # n/cm²/s
+    FISSION_RATE_COEFF = _xenon["FISSION_RATE_COEFF"]
+    XENON_REACTIVITY_CONVERSION_FACTOR = _xenon["XENON_REACTIVITY_CONVERSION_FACTOR"]
 
-# Configuration de l'interface et des paramètres
-gui_settings = _config.get("gui_settings", {})
-parameters_config = _config.get("parameters_config", {})
+    # Configuration de l'interface et des paramètres
+    gui_settings = _config["gui_settings"]
+    parameters_config = _config["parameters_config"]
 
-# Préréglages par défaut
-PRESETS = _config.get("presets", {})
+    # Préréglages par défaut
+    PRESETS = _config["presets"]
 
-# État par défaut
-default_state = _config.get("default_state", {}) 
+    # État par défaut
+    default_state = _config["default_state"]
+
+except KeyError as e:
+    raise KeyError(
+        f"Clé de configuration manquante ou incorrecte dans config.json : {e}. "
+        "Assurez-vous que la structure du fichier est complète et valide."
+    ) 
