@@ -343,11 +343,12 @@ class ReactorModel:
         """
         Calcule l'effet du Xénon-135 sur la réactivité (en pcm).
         Formule calibrée pour donner -2700 à -2800 pcm à l'équilibre à 100% Pn.
+        L'effet xénon est indépendant du niveau de puissance actuel.
         """
-        # Calcul de l'anti-réactivité due au Xénon-135
-        thermal_flux = config.THERMAL_FLUX_NOMINAL * (self.power_level / config.PERCENT_TO_FRACTION)
+        # L'antiréactivité xénon est proportionnelle à la concentration uniquement
+        # Utilisation du flux nominal de référence pour le calcul de l'effet
         xenon_absorption_rate = (config.XENON_ABSORPTION_CROSS_SECTION * 
-                               self.xenon_concentration * thermal_flux * config.BARNS_TO_CM2)
+                               self.xenon_concentration * config.THERMAL_FLUX_NOMINAL * config.BARNS_TO_CM2)
         
         # Conversion en pcm basée sur les données expérimentales PWR
         # Calibré pour donner ~-2750 pcm à l'équilibre à 100% Pn

@@ -169,14 +169,14 @@
         "DOUBLING_TIME_COEFF": 80.0
     },
     "xenon_dynamics": {
-        "IODINE_YIELD": 0.064,
+        "IODINE_YIELD": 0.060,
         "XENON_YIELD_DIRECT": 0.003,
         "IODINE_DECAY_CONSTANT": 2.87e-5,
-        "XENON_DECAY_CONSTANT": 2.11e-5,
+        "XENON_DECAY_CONSTANT": 2.09e-5,
         "XENON_ABSORPTION_CROSS_SECTION": 3.5e6,
         "THERMAL_FLUX_NOMINAL": 3.0e13,
         "FISSION_RATE_COEFF": 1.0e-6,
-        "XENON_REACTIVITY_CONVERSION_FACTOR": 1.65e-5
+        "XENON_REACTIVITY_CONVERSION_FACTOR": 1.74e-5
     },
     "presets": {
         "PMD en début de cycle": {
