@@ -105,6 +105,18 @@
             "decimals": 1,
             "suffix": " %"
         },
+        "power_level": {
+            "label": "Niveau de Puissance (%)",
+            "info_text": "Le niveau de puissance du réacteur en pourcentage de la puissance nominale. Cette valeur affecte directement les concentrations d'équilibre du xénon-135 et de l'iode-135.\n\nPour étudier la dynamique du xénon:\n- Démarrer à 100% (équilibre)\n- Passer à 0% pour simuler un arrêt d'urgence\n- Utiliser les contrôles temporels pour observer le pic de xénon\n\nPlage: 0% à 100%",
+            "range": [
+                0.0,
+                100.0
+            ],
+            "tick_interval": 20,
+            "step": 1.0,
+            "decimals": 1,
+            "suffix": " %"
+        },
         "presets_info": {
             "label": "Préréglages",
             "info_text": "Sélectionnez un préréglage pour configurer rapidement le réacteur dans un état spécifique:\n\n- Démarrage: Configuration typique au démarrage du réacteur\n- Critique à puissance nominale: Réacteur en fonctionnement normal\n- Fin de cycle: Configuration typique en fin de cycle du combustible\n- Surcritique: État où le réacteur voit sa puissance augmenter\n- Sous-critique: État où le réacteur voit sa puissance diminuer\n\nLe préréglage 'Personnalisé' est automatiquement sélectionné lorsque vous modifiez manuellement les paramètres.\n\nBouton 'Reset': Permet de revenir aux paramètres originaux du preset sélectionné si des modifications ont été apportées."
@@ -161,10 +173,10 @@
         "XENON_YIELD_DIRECT": 0.003,
         "IODINE_DECAY_CONSTANT": 2.87e-5,
         "XENON_DECAY_CONSTANT": 2.11e-5,
-        "XENON_ABSORPTION_CROSS_SECTION": 2.65e6,
+        "XENON_ABSORPTION_CROSS_SECTION": 3.5e6,
         "THERMAL_FLUX_NOMINAL": 3.0e13,
         "FISSION_RATE_COEFF": 1.0e-6,
-        "XENON_REACTIVITY_CONVERSION_FACTOR": 1e5
+        "XENON_REACTIVITY_CONVERSION_FACTOR": 1.65e-5
     },
     "presets": {
         "PMD en début de cycle": {

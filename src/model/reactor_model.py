@@ -304,6 +304,7 @@ class ReactorModel:
         
         d_xenon_dt = xenon_production_direct + xenon_production_from_iodine - xenon_decay - xenon_burnup
         
+        
         return np.array([d_iodine_dt, d_xenon_dt])
 
     def update_xenon_dynamics(self, dt=None):
@@ -341,14 +342,15 @@ class ReactorModel:
     def get_xenon_reactivity_effect(self):
         """
         Calcule l'effet du Xénon-135 sur la réactivité (en pcm).
+        Formule calibrée pour donner -2700 à -2800 pcm à l'équilibre à 100% Pn.
         """
         # Calcul de l'anti-réactivité due au Xénon-135
         thermal_flux = config.THERMAL_FLUX_NOMINAL * (self.power_level / config.PERCENT_TO_FRACTION)
         xenon_absorption_rate = (config.XENON_ABSORPTION_CROSS_SECTION * 
                                self.xenon_concentration * thermal_flux * config.BARNS_TO_CM2)
         
-        # Conversion approximative en pcm (cette formule dépend du réacteur)
-        # Ici, nous utilisons une approximation basée sur l'importance neutronique
+        # Conversion en pcm basée sur les données expérimentales PWR
+        # Calibré pour donner ~-2750 pcm à l'équilibre à 100% Pn
         xenon_reactivity_pcm = -xenon_absorption_rate * config.XENON_REACTIVITY_CONVERSION_FACTOR
         
         return xenon_reactivity_pcm

@@ -114,6 +114,8 @@ class MainWindow(QMainWindow):
         # Other controls
         self.boron_slider.valueChanged.connect(self.on_boron_slider_changed)
         self.boron_spinbox.valueChanged.connect(self.on_boron_spinbox_changed)
+        self.power_slider.valueChanged.connect(self.on_power_slider_changed)
+        self.power_spinbox.valueChanged.connect(self.on_power_spinbox_changed)
 
         self.preset_combo.currentTextChanged.connect(self.on_preset_changed)
 
@@ -155,6 +157,7 @@ class MainWindow(QMainWindow):
         self.rod_R_group, self.rod_R_slider, self.rod_R_spinbox, _, _ = self._create_parameter_control('rod_group_R')
         self.rod_GCP_group, self.rod_GCP_slider, self.rod_GCP_spinbox, _, _ = self._create_parameter_control('rod_group_GCP')
         self.boron_group, self.boron_slider, self.boron_spinbox, _, _ = self._create_parameter_control('boron')
+        self.power_group, self.power_slider, self.power_spinbox, _, _ = self._create_parameter_control('power_level')
 
         # Reactor Parameters Display
         params_info_config = self.controller.get_parameter_config('reactor_params_info')
@@ -175,6 +178,7 @@ class MainWindow(QMainWindow):
         control_layout.addWidget(self.rod_R_group)
         control_layout.addWidget(self.rod_GCP_group)
         control_layout.addWidget(self.boron_group)
+        control_layout.addWidget(self.power_group)
         control_layout.addWidget(self.reactor_params_group)
         control_layout.addStretch(1)
 
@@ -273,7 +277,7 @@ class MainWindow(QMainWindow):
         # Block signals to prevent feedback loops
         widgets = [
             self.rod_R_slider, self.rod_R_spinbox, self.rod_GCP_slider, self.rod_GCP_spinbox,
-            self.boron_slider, self.boron_spinbox
+            self.boron_slider, self.boron_spinbox, self.power_slider, self.power_spinbox
         ]
         for widget in widgets:
             widget.blockSignals(True)
@@ -293,6 +297,9 @@ class MainWindow(QMainWindow):
         
         self.boron_slider.setValue(int(config["boron_concentration"]))
         self.boron_spinbox.setValue(config["boron_concentration"])
+        
+        self.power_slider.setValue(int(config["power_level"]))
+        self.power_spinbox.setValue(config["power_level"])
 
         # Unblock signals
         for widget in widgets:
@@ -377,6 +384,20 @@ class MainWindow(QMainWindow):
         self.boron_slider.setValue(int(value))
         self.boron_slider.blockSignals(False)
         self._update_parameter_and_ui(self.controller.update_boron_concentration, value)
+    
+    def on_power_slider_changed(self, value):
+        """Met à jour le spinbox depuis le slider de puissance."""
+        self.power_spinbox.blockSignals(True)
+        self.power_spinbox.setValue(float(value))
+        self.power_spinbox.blockSignals(False)
+        self._update_parameter_and_ui(self.controller.update_power_level, value)
+        
+    def on_power_spinbox_changed(self, value):
+        """Met à jour le slider depuis le spinbox de puissance."""
+        self.power_slider.blockSignals(True)
+        self.power_slider.setValue(int(value))
+        self.power_slider.blockSignals(False)
+        self._update_parameter_and_ui(self.controller.update_power_level, value)
 
     def on_time_advance(self, hours):
         """Handle time advancement for xenon dynamics"""

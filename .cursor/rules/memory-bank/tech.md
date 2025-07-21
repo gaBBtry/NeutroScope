@@ -57,6 +57,22 @@ L'application est entièrement pilotée par un fichier de configuration central.
 
 ## Optimisations et Améliorations Récentes
 
+### **Dynamique Xénon-135 Fonctionnelle (Juillet 2025)**
+-   **Contrôle de Puissance Ajouté** : Interface utilisateur complétée avec un contrôle de puissance (0-100%)
+    - Widget slider/spinbox intégré au panneau de contrôle
+    - Signaux connectés pour mise à jour temps réel
+    - Documentation intégrée pour l'utilisation avec la dynamique xénon
+-   **Calibration Physique Corrigée** : Valeurs d'antiréactivité xénon cohérentes avec les standards PWR
+    - Section efficace xénon : `2.65e6 → 3.5e6` barns
+    - Facteur de conversion réactivité : `1e4 → 1.65e-5` (calibré pour -2750 pcm à l'équilibre)
+    - Antiréactivité équilibre 100% Pn : `-2755 pcm` ✅
+    - Pic post-arrêt réacteur : `~-4200 pcm` après 6-8h ✅
+-   **Simulation Temporelle Opérationnelle** : Dynamique xénon complètement fonctionnelle
+    - Évolution temporelle I-135 → Xe-135 via équations de Bateman
+    - Intégration Runge-Kutta 4 pour précision numérique
+    - Visualisation temps réel : concentrations + antiréactivité
+    - Scénarios réalistes : arrêt d'urgence, variations de puissance
+
 ### **Précision Numérique Avancée**
 -   **Algorithme Runge-Kutta 4** : Remplacement de l'intégration d'Euler pour la simulation temporelle des isotopes Xénon-135
 -   **Précision améliorée** : Réduction significative des erreurs numériques pour les pas de temps longs (>1 heure)

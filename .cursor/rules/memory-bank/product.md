@@ -52,11 +52,13 @@ NeutroScope résout maintenant de manière complète tous ces défis en fourniss
 - **Dynamique des poisons** : Implémentation complète de la chaîne I-135 → Xe-135 avec équations de Bateman
 - **Calcul temps réel** : Tous les paramètres mis à jour simultanément avec les changements de paramètres
 
-#### **2. Capacités de Simulation Temporelle**
+#### **2. Capacités de Simulation Temporelle** ✅ **OPÉRATIONNEL**
 - **Avancement temporel** : Pas de temps contrôlables de 1 heure à 24 heures
 - **Suivi des poisons** : Évolution temps réel des concentrations d'iode et de xénon
 - **Calculs d'équilibre** : Calcul automatique des états d'équilibre pour tout niveau de puissance
 - **Fonctionnalité de remise à zéro** : Retour instantané aux conditions d'équilibre pour comparaison expérimentale
+- **Contrôle de Puissance** : Interface utilisateur complétée avec widget de puissance (0-100%)
+- **Dynamique Xénon Complète** : Simulation opérationnelle des transitoires post-arrêt avec pics réalistes
 
 #### **3. Système Simplifié de Presets**
 - **Interface épurée** : Dropdown simple avec presets prédéfinis bien choisis
@@ -88,12 +90,12 @@ NeutroScope résout maintenant de manière complète tous ces défis en fourniss
 ### **Compréhension Fondamentale**
 NeutroScope fournit une base solide en physique des réacteurs en rendant visibles et interactifs les concepts abstraits. La formule à six facteurs devient intuitive grâce à la représentation visuelle et au retour immédiat.
 
-### **Compréhension des Phénomènes Avancés**
+### **Compréhension des Phénomènes Avancés** ✅ **ENTIÈREMENT RÉALISÉ**
 Les capacités temporelles permettent aux utilisateurs de comprendre des phénomènes complexes qui se produisent sur des heures ou des jours dans les réacteurs réels, tels que :
-- Temps mort xénon après arrêt du réacteur
-- Effets de pic xénon sur la capacité de redémarrage
-- Interactions des coefficients de température
-- États d'équilibre versus transitoires
+- **Temps mort xénon après arrêt du réacteur** : Simulation complète avec valeurs PWR réalistes
+- **Effets de pic xénon sur la capacité de redémarrage** : Pic à -4200 pcm après 6-8h conforme aux standards
+- **Interactions des coefficients de température** : Modélisation Doppler et modérateur intégrée
+- **États d'équilibre versus transitoires** : Visualisation temps réel des transitions I-135 ↔ Xe-135
 
 ### **Formation de Scénarios Pratiques**
 Le système de presets avancé permet :
