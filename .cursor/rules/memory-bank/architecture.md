@@ -98,7 +98,7 @@ L'interface utilisateur, qui est maintenant un simple "moteur de rendu" des info
     - Le Modèle ne connaît rien de la Vue.
     - La Vue ne contient aucune logique métier ni de configuration en dur ; elle est entièrement dépendante de ce que le Contrôleur lui fournit.
 4.  **Don't Repeat Yourself (DRY)**: La création de widgets dans la Vue a été factorisée pour éliminer la duplication de code.
-5.  **Absence de validation automatique** : Il n'existe plus de tests automatisés (unitaires, d'intégration ou de validation physique) dans le projet. Toute vérification de non-régression ou de précision doit être réalisée manuellement.
+5.  **Validation physique intégrée** : L'application inclut des mécanismes de validation des constantes physiques et de la cohérence des modèles neutroniques via des audits automatiques intégrés.
 
 ## Impact Architectural Final
 

@@ -401,18 +401,38 @@ class MainWindow(QMainWindow):
 
     def on_time_advance(self, hours):
         """Handle time advancement for xenon dynamics"""
-        params = self.controller.advance_time(hours)
-        self.update_reactor_params(params)
-        self.update_visualizations()
-        self.check_for_custom_preset()
+        # Protection contre les appels multiples simultanés
+        if hasattr(self, '_advancing_time') and self._advancing_time:
+            return
+            
+        try:
+            self._advancing_time = True
+            params = self.controller.advance_time(hours)
+            self.update_reactor_params(params)
+            self.update_visualizations()
+            self.check_for_custom_preset()
+        except Exception as e:
+            print(f"Erreur lors de l'avancement temporel: {e}")
+        finally:
+            self._advancing_time = False
     
     def on_xenon_reset(self):
         """Handle xenon reset to equilibrium"""
-        params = self.controller.reset_xenon_to_equilibrium()
-        self.update_reactor_params(params)
-        self.update_visualizations()
-        self.visualization_panel.xenon_widget.clear_history()
-        self.check_for_custom_preset()
+        # Protection contre les appels multiples simultanés
+        if hasattr(self, '_resetting_xenon') and self._resetting_xenon:
+            return
+        
+        try:
+            self._resetting_xenon = True
+            params = self.controller.reset_xenon_to_equilibrium()
+            self.update_reactor_params(params)
+            self.update_visualizations()
+            self.visualization_panel.xenon_widget.clear_history()
+            self.check_for_custom_preset()
+        except Exception as e:
+            print(f"Erreur lors de la réinitialisation xénon: {e}")
+        finally:
+            self._resetting_xenon = False
 
     def update_reactor_params(self, params):
         """Update the display of reactor parameters"""

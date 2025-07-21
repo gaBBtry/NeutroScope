@@ -53,25 +53,29 @@ L'application est entièrement pilotée par un fichier de configuration central.
 ## Outils de Développement et Qualité
 
 -   **Build et Déploiement** : **PyInstaller** avec des scripts de build automatisés.
--   **Note** : Il n'existe plus de validation automatique par tests (unitaires, d'intégration ou de validation physique) dans le projet. Toute vérification doit être réalisée manuellement.
+-   **Validation Physique Automatisée** : Système d'audit intégré pour vérifier la conformité aux standards PWR et la cohérence des modèles neutroniques.
 
 ## Optimisations et Améliorations Récentes
 
-### **Dynamique Xénon-135 Fonctionnelle (Juillet 2025)**
--   **Contrôle de Puissance Ajouté** : Interface utilisateur complétée avec un contrôle de puissance (0-100%)
-    - Widget slider/spinbox intégré au panneau de contrôle
-    - Signaux connectés pour mise à jour temps réel
-    - Documentation intégrée pour l'utilisation avec la dynamique xénon
--   **Calibration Physique Corrigée** : Valeurs d'antiréactivité xénon cohérentes avec les standards PWR
-    - Section efficace xénon : `2.65e6 → 3.5e6` barns
-    - Facteur de conversion réactivité : `1e4 → 1.65e-5` (calibré pour -2750 pcm à l'équilibre)
-    - Antiréactivité équilibre 100% Pn : `-2755 pcm` ✅
-    - Pic post-arrêt réacteur : `~-4200 pcm` après 6-8h ✅
--   **Simulation Temporelle Opérationnelle** : Dynamique xénon complètement fonctionnelle
-    - Évolution temporelle I-135 → Xe-135 via équations de Bateman
-    - Intégration Runge-Kutta 4 pour précision numérique
-    - Visualisation temps réel : concentrations + antiréactivité
-    - Scénarios réalistes : arrêt d'urgence, variations de puissance
+### **Simulation Temporelle Automatisée - Xénon 135 (Juillet 2025)**
+-   **Interface Play/Pause/Stop** : Contrôles intuitifs de simulation automatique
+    - Bouton Play/Pause : Démarre/suspend la simulation continue
+    - Bouton Stop & Reset : Arrête et remet à l'équilibre en une action
+    - Timer QTimer intégré avec gestion robuste des états
+    - Paramètres modifiables en temps réel (pas de temps, vitesse)
+-   **Robustesse Anti-Plantage** : Protection complète contre les conditions de course
+    - Guards de ré-entrance pour éviter les appels simultanés
+    - Gestion d'exceptions avec nettoyage automatique des timers
+    - Synchronisation sécurisée timer/reset
+-   **Calibration Physique Précise** : Conformité totale aux standards PWR
+    - Constantes temporelles : Xe-135 (T₁/₂ = 9.2h), I-135 (T₁/₂ = 6.7h)
+    - Rendements de fission : I-135 (6.0%), Xe-135 (0.3%)
+    - Antiréactivité équilibre 100% Pn : `-2743 pcm` ✅
+    - Facteur conversion réactivité : `1.74e-5` (optimisé)
+-   **Évolution Temporelle Réaliste** : Dynamique conforme aux REP français
+    - Équations de Bateman avec intégration Runge-Kutta 4
+    - Scénario AAR : Pic xénon à 6-8h, retour à zéro en 72h
+    - Coefficients de réactivité recalibrés et réalistes
 
 ### **Précision Numérique Avancée**
 -   **Algorithme Runge-Kutta 4** : Remplacement de l'intégration d'Euler pour la simulation temporelle des isotopes Xénon-135

@@ -53,7 +53,8 @@ L'utilisateur doit disposer de "leviers" (curseurs, boutons, champs de saisie) p
 - **Concentration en bore soluble** : Le principal levier de pilotage lent. Augmenter la concentration augmente l'absorption et diminue le facteur `f`.
 - **Température du combustible** : L'augmentation de la température augmente la capture "par résonance", ce qui diminue le facteur `p` (Effet Doppler).
 - **Température du modérateur** : L'augmentation de la température du modérateur (l'eau) diminue sa densité, ce qui affecte à la fois son efficacité à ralentir les neutrons et l'efficacité du bore. Cela impacte les facteurs `p` et `f`, ainsi que les probabilités de fuite.
-- **Présence de "poisons" (ex: Xénon)** : Simuler la présence de produits de fission qui sont de forts absorbeurs de neutrons. Leur présence diminue le facteur `f`.
+- **Niveau de puissance** : Contrôle de la puissance du réacteur (0-100%) qui détermine les concentrations d'équilibre des poisons neutroniques.
+- **Dynamique temporelle Xénon-135** : Simulation automatique Play/Pause/Stop de l'évolution des concentrations I-135→Xe-135 selon les équations de Bateman.
 
 ### 3.3. Affichages et Données en Temps Réel
 

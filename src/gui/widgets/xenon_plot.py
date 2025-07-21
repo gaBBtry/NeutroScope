@@ -7,8 +7,8 @@ along with their effect on reactor reactivity.
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QSlider
-from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QSpinBox
+from PyQt6.QtCore import Qt, pyqtSignal, QTimer
 from typing import Optional
 from ..widgets.info_manager import InfoManager
 
@@ -153,13 +153,16 @@ class XenonPlot(FigureCanvasQTAgg):
 
 
 class XenonControlWidget(QWidget):
-    """Widget de contrôle pour la simulation temporelle du Xénon"""
+    """Widget de contrôle pour la simulation temporelle automatique du Xénon"""
     
-    time_advance_requested = pyqtSignal(float)  # Signal émis quand l'utilisateur veut avancer le temps
+    time_advance_requested = pyqtSignal(float)  # Signal émis pour avancer le temps
     reset_requested = pyqtSignal()  # Signal pour remettre à l'équilibre
     
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.simulation_timer = QTimer()
+        self.simulation_timer.timeout.connect(self._advance_simulation_step)
+        self.is_running = False
         self._setup_ui()
         
     def _setup_ui(self):
@@ -167,59 +170,144 @@ class XenonControlWidget(QWidget):
         layout = QVBoxLayout(self)
         
         # Titre
-        title = QLabel("Contrôles Temporels")
+        title = QLabel("Simulation Temporelle Xénon")
         title.setStyleSheet("font-weight: bold; font-size: 14px; margin-bottom: 10px;")
         layout.addWidget(title)
         
-        # Contrôles de temps
-        time_layout = QHBoxLayout()
+        # Contrôles de simulation
+        control_layout = QHBoxLayout()
         
-        # Slider pour le pas de temps
-        time_layout.addWidget(QLabel("Pas de temps:"))
-        self.time_slider = QSlider(Qt.Orientation.Horizontal)
-        self.time_slider.setMinimum(1)
-        self.time_slider.setMaximum(24)
-        self.time_slider.setValue(1)
-        self.time_slider.valueChanged.connect(self._update_time_label)
-        time_layout.addWidget(self.time_slider)
+        # Boutons Play/Pause/Stop
+        self.play_button = QPushButton("▶ Play")
+        self.play_button.setStyleSheet("background-color: #4CAF50; color: white; font-weight: bold;")
+        self.play_button.clicked.connect(self._toggle_simulation)
+        control_layout.addWidget(self.play_button)
         
-        self.time_label = QLabel("1h")
-        self.time_label.setMinimumWidth(30)
-        time_layout.addWidget(self.time_label)
+        self.stop_button = QPushButton("⏹ Stop & Reset")
+        self.stop_button.setStyleSheet("background-color: #f44336; color: white; font-weight: bold;")
+        self.stop_button.clicked.connect(self._stop_and_reset)
+        control_layout.addWidget(self.stop_button)
         
-        layout.addLayout(time_layout)
+        layout.addLayout(control_layout)
         
-        # Boutons de contrôle
-        button_layout = QHBoxLayout()
+        # Paramètres de simulation
+        params_layout = QVBoxLayout()
         
-        self.advance_button = QPushButton("Avancer le Temps")
-        self.advance_button.clicked.connect(self._advance_time)
-        button_layout.addWidget(self.advance_button)
+        # Pas de temps de simulation (modifiable en temps réel)
+        step_layout = QHBoxLayout()
+        step_layout.addWidget(QLabel("Pas de temps:"))
+        self.time_step_spinbox = QSpinBox()
+        self.time_step_spinbox.setMinimum(1)
+        self.time_step_spinbox.setMaximum(24)
+        self.time_step_spinbox.setValue(1)
+        self.time_step_spinbox.setSuffix(" h")
+        self.time_step_spinbox.valueChanged.connect(self._update_simulation_params)
+        step_layout.addWidget(self.time_step_spinbox)
         
-        self.reset_button = QPushButton("Remettre à l'Équilibre")
-        self.reset_button.clicked.connect(self.reset_requested.emit)
-        button_layout.addWidget(self.reset_button)
+        # Vitesse de simulation (intervalle entre pas)
+        step_layout.addWidget(QLabel("Vitesse:"))
+        self.speed_spinbox = QSpinBox()
+        self.speed_spinbox.setMinimum(100)
+        self.speed_spinbox.setMaximum(5000)
+        self.speed_spinbox.setValue(1000)
+        self.speed_spinbox.setSuffix(" ms")
+        self.speed_spinbox.valueChanged.connect(self._update_simulation_params)
+        step_layout.addWidget(self.speed_spinbox)
         
-        layout.addLayout(button_layout)
+        params_layout.addLayout(step_layout)
+        layout.addLayout(params_layout)
         
         # Info sur l'état actuel
-        self.status_label = QLabel("État: Équilibre initial")
-        self.status_label.setStyleSheet("color: #2E8B57; font-style: italic;")
+        self.status_label = QLabel("État: Prêt - Appuyez sur Play pour démarrer")
+        self.status_label.setStyleSheet("color: #2E8B57; font-style: italic; margin-top: 10px;")
         layout.addWidget(self.status_label)
         
-    def _update_time_label(self, value):
-        """Met à jour le label du temps sélectionné"""
-        self.time_label.setText(f"{value}h")
+    def _toggle_simulation(self):
+        """Démarre ou met en pause la simulation"""
+        if not self.is_running:
+            self._start_simulation()
+        else:
+            self._pause_simulation()
+    
+    def _start_simulation(self):
+        """Démarre la simulation automatique"""
+        self.is_running = True
+        self.play_button.setText("⏸ Pause")
+        self.play_button.setStyleSheet("background-color: #FF9800; color: white; font-weight: bold;")
         
-    def _advance_time(self):
-        """Émet le signal pour avancer le temps du nombre d'heures sélectionné"""
-        hours = self.time_slider.value()
-        self.time_advance_requested.emit(hours)
-        self.status_label.setText(f"Dernier avancement: +{hours}h")
+        # Configurer le timer avec la vitesse actuelle
+        interval_ms = self.speed_spinbox.value()
+        self.simulation_timer.start(interval_ms)
         
+        self.status_label.setText("État: Simulation en cours...")
+        self.status_label.setStyleSheet("color: #4CAF50; font-style: italic; margin-top: 10px;")
+    
+    def _pause_simulation(self):
+        """Met en pause la simulation"""
+        self.is_running = False
+        self.play_button.setText("▶ Play")
+        self.play_button.setStyleSheet("background-color: #4CAF50; color: white; font-weight: bold;")
+        
+        self.simulation_timer.stop()
+        
+        self.status_label.setText("État: Simulation en pause")
+        self.status_label.setStyleSheet("color: #FF9800; font-style: italic; margin-top: 10px;")
+    
+    def _stop_and_reset(self):
+        """Arrête la simulation et remet à l'équilibre"""
+        # Arrêter le timer d'abord
+        if self.simulation_timer.isActive():
+            self.simulation_timer.stop()
+        
+        # S'assurer que l'état est cohérent
+        self.is_running = False
+        self.play_button.setText("▶ Play")
+        self.play_button.setStyleSheet("background-color: #4CAF50; color: white; font-weight: bold;")
+        
+        # Émettre le signal de reset
+        self.reset_requested.emit()
+        
+        self.status_label.setText("État: Arrêté et remis à l'équilibre")
+        self.status_label.setStyleSheet("color: #2E8B57; font-style: italic; margin-top: 10px;")
+    
+    
+    def _advance_simulation_step(self):
+        """Avance la simulation d'un pas (appelée par le timer)"""
+        # Vérifier que la simulation est toujours active et que le timer tourne
+        if self.is_running and self.simulation_timer.isActive():
+            try:
+                hours = self.time_step_spinbox.value()
+                self.time_advance_requested.emit(hours)
+            except Exception as e:
+                # En cas d'erreur, arrêter la simulation pour éviter les plantages
+                print(f"Erreur lors de l'avancement temporel: {e}")
+                self._stop_and_reset()
+    
+    def _update_simulation_params(self):
+        """Met à jour les paramètres de simulation en temps réel"""
+        if self.is_running:
+            # Redémarrer le timer avec le nouveau délai
+            interval_ms = self.speed_spinbox.value()
+            self.simulation_timer.start(interval_ms)
+    
     def reset_status(self):
-        """Remet à zéro le statut"""
-        self.status_label.setText("État: Remi à l'équilibre")
+        """Remet à zéro le statut (compatibilité)"""
+        self._stop_and_reset()
+    
+    def closeEvent(self, event):
+        """Nettoyage lors de la fermeture du widget"""
+        if hasattr(self, 'simulation_timer') and self.simulation_timer.isActive():
+            self.simulation_timer.stop()
+        super().closeEvent(event)
+    
+    def __del__(self):
+        """Destructeur pour s'assurer que le timer est arrêté"""
+        try:
+            if hasattr(self, 'simulation_timer') and self.simulation_timer and self.simulation_timer.isActive():
+                self.simulation_timer.stop()
+        except (RuntimeError, AttributeError):
+            # Objet Qt déjà détruit, ignorer l'erreur
+            pass
 
 
 class XenonVisualizationWidget(QWidget):
@@ -249,4 +337,4 @@ class XenonVisualizationWidget(QWidget):
     def clear_history(self):
         """Efface l'historique"""
         self.xenon_plot.clear_history()
-        self.controls.reset_status() 
+        self.controls.reset_status()
