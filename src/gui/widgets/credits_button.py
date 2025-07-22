@@ -51,10 +51,10 @@ class CreditsButton(QToolButton):
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         
         credits = QLabel(
-            "© 2023-2024 EDF UFPI\n\n"
+            "© 2025 EDF UFPI - SCF Chinon\n\n"
             "Développé pour la formation et l'apprentissage\n"
             "des principes de la neutronique des réacteurs.\n\n"
-            "Version: alpha 0.1"
+            "Version: 1.0"
         )
         credits.setAlignment(Qt.AlignmentFlag.AlignCenter)
         credits.setWordWrap(True)
