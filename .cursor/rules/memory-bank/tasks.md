@@ -1713,3 +1713,33 @@ def get_xenon_reactivity_effect(self):
 - **Scénarios automatisés** : Séquences temporelles préprogrammées pour enseignement
 - **Visualisation enrichie** : Graphiques 3D temps/puissance/concentration
 - **Export données** : Sauvegarde historiques temporels pour analyse externe
+
+---
+
+## Amélioration Ergonomie Visualisations (Scroll & Labels Multilignes)
+**Dernière exécution :** Juillet 2025
+**Fichiers à modifier :**
+- `src/gui/visualization.py` (ajout d'un QScrollArea autour d'un widget complexe)
+- `src/gui/widgets/neutron_balance_plot.py` (labels multilignes pour camembert matplotlib)
+
+**Étapes :**
+1. Identifier le widget de visualisation problématique (ex : diagramme trop grand pour petit écran).
+2. Envelopper le widget dans un `QScrollArea` pour garantir l'accessibilité sur toutes tailles de fenêtre.
+3. Pour les labels matplotlib trop larges, transformer les labels en multilignes (ex : retour à la ligne après chaque mot).
+4. Tester l'affichage sur différentes tailles d'écran.
+
+**Notes importantes :**
+- Préférer le scroll automatique à la réduction forcée du contenu pour préserver la lisibilité.
+- Pour matplotlib, le retour à la ligne dans les labels se fait en insérant '\n' entre chaque mot.
+- Cette tâche améliore l'expérience utilisateur sur tous les supports, sans ajout de style custom.
+
+**Exemple d'implémentation :**
+```python
+# Scroll sur widget complexe
+scroll = QScrollArea()
+scroll.setWidgetResizable(True)
+scroll.setWidget(widget_complexe)
+
+# Labels multilignes pour camembert
+labels = ['\n'.join(label.split()) for label in labels]
+```

@@ -27,3 +27,7 @@
 - **🔬 Isotopes Additionnels** : Extension Samarium-149 et autres produits de fission
 - **🎯 Modes Opérationnels** : Simulation procédures de redémarrage et gestion des transitoires
 - **📊 Export/Import** : Sauvegarde des états temporels et partage de scénarios éducatifs 
+
+## Améliorations UX Juillet 2025
+- **Accessibilité petits écrans** : Le widget du cycle neutronique (onglet "Cycle Neutronique") est désormais encapsulé dans un scroll automatique, ce qui garantit l'accès à l'intégralité du diagramme même sur des écrans 14 pouces ou moins.
+- **Lisibilité camembert** : Les étiquettes du diagramme circulaire du bilan neutronique sont désormais affichées en multilignes (un mot par ligne), ce qui rend les labels compacts et lisibles quelle que soit la taille de la fenêtre. 

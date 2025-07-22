@@ -43,6 +43,11 @@ class VisualizationPanel(QWidget):
         self.neutron_balance_plot = NeutronBalancePlot(info_manager=self.info_manager)
         self.xenon_widget = XenonVisualizationWidget(info_manager=self.info_manager)
         
+        # --- Ajout du scroll pour le cycle neutronique ---
+        neutron_cycle_scroll = QScrollArea()
+        neutron_cycle_scroll.setWidgetResizable(True)
+        neutron_cycle_scroll.setWidget(self.neutron_cycle_plot)
+        
         # Create a container widget for factors and balance plots
         analysis_tab = QWidget()
         analysis_layout = QHBoxLayout(analysis_tab)
@@ -50,7 +55,7 @@ class VisualizationPanel(QWidget):
         analysis_layout.addWidget(self.neutron_balance_plot)
 
         # Add plots to tabs
-        self.tabs.addTab(self.neutron_cycle_plot, "Cycle Neutronique")
+        self.tabs.addTab(neutron_cycle_scroll, "Cycle Neutronique")
         self.tabs.addTab(self.flux_plot, "Flux Axial")
         self.tabs.addTab(analysis_tab, "Analyse Neutronique")
         self.tabs.addTab(self.xenon_widget, "Dynamique Xénon")

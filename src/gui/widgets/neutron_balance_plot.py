@@ -34,7 +34,9 @@ class NeutronBalancePlot(FigureCanvasQTAgg):
         self.axes.clear()
         
         # Extract data from the dictionary
-        labels = [item['name'] for item in balance_data['sections']]
+        def multiline_label(label):
+            return '\n'.join(label.split())
+        labels = [multiline_label(item['name']) for item in balance_data['sections']]
         sizes = [item['value'] for item in balance_data['sections']]
         colors = [item['color'] for item in balance_data['sections']]
         self.tooltips = [item['tooltip'] for item in balance_data['sections']]
