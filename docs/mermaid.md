@@ -7,42 +7,8 @@ Ce fichier contient les diagrammes Mermaid essentiels pour comprendre l'architec
 ```mermaid
 graph TB
     subgraph "Vue (GUI)"
-        MW[MainWindow]
-        VP[VisualizationPanel]
-        W[Widgets]
-        MW --> VP
-        MW --> W
-    end
-    
-    subgraph "Contrôleur"
-        RC[ReactorController]
-    end
-    
-    subgraph "Modèle"
-        RM[ReactorModel]
-        PM[PresetManager]
-        CFG[Config]
-        RM --> PM
-        RM --> CFG
-    end
-    
-    MW --> RC
-    RC --> RM
-    
-    style MW fill:#e3f2fd
-    style RC fill:#fff3e0
-    style RM fill:#e8f5e8
-```
-
-## 2. Structure Détaillée des Composants
-
-```mermaid
-graph TB
-    subgraph "src/gui/ (Interface)"
-        direction TB
-        MW[main_window.py<br/>Interface principale]
-        VZ[visualization.py<br/>Gestionnaire onglets]
-        
+        MW[main_window.py]
+        VZ[visualization.py]
         subgraph "widgets/"
             IP[info_panel.py]
             IM[info_manager.py]
@@ -55,7 +21,6 @@ graph TB
             ID[info_dialog.py]
             CB[credits_button.py]
         end
-        
         MW --> VZ
         VZ --> XP
         VZ --> NC
@@ -68,43 +33,32 @@ graph TB
         MW --> ID
         MW --> CB
     end
-    
-    subgraph "src/controller/"
-        RC[reactor_controller.py<br/>Orchestration]
+    subgraph "Contrôleur"
+        RC[reactor_controller.py]
     end
-    
-    subgraph "src/model/"
-        RM[reactor_model.py<br/>Physique + Simulation]
-        PM[preset_model.py<br/>Gestion presets]
-        C[config.py<br/>Configuration]
-        
-        subgraph "calculators/"
-            CALC[Modules spécialisés]
-        end
-        
-        RM --> PM
-        RM --> C
-        RM --> CALC
+    subgraph "Modèle"
+        RM[reactor_model.py]
+        PM[preset_model.py]
+        CFG[config.py]
     end
-    
     MW --> RC
     RC --> RM
-    
+    RM --> PM
+    RM --> CFG
     style MW fill:#e3f2fd
     style RC fill:#fff3e0
     style RM fill:#e8f5e8
 ```
 
-## 3. Flux de Données Utilisateur
+## 2. Flux de Données Utilisateur
 
 ```mermaid
 sequenceDiagram
     participant U as Utilisateur
-    participant MW as MainWindow
-    participant RC as ReactorController
-    participant RM as ReactorModel
+    participant MW as main_window.py
+    participant RC as reactor_controller.py
+    participant RM as reactor_model.py
     participant W as Widgets
-    
     U->>MW: Modifie paramètre (slider)
     MW->>RC: update_parameter(value)
     RC->>RM: set_parameter(value)
@@ -117,195 +71,204 @@ sequenceDiagram
     MW->>MW: update_reset_button_state()
 ```
 
-## 4. Système de Presets Avancé
+## 3. Système de Presets
 
 ```mermaid
 graph TD
     subgraph "Sources de Presets"
-        CFG[config.json<br/>Presets Système]
-        USER[user_presets.json<br/>Presets Utilisateur]
+        CFG[config.json]
+        USER[user_presets.json]
     end
-    
     subgraph "PresetManager"
-        PM[PresetManager]
+        PM[preset_model.py]
         PM --> LOAD[Chargement]
         PM --> CRUD[CRUD Operations]
         PM --> VALID[Validation]
         PM --> PERSIST[Persistance]
     end
-    
     subgraph "Interface"
-        COMBO[QComboBox<br/>Sélection]
+        COMBO[QComboBox]
         RESET[Bouton Reset]
         MANAGE[Gestionnaire Avancé]
     end
-    
     CFG --> LOAD
     USER --> LOAD
     LOAD --> PM
-    
     PM --> COMBO
     PM --> MANAGE
     COMBO --> RESET
-    
     CRUD --> USER
-    
     style CFG fill:#fff3e0
     style USER fill:#e8f5e8
     style PM fill:#e3f2fd
 ```
 
-## 5. Cycle de Simulation Temporelle (Xénon-135)
+## 4. Cycle de Simulation Temporelle (Xénon-135)
 
 ```mermaid
 graph TB
     subgraph "État Initial"
-        EQUI[Équilibre Xénon<br/>calculate_xenon_equilibrium()]
+        EQUI[Équilibre Xénon\ncalculate_xenon_equilibrium()]
     end
-    
     subgraph "Simulation Temporelle"
         ADV[advance_time(hours)]
-        BAT[Équations Bateman<br/>I-135 → Xe-135]
+        BAT[Équations Bateman\nI-135 → Xe-135]
         UPD[update_xenon_dynamics(dt)]
         CALC[calculate_all()]
     end
-    
     subgraph "Visualisation"
-        XW[XenonVisualizationWidget]
+        XP[xenon_plot.py]
         GRAPH[Graphiques concentrations]
         HIST[Historique temporel]
     end
-    
     subgraph "Contrôles"
         RESET_XE[Reset Équilibre]
         TIME_CTL[Contrôles Temps]
     end
-    
     EQUI --> ADV
     ADV --> BAT
     BAT --> UPD
     UPD --> CALC
-    CALC --> XW
-    XW --> GRAPH
-    XW --> HIST
-    
+    CALC --> XP
+    XP --> GRAPH
+    XP --> HIST
     TIME_CTL --> ADV
     RESET_XE --> EQUI
-    
     style EQUI fill:#fff3e0
     style BAT fill:#e8f5e8
-    style XW fill:#e3f2fd
+    style XP fill:#e3f2fd
 ```
 
-## 6. Système d'Information Contextuel
+## 5. Système d'Information Contextuel
 
 ```mermaid
 graph TD
     subgraph "Gestion Info"
-        IM[InfoManager<br/>Centralisé]
+        IM[info_manager.py]
         IM --> REG[register_widget()]
         IM --> TRACK[Mouse Tracking]
         IM --> EMIT[Signaux info]
     end
-    
     subgraph "Affichage"
-        IP[InfoPanel<br/>Toujours visible]
-        ID[InfoDialog<br/>Touche 'i']
-        TT[Tooltips<br/>Survol souris]
+        IP[info_panel.py]
+        ID[info_dialog.py]
+        TT[Tooltips]
     end
-    
     subgraph "Widgets Enhanced"
+        EW[enhanced_widgets.py]
         IGB[InfoGroupBox]
         IW[InfoWidget]
         IS[InfoSlider]
         IC[InfoComboBox]
     end
-    
     EMIT --> IP
     EMIT --> ID
-    
     IGB --> REG
     IW --> REG
     IS --> REG
     IC --> REG
-    
     TRACK --> TT
-    
     style IM fill:#e3f2fd
     style IP fill:#fff3e0
     style ID fill:#e8f5e8
 ```
 
-## 7. Gestion des États et Bouton Reset
+## 6. Gestion des États et Bouton Reset
 
 ```mermaid
 stateDiagram-v2
     [*] --> PresetSelected: Sélection preset
-    
     PresetSelected --> ParametersMatch: État correspond
     PresetSelected --> ParametersModified: Utilisateur modifie
-    
     ParametersMatch --> ResetDisabled: Bouton désactivé
     ParametersModified --> CustomMode: Mode "Personnalisé"
-    
     CustomMode --> ResetEnabled: Bouton activé
-    
     ResetEnabled --> ResetClicked: Clic Reset
     ResetClicked --> PresetSelected: Restauration
-    
     ParametersModified --> NewPresetSelected: Changement preset
     NewPresetSelected --> PresetSelected: Nouveau preset
-    
     ResetEnabled --> NewPresetSelected: Changement preset
 ```
 
-## 8. Architecture des Visualisations
+## 7. Architecture des Visualisations
 
 ```mermaid
 graph TB
     subgraph "VisualizationPanel"
+        VZ[visualization.py]
         TABS[QTabWidget]
     end
-    
     subgraph "Onglets Physique"
-        NC[Cycle Neutronique<br/>neutron_cycle_plot.py]
-        FF[Quatre Facteurs<br/>four_factors_plot.py]
-        FP[Flux Axial<br/>flux_plot.py]
-        NB[Bilan Neutronique<br/>neutron_balance_plot.py]
+        NC[neutron_cycle_plot.py]
+        FF[four_factors_plot.py]
+        FP[flux_plot.py]
+        NB[neutron_balance_plot.py]
     end
-    
     subgraph "Onglet Temporel"
-        XV[Dynamique Xénon<br/>xenon_plot.py]
+        XP[xenon_plot.py]
         XC[Contrôles Temps]
         XG[Graphiques Jumeaux]
     end
-    
     subgraph "Données Modèle"
-        RM[ReactorModel]
+        RM[reactor_model.py]
         CD[cycle_data]
         FD[factors_data]
         XD[xenon_data]
     end
-    
+    VZ --> TABS
     TABS --> NC
     TABS --> FF
     TABS --> FP
     TABS --> NB
-    TABS --> XV
-    
-    XV --> XC
-    XV --> XG
-    
+    TABS --> XP
+    XP --> XC
+    XP --> XG
     RM --> CD
     RM --> FD
     RM --> XD
-    
     CD --> NC
     FD --> FF
-    XD --> XV
-    
+    XD --> XP
     style TABS fill:#e3f2fd
     style RM fill:#e8f5e8
+```
+
+## 8. Pipeline de Build et Distribution
+
+```mermaid
+graph TD
+    subgraph "Développement"
+        SRC[src/]
+        CFG[config.json]
+        DEPS[requirements.txt]
+    end
+    subgraph "Build Process"
+        PY[build_windows.py]
+        BAT[build_windows.bat]
+        INST[PyInstaller]
+    end
+    subgraph "Distribution"
+        EXE[NeutroScope.exe]
+        DIST[Distribution]
+    end
+    subgraph "Utilisateurs Finaux"
+        EDU[Étudiants]
+        PROF[Professeurs]
+        INDUS[Professionnels]
+    end
+    SRC --> PY
+    CFG --> PY
+    DEPS --> PY
+    PY --> BAT
+    BAT --> INST
+    INST --> EXE
+    EXE --> DIST
+    DIST --> EDU
+    DIST --> PROF
+    DIST --> INDUS
+    style SRC fill:#e8f5e8
+    style EXE fill:#fff3e0
+    style DIST fill:#e3f2fd
 ```
 
 ## 9. Workflow Développement et Mémoire
@@ -313,77 +276,27 @@ graph TB
 ```mermaid
 graph LR
     subgraph "Memory Bank"
-        BRIEF[brief.md<br/>Vision]
-        PROD[product.md<br/>Produit]
-        ARCH[architecture.md<br/>Architecture]
-        TECH[tech.md<br/>Technologies]
-        CTX[context.md<br/>État actuel]
-        MERM[mermaid.md<br/>Diagrammes]
+        BRIEF[brief.md]
+        PROD[product.md]
+        ARCH[architecture.md]
+        TECH[tech.md]
+        CTX[context.md]
+        MERM[mermaid.md]
     end
-    
     subgraph "Développement"
         INIT[Initialisation]
         TASK[Tâche]
         UPDATE[Mise à jour]
     end
-    
     INIT --> BRIEF
     TASK --> CTX
     UPDATE --> CTX
-    
     BRIEF --> PROD
     PROD --> ARCH
     ARCH --> TECH
-    
     CTX --> TASK
     MERM --> ARCH
-    
     style BRIEF fill:#fff3e0
     style CTX fill:#e8f5e8
     style TASK fill:#e3f2fd
-```
-
-## 10. Pipeline de Build et Distribution
-
-```mermaid
-graph TD
-    subgraph "Développement"
-        SRC[Code Source<br/>Python + PyQt6]
-        CFG[Configuration<br/>config.json]
-        DEPS[Dependencies<br/>requirements.txt]
-    end
-    
-    subgraph "Build Process"
-        PY[build_windows.py]
-        BAT[build_windows.bat]
-        INST[PyInstaller]
-    end
-    
-    subgraph "Distribution"
-        EXE[NeutroScope.exe<br/>Exécutable Windows]
-        DIST[Distribution<br/>OneDrive entreprise]
-    end
-    
-    subgraph "Utilisateurs Finaux"
-        EDU[Étudiants]
-        PROF[Professeurs]
-        INDUS[Professionnels]
-    end
-    
-    SRC --> PY
-    CFG --> PY
-    DEPS --> PY
-    
-    PY --> BAT
-    BAT --> INST
-    INST --> EXE
-    
-    EXE --> DIST
-    DIST --> EDU
-    DIST --> PROF
-    DIST --> INDUS
-    
-    style SRC fill:#e8f5e8
-    style EXE fill:#fff3e0
-    style DIST fill:#e3f2fd
 ```
