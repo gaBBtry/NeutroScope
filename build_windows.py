@@ -77,13 +77,20 @@ def main():
             print(f"📦 Exécutable créé: {exe_path}")
             print(f"📊 Taille: {file_size:.1f} MB")
             
-            # Copier les fichiers additionnels si nécessaire
-            additional_files = ["README.md", "config.json"]
-            for file_name in additional_files:
-                if Path(file_name).exists():
-                    shutil.copy(file_name, output_dir)
-                    print(f"📄 Copié: {file_name}")
-            
+            # Créer le fichier "A LIRE.txt" dans le dossier releases
+            notice_path = output_dir / "A LIRE.txt"
+            with open(notice_path, "w", encoding="utf-8") as f:
+                f.write(
+                    """Le code source de NeutroScope est disponible sur le GitLab interne d'EDF.\n"
+                    "Pour toute question ou problème, veuillez contacter le responsable du projet au SCF de Chinon.\n\n"
+                    "https://gitlab.pleiade.edf.fr/SCF-Chinon/NeutroScope\n""" 
+                )
+            print(f"📝 Fichier d'information créé: {notice_path}")
+
+            # Copier config.json dans releases/
+            shutil.copy("config.json", output_dir / "config.json")
+            print(f"📝 config.json copié dans: {output_dir / 'config.json'}")
+
             print("\n🎉 Build terminé avec succès!")
             print(f"🎯 L'exécutable est disponible dans: {output_dir.absolute()}")
             print("\n📋 Instructions pour le partage:")

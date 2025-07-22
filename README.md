@@ -1,68 +1,51 @@
-# NeutroScope - Simulation Pédagogique du Cycle Neutronique
+# NeutroScope
 
-NeutroScope est un logiciel de simulation interactif conçu comme un outil pédagogique pour l'apprentissage des principes de la physique des réacteurs nucléaires. Il se concentre sur la visualisation du cycle de vie des neutrons et l'impact des paramètres de pilotage sur la réactivité du cœur.
+**Simulateur pédagogique avancé du cycle neutronique – Production Ready**
 
-## Fonctionnalités
+NeutroScope est un simulateur interactif de physique des réacteurs nucléaires, conçu pour l'enseignement et la formation professionnelle. Il permet de visualiser, manipuler et comprendre en profondeur le cycle de vie des neutrons, la criticité, la réactivité et les phénomènes temporels complexes (dynamique xénon, effets de température, scénarios transitoires). L'interface est 100% en français, moderne, épurée et adaptée à tous les niveaux.
 
--   **Visualisation du cycle neutronique** : Suivez une population de neutrons à travers les six facteurs du cycle pour comprendre comment la criticité est atteinte.
--   **Contrôles interactifs** : Manipulez les barres de contrôle, la concentration en bore et les températures pour voir leur effet en temps réel.
--   **Données en temps réel** : Observez `k_eff`, la réactivité (en pcm) et la valeur de chaque facteur du cycle.
--   **Presets de scénarios** : Chargez des configurations de réacteur prédéfinies (début/fin de cycle, etc.).
--   **Interface Pédagogique** : Des info-bulles détaillées expliquent chaque paramètre et concept physique.
+## Fonctionnalités principales
 
-## Installation et Lancement
+- **Visualisation du cycle neutronique** : Diagramme interactif à six facteurs, flux de neutrons, pertes, fissions, etc.
+- **Simulation temporelle automatisée** : Contrôles Play/Pause/Stop, évolution continue des concentrations d'isotopes (I-135, Xe-135), graphiques dynamiques.
+- **Contrôles physiques réalistes** : Barres de contrôle (groupes R/GCP), bore, température, puissance, tous configurables en temps réel.
+- **Scénarios prédéfinis (presets)** : Début/fin de cycle, fonctionnement en puissance, transitoires xénon, etc. – extensibles via `config.json`.
+- **Audit physique intégré** : Validation automatique de la cohérence physique (standards PWR, calibration industrielle).
+- **Info-bulles universelles** : Explications pédagogiques sur chaque élément, aide contextuelle détaillée (touche "i").
+- **Interface épurée et robuste** : Protection anti-plantage, synchronisation sécurisée, architecture modulaire.
 
-### Prérequis
+## Installation rapide (Windows)
 
--   Python 3.8+
--   PyQt6
+1. **Téléchargez ou clonez** le projet NeutroScope sur votre PC Windows.
+2. **Double-cliquez** sur le fichier `build_windows.bat` à la racine du projet.
+3. Laissez le script s’exécuter (quelques minutes).  
+   Il installe les dépendances, prépare l’environnement et crée l’exécutable.
+4. À la fin, l’exécutable `NeutroScope.exe` sera disponible dans le dossier `releases/`.
 
-### Installation
+**Prérequis** :
+- Windows avec Python 3.8+ et pip installés (voir [python.org](https://python.org) si besoin).
+- Connexion internet pour la première installation.
 
-1.  **Clonez le dépôt**
+**Dépannage** :
+- Si une erreur indique que Python ou pip est manquant, installez-les puis relancez le script.
+- Si le build échoue, consultez les messages affichés dans la console pour identifier le problème.
 
-    ```bash
-    git clone https://github.com/votre-utilisateur/NeutroScope.git
-    cd NeutroScope
-    ```
+**Partage** :
+- Vous pouvez copier le dossier `releases/` (et son contenu) sur une clé USB ou un service cloud (ex : OneDrive) pour distribuer l’exécutable.
 
-2.  **Créez un environnement virtuel**
+**Pour plus de détails, de dépannage ou d’options avancées, consultez le guide complet dans `docs/BUILD_WINDOWS.md`.**
 
-    ```bash
-    python -m venv venv
-    source venv/bin/activate  # Sur Windows: venv\Scripts\activate
-    ```
+## Architecture du projet
 
-3.  **Installez les dépendances**
+- `main.py` : Point d'entrée de l'application.
+- `config.json` : **Source unique de vérité** – tous les paramètres physiques, UI, presets, textes d'aide.
+- `src/` : Code source principal.
+    - `model/` : Logique physique, simulation, gestion des presets.
+    - `controller/` : Orchestration, pont entre modèle et interface, expose la configuration à la vue.
+    - `gui/` : Interface utilisateur dynamique, widgets, visualisations, info-bulles.
 
-    ```bash
-    pip install -r requirements.txt
-    ```
+## Extension et personnalisation
 
-### Lancement
-
-```bash
-python main.py
-```
-
-## Structure du Projet
-
--   `main.py` : Point d'entrée de l'application.
--   `config.json` : Fichier de configuration pour les paramètres physiques et les presets.
--   `src/` : Code source de l'application.
-    -   `model/` : Logique de la simulation physique (`reactor_model.py`).
-    -   `controller/` : Pont entre le modèle et l'interface (`reactor_controller.py`).
-    -   `gui/` : Tous les composants de l'interface utilisateur (fenêtre principale, widgets, graphiques).
--   `tests/` : Tests unitaires et d'intégration.
--   `docs/` : Documentation du projet.
--   `data/` : Données (si nécessaire pour de futures extensions).
-
-## Comment Contribuer
-
-Les contributions sont les bienvenues ! Veuillez suivre les étapes suivantes :
-
-1.  Forkez le projet.
-2.  Créez une branche pour votre fonctionnalité (`git checkout -b feature/NouvelleFonctionnalite`).
-3.  Commitez vos changements (`git commit -m 'Ajout de la fonctionnalité X'`).
-4.  Poussez vers la branche (`git push origin feature/NouvelleFonctionnalite`).
-5.  Ouvrez une Pull Request.
+- **Ajout de paramètres ou scénarios** : Modifiez simplement `config.json` (voir documentation et workflows dans `.cursor/rules/memory-bank/tasks.md`).
+- **Architecture modulaire** : Ajoutez de nouveaux widgets, visualisations ou modèles physiques sans modifier l’interface existante.
+- **Internationalisation** : Toute l’interface est en français, mais la structure permet une adaptation future.
