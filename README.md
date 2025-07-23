@@ -33,7 +33,7 @@ NeutroScope est un simulateur interactif de physique des réacteurs nucléaires,
 **Partage** :
 - Vous pouvez copier le dossier `releases/` (et son contenu) sur une clé USB ou un service cloud (ex : OneDrive) pour distribuer l’exécutable.
 
-**Pour plus de détails, de dépannage ou d’options avancées, consultez le guide complet dans `docs/BUILD_WINDOWS.md`.**
+**Pour plus de détails, de dépannage ou d’options avancées, consultez le guide complet dans `BUILD_WINDOWS.md`.**
 
 ## Architecture du projet
 
