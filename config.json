@@ -70,7 +70,7 @@
         },
         "boron": {
             "label": "Concentration en Bore (ppm)",
-            "info_text": "Le bore dissous dans l'eau du circuit primaire est un poison neutronique qui permet un contrôle fin et homogène de la réactivité du cœur. Une concentration plus élevée réduit la réactivité.\n\nPlage typique: 0 à 2000 ppm (parties par million)",
+            "info_text": "Le bore dissous dans l'eau du circuit primaire est un poison neutronique qui permet un contrôle fin et homogène de la réactivité du cœur. Une concentration plus élevée réduit la réactivité.\n\nPlage typique: 0 à 2000 ppm (parties par million)\nDémarrage: ~1425 ppm, Début de cycle: ~1058 ppm, Milieu de cycle: ~520 ppm, Fin de cycle: ~19 ppm",
             "range": [
                 0,
                 2000
@@ -82,10 +82,10 @@
         },
         "moderator_temp": {
             "label": "Température Moyenne (°C)",
-            "info_text": "La température de l'eau (modérateur) affecte sa densité et donc son efficacité à ralentir les neutrons. Une augmentation de température réduit généralement la réactivité (coefficient de température modérateur négatif).\n\nPlage d'opération normale: 280°C à 350°C",
+            "info_text": "La température de l'eau (modérateur) affecte sa densité et donc son efficacité à ralentir les neutrons. Une augmentation de température réduit généralement la réactivité (coefficient de température modérateur négatif).\n\nPlage d'opération normale: 286°C (démarrage/arrêt à chaud) à 304.6°C (puissance nominale)\nProlongation de cycle: température réduite (~295°C) pour compenser l'épuisement",
             "range": [
                 280,
-                350
+                320
             ],
             "tick_interval": 10,
             "step": 1,
@@ -94,9 +94,9 @@
         },
         "fuel_enrichment": {
             "label": "Enrichissement Combustible (%)",
-            "info_text": "Le pourcentage d'uranium-235 (isotope fissile) dans le combustible. Un enrichissement plus élevé augmente la réactivité et permet des cycles de combustible plus longs.\n\nPlage typique REP: 1.0% à 5.0%",
+            "info_text": "Le pourcentage d'uranium-235 (isotope fissile) dans le combustible. Un enrichissement plus élevé augmente la réactivité et permet des cycles de combustible plus longs.\n\nPlage typique REP français: 3.7% (UO2) à 4.0%\nAssemblages MOX: teneur en PuO2 ~8.65%",
             "range": [
-                1.0,
+                3.0,
                 5.0
             ],
             "slider_range_multiplier": 10,
@@ -180,45 +180,53 @@
     },
     "presets": {
         "PMD en début de cycle": {
-            "rod_group_R_position": 100,
-            "rod_group_GCP_position": 100,
-            "boron_concentration": 500.0,
+            "rod_group_R_position": 91,
+            "rod_group_GCP_position": 87,
+            "boron_concentration": 1058.0,
             "average_temperature": 304.6,
-            "fuel_enrichment": 3.5,
+            "fuel_enrichment": 3.7,
             "power_level": 100.0
         },
         "PMD en cours de cycle": {
-            "rod_group_R_position": 100,
-            "rod_group_GCP_position": 100,
-            "boron_concentration": 1000.0,
+            "rod_group_R_position": 92,
+            "rod_group_GCP_position": 85,
+            "boron_concentration": 520.0,
             "average_temperature": 304.6,
-            "fuel_enrichment": 3.5,
+            "fuel_enrichment": 3.7,
             "power_level": 100.0
         },
         "Démarrage": {
-            "rod_group_R_position": 20,
-            "rod_group_GCP_position": 20,
-            "boron_concentration": 1020.0,
-            "average_temperature": 280.0,
-            "fuel_enrichment": 3.5,
-            "power_level": 10.0
+            "rod_group_R_position": 2,
+            "rod_group_GCP_position": 2,
+            "boron_concentration": 1425.0,
+            "average_temperature": 286.0,
+            "fuel_enrichment": 3.7,
+            "power_level": 0.0
         },
         "Fin de cycle": {
-            "rod_group_R_position": 5,
-            "rod_group_GCP_position": 5,
-            "boron_concentration": 50.0,
-            "average_temperature": 315.0,
-            "fuel_enrichment": 3.5,
+            "rod_group_R_position": 93,
+            "rod_group_GCP_position": 100,
+            "boron_concentration": 19.0,
+            "average_temperature": 304.6,
+            "fuel_enrichment": 3.7,
             "power_level": 100.0
+        },
+        "Prolongation de cycle": {
+            "rod_group_R_position": 97,
+            "rod_group_GCP_position": 100,
+            "boron_concentration": 5.0,
+            "average_temperature": 295.0,
+            "fuel_enrichment": 3.7,
+            "power_level": 85.0
         }
     },
     "default_state": {
-        "rod_group_R_position": 100,
-        "rod_group_GCP_position": 100,
-        "boron_concentration": 500.0,
-        "average_temperature": 310.0,
+        "rod_group_R_position": 91,
+        "rod_group_GCP_position": 87,
+        "boron_concentration": 1058.0,
+        "average_temperature": 304.6,
         "power_level": 100.0,
-        "fuel_enrichment": 3.5,
+        "fuel_enrichment": 3.7,
         "time_step": 3600.0
     }
 }
