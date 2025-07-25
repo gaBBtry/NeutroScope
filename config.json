@@ -44,27 +44,27 @@
     "parameters_config": {
         "rod_group_R": {
             "label": "Groupe R (Régulation)",
-            "info_text": "Le groupe R est utilisé pour le contrôle fin de la réactivité et les ajustements de puissance. Il représente environ 30% de la valeur totale des barres de contrôle.\n\nPosition: 0 pas (barres extraites) à 228 pas (barres insérées)\nCurseur: gauche = extraites, droite = insérées\nPas recommandés: 1-10 pas pour les ajustements fins",
+            "info_text": "Le groupe R est utilisé pour le contrôle fin de la réactivité et les ajustements de puissance. Il représente environ 30% de la valeur totale des barres de contrôle.\n\nPosition: 100% (barres extraites) à 0% (barres insérées)\nCurseur: gauche = extraites, droite = insérées\nPourcentages recommandés: 95-99% pour les ajustements fins",
             "range": [
                 0,
-                228
+                100
             ],
-            "tick_interval": 50,
+            "tick_interval": 20,
             "step": 1,
-            "suffix": " pas",
+            "suffix": " %",
             "description": "Groupe de Régulation",
             "worth_fraction": 0.3
         },
         "rod_group_GCP": {
             "label": "Groupe GCP (Compensation)",
-            "info_text": "Le groupe GCP est utilisé pour la compensation des variations de réactivité dues au burn-up et aux effets xénon. Il représente environ 70% de la valeur totale.\n\nPosition: 0 pas (barres extraites) à 228 pas (barres insérées)\nCurseur: gauche = extraites, droite = insérées\nPas recommandés: 5-50 pas pour les ajustements significatifs",
+            "info_text": "Le groupe GCP est utilisé pour la compensation des variations de réactivité dues au burn-up et aux effets xénon. Il représente environ 70% de la valeur totale.\n\nPosition: 100% (barres extraites) à 0% (barres insérées)\nCurseur: gauche = extraites, droite = insérées\nPourcentages recommandés: 80-95% pour les ajustements significatifs",
             "range": [
                 0,
-                228
+                100
             ],
-            "tick_interval": 50,
-            "step": 5,
-            "suffix": " pas",
+            "tick_interval": 20,
+            "step": 1,
+            "suffix": " %",
             "description": "Groupe de Compensation de Puissance",
             "worth_fraction": 0.7
         },
@@ -180,32 +180,32 @@
     },
     "presets": {
         "PMD en début de cycle": {
-            "rod_group_R_position": 228,
-            "rod_group_GCP_position": 228,
+            "rod_group_R_position": 100,
+            "rod_group_GCP_position": 100,
             "boron_concentration": 500.0,
             "average_temperature": 304.6,
             "fuel_enrichment": 3.5,
             "power_level": 100.0
         },
         "PMD en cours de cycle": {
-            "rod_group_R_position": 228,
-            "rod_group_GCP_position": 228,
+            "rod_group_R_position": 100,
+            "rod_group_GCP_position": 100,
             "boron_concentration": 1000.0,
             "average_temperature": 304.6,
             "fuel_enrichment": 3.5,
             "power_level": 100.0
         },
         "Démarrage": {
-            "rod_group_R_position": 46,
-            "rod_group_GCP_position": 46,
+            "rod_group_R_position": 20,
+            "rod_group_GCP_position": 20,
             "boron_concentration": 1020.0,
             "average_temperature": 280.0,
             "fuel_enrichment": 3.5,
             "power_level": 10.0
         },
         "Fin de cycle": {
-            "rod_group_R_position": 11,
-            "rod_group_GCP_position": 11,
+            "rod_group_R_position": 5,
+            "rod_group_GCP_position": 5,
             "boron_concentration": 50.0,
             "average_temperature": 315.0,
             "fuel_enrichment": 3.5,
@@ -213,8 +213,8 @@
         }
     },
     "default_state": {
-        "rod_group_R_position": 0,
-        "rod_group_GCP_position": 0,
+        "rod_group_R_position": 100,
+        "rod_group_GCP_position": 100,
         "boron_concentration": 500.0,
         "average_temperature": 310.0,
         "power_level": 100.0,

@@ -283,16 +283,11 @@ class MainWindow(QMainWindow):
             widget.blockSignals(True)
 
         # Update rod group controls
-        rod_r_config = self.controller.get_parameter_config('rod_group_R')
-        max_steps = rod_r_config.get('range', [0, 228])[1]
-        
-        inverted_R_slider = max_steps - int(config["rod_group_R_position"])
-        inverted_GCP_slider = max_steps - int(config["rod_group_GCP_position"])
-        
-        self.rod_R_slider.setValue(inverted_R_slider)
+        # Inversion pour que 100% soit à gauche du slider
+        self.rod_R_slider.setValue(100 - int(config["rod_group_R_position"]))
         self.rod_R_spinbox.setValue(config["rod_group_R_position"])
         
-        self.rod_GCP_slider.setValue(inverted_GCP_slider)
+        self.rod_GCP_slider.setValue(100 - int(config["rod_group_GCP_position"]))
         self.rod_GCP_spinbox.setValue(config["rod_group_GCP_position"])
         
         self.boron_slider.setValue(int(config["boron_concentration"]))
@@ -325,9 +320,8 @@ class MainWindow(QMainWindow):
 
     def on_rod_R_slider_changed(self, value):
         """Handle R group slider change"""
-        rod_config = self.controller.get_parameter_config('rod_group_R')
-        max_steps = rod_config.get('range', [0, 228])[1]
-        inverted_value = max_steps - value
+        # Inversion: slider value 0 = 100%, slider value 100 = 0%
+        inverted_value = 100 - value
         
         self.rod_R_spinbox.blockSignals(True)
         self.rod_R_spinbox.setValue(inverted_value)
@@ -337,9 +331,8 @@ class MainWindow(QMainWindow):
     
     def on_rod_R_spinbox_changed(self, value):
         """Handle R group spinbox change"""
-        rod_config = self.controller.get_parameter_config('rod_group_R')
-        max_steps = rod_config.get('range', [0, 228])[1]
-        inverted_slider_value = max_steps - int(value)
+        # Inversion: spinbox 100% = slider 0, spinbox 0% = slider 100
+        inverted_slider_value = 100 - int(value)
         
         self.rod_R_slider.blockSignals(True)
         self.rod_R_slider.setValue(inverted_slider_value)
@@ -349,9 +342,8 @@ class MainWindow(QMainWindow):
     
     def on_rod_GCP_slider_changed(self, value):
         """Handle GCP group slider change"""
-        rod_config = self.controller.get_parameter_config('rod_group_GCP')
-        max_steps = rod_config.get('range', [0, 228])[1]
-        inverted_value = max_steps - value
+        # Inversion: slider value 0 = 100%, slider value 100 = 0%
+        inverted_value = 100 - value
         
         self.rod_GCP_spinbox.blockSignals(True)
         self.rod_GCP_spinbox.setValue(inverted_value)
@@ -361,9 +353,8 @@ class MainWindow(QMainWindow):
     
     def on_rod_GCP_spinbox_changed(self, value):
         """Handle GCP group spinbox change"""
-        rod_config = self.controller.get_parameter_config('rod_group_GCP')
-        max_steps = rod_config.get('range', [0, 228])[1]
-        inverted_slider_value = max_steps - int(value)
+        # Inversion: spinbox 100% = slider 0, spinbox 0% = slider 100
+        inverted_slider_value = 100 - int(value)
         
         self.rod_GCP_slider.blockSignals(True)
         self.rod_GCP_slider.setValue(inverted_slider_value)

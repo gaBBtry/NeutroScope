@@ -23,12 +23,12 @@ class ReactorController:
 
     # Nouvelles méthodes pour les groupes de barres
     def update_rod_group_R_position(self, position):
-        """Update R group position (0-228 steps)"""
+        """Update R group position (0-100%)"""
         self.model.update_rod_group_R_position(position)
         return self.get_reactor_parameters()
     
     def update_rod_group_GCP_position(self, position):
-        """Update GCP group position (0-228 steps)"""
+        """Update GCP group position (0-100%)"""
         self.model.update_rod_group_GCP_position(position)
         return self.get_reactor_parameters()
     

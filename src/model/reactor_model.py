@@ -391,11 +391,9 @@ class ReactorModel:
     
     def update_control_rod_position(self, position):
         """Méthode de rétrocompatibilité - convertit % en positions équivalentes R et GCP"""
-        # Conversion approximative pour maintenir la rétrocompatibilité
-        steps_max = config.parameters_config['conversion']['steps_to_percent']
-        equivalent_steps = (config.PERCENT_TO_FRACTION - position) * steps_max / config.PERCENT_TO_FRACTION
-        self.rod_group_R_position = equivalent_steps
-        self.rod_group_GCP_position = equivalent_steps
+        # Maintenant position est directement en pourcentage (0-100%)
+        self.rod_group_R_position = position
+        self.rod_group_GCP_position = position
         self.calculate_all()
     
     def update_boron_concentration(self, concentration):
@@ -783,10 +781,10 @@ class ReactorModel:
             float: Fraction totale d'anti-réactivité (0.0 à 1.0)
         """
         # Conversion des positions en fractions d'insertion (0 = extrait, 1 = inséré)
-        steps_max = config.parameters_config['conversion']['steps_to_percent']
+        # 100% = barres extraites (0 insertion), 0% = barres insérées (100% insertion)
         
-        r_insertion_fraction = (steps_max - self.rod_group_R_position) / steps_max
-        gcp_insertion_fraction = (steps_max - self.rod_group_GCP_position) / steps_max
+        r_insertion_fraction = (100 - self.rod_group_R_position) / 100
+        gcp_insertion_fraction = (100 - self.rod_group_GCP_position) / 100
         
         # Calcul des contributions pondérées
         r_worth = config.parameters_config['rod_group_R']['worth_fraction']

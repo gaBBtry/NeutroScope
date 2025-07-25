@@ -39,8 +39,8 @@ class PresetData:
     tags: List[str] = None
     
     # Paramètres de base du réacteur
-    rod_group_R_position: int = 0  # 0-228 pas (Groupe de Régulation)
-    rod_group_GCP_position: int = 0  # 0-228 pas (Groupe de Compensation de Puissance)
+    rod_group_R_position: int = 0  # 0-100% (Groupe de Régulation)
+    rod_group_GCP_position: int = 0  # 0-100% (Groupe de Compensation de Puissance)
     boron_concentration: float = 500.0  # ppm
     average_temperature: float = 310.0  # °C
     fuel_enrichment: float = 3.5  # %
@@ -89,11 +89,11 @@ class PresetData:
         errors = []
         
         # Validation des paramètres de base
-        if not (0 <= self.rod_group_R_position <= 228):
-            errors.append("Position groupe R doit être entre 0 et 228 pas")
+        if not (0 <= self.rod_group_R_position <= 100):
+            errors.append("Position groupe R doit être entre 0 et 100%")
         
-        if not (0 <= self.rod_group_GCP_position <= 228):
-            errors.append("Position groupe GCP doit être entre 0 et 228 pas")
+        if not (0 <= self.rod_group_GCP_position <= 100):
+            errors.append("Position groupe GCP doit être entre 0 et 100%")
         
         if not (0 <= self.boron_concentration <= 5000):
             errors.append("Concentration bore doit être entre 0 et 5000 ppm")
