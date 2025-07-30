@@ -159,3 +159,8 @@ The configuration system enforces strict validation:
 - New reactor types can be added by subclassing `ReactorModel`
 - Preset system supports arbitrary parameter sets
 - Visualization framework supports dynamic plot addition
+
+## Development Memories
+
+### Mémoire Rédaction Guidelines
+- Avant chaque action pour la rédaction du mémoire, il faut s'assurer qu'elle est rigoureusement conforme aux consignes explicitées dans @docs/memoire_M2/docs/CONSIGNES.pdf
