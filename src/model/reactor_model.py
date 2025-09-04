@@ -560,8 +560,6 @@ class ReactorModel:
             "neutrons_produced_new": neutrons_start_generation * self.k_effective
         }
     
-
-    
     def get_neutron_cycle_data(self):
         """
         Get data for the neutron cycle visualization.
